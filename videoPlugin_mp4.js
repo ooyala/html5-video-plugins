@@ -13,10 +13,6 @@ OO.Video.plugin((function(_, $) {
     /************************************************************************************/
     // Required. Methods that Video Controller calls
     /************************************************************************************/
-    initialize: function() {
-      this.ready = true;
-    },
-
     create: function(parentContainer, stream) {
       var video = $("<video>");
       video.attr("class", "video");
@@ -28,7 +24,6 @@ OO.Video.plugin((function(_, $) {
 
       this.videoWrapper = new VideoWrapper(video[0]);
       this.videoWrapper.setVideoUrl(stream);
-      //this.videoWrapper.load();
 
       parentContainer.append(video);
     },
