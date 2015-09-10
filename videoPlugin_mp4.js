@@ -1,19 +1,29 @@
-OO.Video.plugin((function(_, $) {
+/*
+ * Simple HTML5 video tag plugin for mp4
+ * version: 0.1
+ */
 
+OO.Video.plugin((function(_, $) {
+  /**
+   * @class OoyalaVideoPlugin
+   * @classdesc
+   * @property {string} name The name of the plugin
+   * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
+   */
   OoyalaVideoPlugin = function() {
     this.name = "ooyalaVideoPlugin";
     this.ready = false;
-    this.videoWrapper = null;
+    this.videoWrappers = {};
 
     var video = document.createElement("video");
     this.streams = (!!video.canPlayType("application/vnd.apple.mpegurl") || !!video.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
-  };
 
-  _.extend(OoyalaVideoPlugin.prototype, {
     /************************************************************************************/
     // Required. Methods that Video Controller calls
     /************************************************************************************/
-    create: function(parentContainer, stream) {
+    this.create = function(parentContainer, stream, id) {
+      if (this.videoWrappers[id]) this.videoWrappers[id];
+
       var video = $("<video>");
       video.attr("class", "video");
       video.attr("preload", "none");
@@ -22,57 +32,55 @@ OO.Video.plugin((function(_, $) {
         video.attr("x-webkit-airplay", "allow");
       }
 
-      this.videoWrapper = new VideoWrapper(video[0]);
-      this.videoWrapper.setVideoUrl(stream);
+      this.videoWrappers[id] = new VideoWrapper(video[0]);
+      this.videoWrappers[id].setVideoUrl(stream);
 
       parentContainer.append(video);
-    },
+      return this.videoWrappers[id];
+    };
 
-    play: function() {
-      this.videoWrapper.play();
-    },
+    this.play = function(id) {
+      this.videoWrappers[id].play();
+    };
 
-    pause: function() {
-      this.videoWrapper.pause();
-    },
+    this.pause = function(id) {
+      this.videoWrappers[id].pause();
+    };
 
-    seek: function(time) {
-      this.videoWrapper.seek(time);
-    },
+    this.seek = function(id, time) {
+      this.videoWrappers[id].seek(time);
+    };
 
-    setVolume: function(volume) {
-      this.videoWrapper.setVolume(volume);
-    },
+    this.setVolume = function(id, volume) {
+      this.videoWrappers[id].setVolume(volume);
+    };
 
     /************************************************************************************/
     // Plugin methods. To Notify Video Controller that something happens
     /************************************************************************************/
-    notify: function() {
-      // Need to notify Video controller that videoWrapper is playing or paused
-    },
+    this.notify = function() {
+      // Need to notify Video controller that videoWrappers[id] is playing or paused
+    };
 
     /************************************************************************************/
     // Helper methods
     /************************************************************************************/
 
-    isIos: function() {
+    this.isIos = function() {
       var platform = window.navigator.platform;
       return platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/);
-    },
-
-  });
+    };
+  };
 
   VideoWrapper = function(video) {
     this._video = video;
     this._currentUrl = '';
     this.isM3u8 = false;
     this._readyToPlay = false;
-  };
 
-  _.extend(VideoWrapper.prototype, {
     // Allow for the video src to be changed without loading the video
     // @param url: the new url to insert into the video element's src attribute
-    setVideoUrl: function(url) {
+    this.setVideoUrl = function(url) {
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
       var urlChanged = false;
@@ -94,9 +102,9 @@ OO.Video.plugin((function(_, $) {
       //   this.trigger(OO.VideoElementWrapper.ERROR, 0); //0 -> no stream
       // }
       return urlChanged;
-    },
+    };
 
-    load: function(rewind) {
+    this.load = function(rewind) {
       // if(!!rewind) {
       //   try {
       //     if (OO.isIos && OO.iosMajorVersion == 8) {
@@ -112,34 +120,34 @@ OO.Video.plugin((function(_, $) {
       //   }
       // }
       this._video.load();
-    },
+    };
 
-    play: function() {
+    this.play = function() {
       this._video.play();
-    },
+    };
 
-    pause: function() {
+    this.pause = function() {
       this._video.pause();
-    },
+    };
 
-    seek: function(time) {
+    this.seek = function(time) {
       // video_dom_wrapper has better implementation on safeSeekRange
       this._video.currentTime = time;
-    },
+    };
 
-    setVolume: function(volume) {
+    this.setVolume = function(volume) {
       // video_dom_wrapper has better implementation on safe volume set
       this._video.volume = volume;
-    },
+    };
 
-    isChrome: function() {
+    this.isChrome = function() {
       return !!window.navigator.userAgent.match(/Chrome/);
-    },
+    };
 
-    getRandomString: function() {
+    this.getRandomString = function() {
       return Math.random().toString(36).substring(7);
-    },
-  });
+    };
+  };
 
   return new OoyalaVideoPlugin();
 }(OO._, OO.$)));
