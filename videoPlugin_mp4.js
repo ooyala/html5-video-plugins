@@ -4,6 +4,8 @@
  */
 
 OO.Video.plugin((function(_, $) {
+  var pluginName = "ooyalaVideoPlugin";
+
   /**
    * @class OoyalaVideoPlugin
    * @classdesc
@@ -11,9 +13,8 @@ OO.Video.plugin((function(_, $) {
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    */
   OoyalaVideoPlugin = function() {
-    this.name = "ooyalaVideoPlugin";
+    this.name = pluginName;
     this.ready = false;
-    this.videoWrappers = {};
 
     var video = document.createElement("video");
     this.streams = (!!video.canPlayType("application/vnd.apple.mpegurl") || !!video.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
@@ -22,8 +23,6 @@ OO.Video.plugin((function(_, $) {
     // Required. Methods that Video Controller calls
     /************************************************************************************/
     this.create = function(parentContainer, stream, id) {
-      if (this.videoWrappers[id]) this.videoWrappers[id];
-
       var video = $("<video>");
       video.attr("class", "video");
       video.attr("preload", "none");
@@ -31,35 +30,14 @@ OO.Video.plugin((function(_, $) {
       if (this.isIos()) {
         video.attr("x-webkit-airplay", "allow");
       }
+      video.attr("style", "width:100%;height:100%");
 
-      this.videoWrappers[id] = new VideoWrapper(video[0]);
-      this.videoWrappers[id].setVideoUrl(stream);
+      element = new VideoWrapper(id, video[0]);
+      element.setVideoUrl(stream);
+      element.streams = this.streams;
 
       parentContainer.append(video);
-      return this.videoWrappers[id];
-    };
-
-    this.play = function(id) {
-      this.videoWrappers[id].play();
-    };
-
-    this.pause = function(id) {
-      this.videoWrappers[id].pause();
-    };
-
-    this.seek = function(id, time) {
-      this.videoWrappers[id].seek(time);
-    };
-
-    this.setVolume = function(id, volume) {
-      this.videoWrappers[id].setVolume(volume);
-    };
-
-    /************************************************************************************/
-    // Plugin methods. To Notify Video Controller that something happens
-    /************************************************************************************/
-    this.notify = function() {
-      // Need to notify Video controller that videoWrappers[id] is playing or paused
+      return element;
     };
 
     /************************************************************************************/
@@ -72,11 +50,36 @@ OO.Video.plugin((function(_, $) {
     };
   };
 
-  VideoWrapper = function(video) {
+  VideoWrapper = function(id, video) {
+    this._id = id;
     this._video = video;
     this._currentUrl = '';
     this.isM3u8 = false;
     this._readyToPlay = false;
+
+    // Callback takes: videoId, pluginName, event, params
+    this.subscribe = function(callback) {
+      var raiseEvent = function(callback, event) {
+        callback(event.type, event);
+      }
+
+      // events minimum set
+      this._video.addEventListener("playing", _.bind(raiseEvent, this, callback));
+      this._video.addEventListener("ended", _.bind(raiseEvent, this, callback));
+      this._video.addEventListener("error", _.bind(raiseEvent, this, callback));
+      this._video.addEventListener("seeking", _.bind(raiseEvent, this, callback));
+      this._video.addEventListener("seeked", _.bind(raiseEvent, this, callback));
+      this._video.addEventListener("pause", _.bind(raiseEvent, this, callback));
+      this._video.addEventListener("ratechange", _.bind(raiseEvent, this, callback));
+      this._video.addEventListener("stalled", _.bind(raiseEvent, this, callback));
+      this._video.addEventListener("volumechange", _.bind(raiseEvent, this, callback));
+
+      // calls callback(eventname, [currentTime, duration]);
+      var raiseTimeUpdate = function(callback, event) {
+        callback(event.type, [event.srcElement.currentTime, event.srcElement.duration]);
+      }
+      this._video.addEventListener("timeupdate", _.bind(raiseTimeUpdate, this, callback));
+    };
 
     // Allow for the video src to be changed without loading the video
     // @param url: the new url to insert into the video element's src attribute
@@ -88,8 +91,8 @@ OO.Video.plugin((function(_, $) {
         this._currentUrl = url || "";
 
         // bust the chrome stupid caching bug
-        if(this._currentUrl.length > 0 && this.isChrome()) {
-          this._currentUrl = this._currentUrl + (/\?/.test(this._currentUrl) ? "&" : "?") + "_=" + this.getRandomString();
+        if(this._currentUrl.length > 0 && isChrome) {
+          this._currentUrl = this._currentUrl + (/\?/.test(this._currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
         this.isM3u8 = (this._currentUrl.toLowerCase().indexOf("m3u8") > 0);
@@ -132,7 +135,8 @@ OO.Video.plugin((function(_, $) {
 
     this.seek = function(time) {
       // video_dom_wrapper has better implementation on safeSeekRange
-      this._video.currentTime = time;
+      // bug to watch out for "Failed to set the 'currentTime' property on 'HTMLMediaElement': The provided double value is non-finite."
+      this._video.currentTime = safeSeekTime(time);
     };
 
     this.setVolume = function(volume) {
@@ -140,13 +144,27 @@ OO.Video.plugin((function(_, $) {
       this._video.volume = volume;
     };
 
-    this.isChrome = function() {
-      return !!window.navigator.userAgent.match(/Chrome/);
-    };
+    // Private Helpers
 
-    this.getRandomString = function() {
+    var getRandomString = function() {
       return Math.random().toString(36).substring(7);
     };
+
+    var safeSeekTime = _.bind(function(time) {
+      var safeTime = time >= this._video.duration ? this._video.duration - 0.01 : (time < 0 ? 0 : time);
+      // iPad with 6.1 has an intersting bug that causes the video to break if seeking exactly to zero
+      if (isIpad && safeTime < 0.1) { safeTime = 0.1; }
+      return safeTime;
+    }, this);
+
+    // Platform
+    var isIpad = (function() {
+      return !!window.navigator.platform.match(/iPad/);
+    })();
+
+    var isChrome = (function() {
+      return !!window.navigator.userAgent.match(/Chrome/);
+    })();
   };
 
   return new OoyalaVideoPlugin();
