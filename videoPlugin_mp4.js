@@ -27,7 +27,7 @@ OO.Video.plugin((function(_, $) {
       video.attr("class", "video");
       video.attr("preload", "none");
       video.attr("crossorigin", "anonymous");
-      if (this.isIos()) {
+      if (platform.isIos) {
         video.attr("x-webkit-airplay", "allow");
       }
       video.attr("style", "width:100%;height:100%");
@@ -43,11 +43,6 @@ OO.Video.plugin((function(_, $) {
     /************************************************************************************/
     // Helper methods
     /************************************************************************************/
-
-    this.isIos = function() {
-      var platform = window.navigator.platform;
-      return platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/);
-    };
   };
 
   VideoWrapper = function(id, video) {
@@ -57,8 +52,10 @@ OO.Video.plugin((function(_, $) {
     this.isM3u8 = false;
     this._readyToPlay = false;
 
-    // Callback takes: videoId, pluginName, event, params
-    this.subscribe = function(callback) {
+    /************************************************************************************/
+    // Required. Methods that Video Controller calls
+    /************************************************************************************/
+    this.subscribeAllEvents = function(callback) {
       var raiseEvent = function(callback, event) {
         callback(event.type, event);
       }
@@ -91,7 +88,7 @@ OO.Video.plugin((function(_, $) {
         this._currentUrl = url || "";
 
         // bust the chrome stupid caching bug
-        if(this._currentUrl.length > 0 && isChrome) {
+        if(this._currentUrl.length > 0 && platform.isChrome) {
           this._currentUrl = this._currentUrl + (/\?/.test(this._currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
@@ -110,7 +107,7 @@ OO.Video.plugin((function(_, $) {
     this.load = function(rewind) {
       // if(!!rewind) {
       //   try {
-      //     if (OO.isIos && OO.iosMajorVersion == 8) {
+      //     if (platform.isIos && OO.iosMajorVersion == 8) {
       //       $(this._video).one("durationchange", _.bind(function() {
       //         this._video.currentTime = 0;}, this));
       //     } else {
@@ -144,8 +141,9 @@ OO.Video.plugin((function(_, $) {
       this._video.volume = volume;
     };
 
-    // Private Helpers
-
+    /************************************************************************************/
+    // Helper methods
+    /************************************************************************************/
     var getRandomString = function() {
       return Math.random().toString(36).substring(7);
     };
@@ -153,19 +151,26 @@ OO.Video.plugin((function(_, $) {
     var safeSeekTime = _.bind(function(time) {
       var safeTime = time >= this._video.duration ? this._video.duration - 0.01 : (time < 0 ? 0 : time);
       // iPad with 6.1 has an intersting bug that causes the video to break if seeking exactly to zero
-      if (isIpad && safeTime < 0.1) { safeTime = 0.1; }
+      if (platform.isIpad && safeTime < 0.1) { safeTime = 0.1; }
       return safeTime;
     }, this);
-
-    // Platform
-    var isIpad = (function() {
-      return !!window.navigator.platform.match(/iPad/);
-    })();
-
-    var isChrome = (function() {
-      return !!window.navigator.userAgent.match(/Chrome/);
-    })();
   };
+
+  // Platform
+  var platform = {
+    isIos: (function() {
+      var platform = window.navigator.platform;
+      return !!(platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/));
+    })(),
+
+    isIpad: (function() {
+      return !!window.navigator.platform.match(/iPad/);
+    })(),
+
+    isChrome: (function() {
+      return !!window.navigator.userAgent.match(/Chrome/);
+    })(),
+  }
 
   return new OoyalaVideoPlugin();
 }(OO._, OO.$)));
