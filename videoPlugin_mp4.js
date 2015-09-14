@@ -1,27 +1,36 @@
 /*
- * Simple HTML5 video tag plugin for mp4
+ * Simple HTML5 video tag plugin for mp4 and hls
  * version: 0.1
  */
 
 OO.Video.plugin((function(_, $) {
-  var pluginName = "ooyalaVideoPlugin";
+  var pluginName = "ooyalaHtml5VideoTech";
 
   /**
-   * @class OoyalaVideoPlugin
-   * @classdesc
+   * @class OoyalaVideoFactory
+   * @classdesc Factory for creating video player objects that use HTML5 video tags
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
+   * @property {array} streams A list of supported encoding types (ex. m3u8, mp4)
    */
-  OoyalaVideoPlugin = function() {
+  OoyalaVideoFactory = function() {
     this.name = pluginName;
-    this.ready = false;
 
-    var video = document.createElement("video");
-    this.streams = (!!video.canPlayType("application/vnd.apple.mpegurl") || !!video.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
+    // This module defaults to ready because no setup or external loading is required
+    this.ready = true;
 
-    /************************************************************************************/
-    // Required. Methods that Video Controller calls
-    /************************************************************************************/
+    var videoElement = document.createElement("video");
+    this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") || !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
+
+    /**
+     * Creates a video player instance using OoyalaVideoWrapper
+     * @public
+     * @method OoyalaVideoFactory#create
+     * @memberOf OoyalaVideoFactory
+     * @param {object} parentContainer
+     * @param {string} stream The url of the stream to play
+     * @param {string} id The id of the video player instance to create
+     */
     this.create = function(parentContainer, stream, id) {
       var video = $("<video>");
       video.attr("class", "video");
@@ -32,49 +41,47 @@ OO.Video.plugin((function(_, $) {
       }
       video.attr("style", "width:100%;height:100%");
 
-      element = new VideoWrapper(id, video[0]);
+      element = new OoyalaVideoWrapper(id, video[0]);
       element.setVideoUrl(stream);
       element.streams = this.streams;
 
       parentContainer.append(video);
       return element;
     };
-
-    /************************************************************************************/
-    // Helper methods
-    /************************************************************************************/
   };
 
-  VideoWrapper = function(id, video) {
+  /**
+   * @class OoyalaVideoWrapper
+   * @classdesc Player object that wraps HTML5 video tags
+   * @param {string} id The id of the video player element
+   * @param {object} video The core video object to wrap
+   * @property {string} _id The id of the video player element
+   * @property {object} _video The core video object
+   * @property {string} _currentUrl The url of the current video stream
+   */
+  OoyalaVideoWrapper = function(id, video) {
     this._id = id;
     this._video = video;
     this._currentUrl = '';
-    this.isM3u8 = false;
+    var isM3u8 = false;
     this._readyToPlay = false;
 
     /************************************************************************************/
     // Required. Methods that Video Controller calls
     /************************************************************************************/
     this.subscribeAllEvents = function(callback) {
-      var raiseEvent = function(callback, event) {
-        callback(event.type, event);
-      }
+
 
       // events minimum set
-      this._video.addEventListener("playing", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("ended", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("error", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("seeking", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("seeked", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("pause", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("ratechange", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("stalled", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("volumechange", _.bind(raiseEvent, this, callback));
-
-      // calls callback(eventname, [currentTime, duration]);
-      var raiseTimeUpdate = function(callback, event) {
-        callback(event.type, [event.srcElement.currentTime, event.srcElement.duration]);
-      }
+      this._video.addEventListener("playing", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("ended", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("error", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("seeking", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("seeked", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("pause", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("ratechange", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("stalled", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("volumechange", _.bind(raiseGeneralEvent, this, callback));
       this._video.addEventListener("timeupdate", _.bind(raiseTimeUpdate, this, callback));
     };
 
@@ -92,7 +99,7 @@ OO.Video.plugin((function(_, $) {
           this._currentUrl = this._currentUrl + (/\?/.test(this._currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
-        this.isM3u8 = (this._currentUrl.toLowerCase().indexOf("m3u8") > 0);
+        isM3u8 = (this._currentUrl.toLowerCase().indexOf("m3u8") > 0);
         this._readyToPlay = false;
         urlChanged = true;
         this._video.src = this._currentUrl;
@@ -141,6 +148,24 @@ OO.Video.plugin((function(_, $) {
       this._video.volume = volume;
     };
 
+    this.destroy = function() {
+      this._video.pause();
+      $(this._video).remove();
+    };
+
+    /************************************************************************************/
+    // Event callback methods
+    /************************************************************************************/
+
+    var raiseGeneralEvent = function(callback, event) {
+      callback(event.type, event);
+    };
+
+    var raiseTimeUpdate = function(callback, event) {
+      // calls callback(eventname, [currentTime, duration]);
+      callback(event.type, [event.srcElement.currentTime, event.srcElement.duration]);
+    };
+
     /************************************************************************************/
     // Helper methods
     /************************************************************************************/
@@ -172,5 +197,5 @@ OO.Video.plugin((function(_, $) {
     })(),
   }
 
-  return new OoyalaVideoPlugin();
+  return new OoyalaVideoFactory();
 }(OO._, OO.$)));
