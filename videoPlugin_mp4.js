@@ -65,6 +65,7 @@ OO.Video.plugin((function(_, $) {
     this._currentUrl = '';
     var isM3u8 = false;
     this._readyToPlay = false;
+    var videoEnded = false;
 
     /************************************************************************************/
     // Required. Methods that Video Controller calls
@@ -74,7 +75,7 @@ OO.Video.plugin((function(_, $) {
 
       // events minimum set
       this._video.addEventListener("playing", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("ended", _.bind(raiseGeneralEvent, this, callback));
+      this._video.addEventListener("ended", _.bind(raiseEndedEvent, this, callback));
       this._video.addEventListener("error", _.bind(raiseGeneralEvent, this, callback));
       this._video.addEventListener("seeking", _.bind(raiseGeneralEvent, this, callback));
       this._video.addEventListener("seeked", _.bind(raiseGeneralEvent, this, callback));
@@ -83,6 +84,7 @@ OO.Video.plugin((function(_, $) {
       this._video.addEventListener("stalled", _.bind(raiseGeneralEvent, this, callback));
       this._video.addEventListener("volumechange", _.bind(raiseGeneralEvent, this, callback));
       this._video.addEventListener("timeupdate", _.bind(raiseTimeUpdate, this, callback));
+      this._video.addEventListener("waiting", _.bind(raiseWaitingEvent, this, callback));
     };
 
     // Allow for the video src to be changed without loading the video
@@ -138,8 +140,6 @@ OO.Video.plugin((function(_, $) {
     };
 
     this.seek = function(time) {
-      // video_dom_wrapper has better implementation on safeSeekRange
-      // bug to watch out for "Failed to set the 'currentTime' property on 'HTMLMediaElement': The provided double value is non-finite."
       this._video.currentTime = safeSeekTime(time);
     };
 
@@ -149,7 +149,9 @@ OO.Video.plugin((function(_, $) {
     };
 
     this.destroy = function() {
+      // TODO: unsubscribe all events
       this._video.pause();
+      this._video.src = '';
       $(this._video).remove();
     };
 
@@ -158,6 +160,17 @@ OO.Video.plugin((function(_, $) {
     /************************************************************************************/
 
     var raiseGeneralEvent = function(callback, event) {
+      callback(event.type, event);
+    };
+
+    var raiseWaitingEvent = function(callback, event) {
+      videoEnded = false;
+      callback(event.type, event);
+    };
+
+    var raiseEndedEvent = function(callback, event) {
+      if (videoEnded) { return; } // no double firing ended event.
+      videoEnded = true;
       callback(event.type, event);
     };
 
@@ -174,6 +187,10 @@ OO.Video.plugin((function(_, $) {
     };
 
     var safeSeekTime = _.bind(function(time) {
+      // If seeking within some threshold of the end of the stream, seek to end of stream directly
+      // TODO: populate OO.CONSTANTS.SEEK_TO_END_LIMIT somehow
+      //if (this._video.duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) { time = this._video.duration; }
+
       var safeTime = time >= this._video.duration ? this._video.duration - 0.01 : (time < 0 ? 0 : time);
       // iPad with 6.1 has an intersting bug that causes the video to break if seeking exactly to zero
       if (platform.isIpad && safeTime < 0.1) { safeTime = 0.1; }
