@@ -19,8 +19,10 @@ OO.Video.plugin((function(_, $) {
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
 
+    // Determine supported stream types
     var videoElement = document.createElement("video");
     this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") || !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
+    videoElement = null;
 
     /**
      * Creates a video player instance using OoyalaVideoWrapper
@@ -48,6 +50,12 @@ OO.Video.plugin((function(_, $) {
       parentContainer.append(video);
       return element;
     };
+
+    this.destroy = function() {
+      this.ready = false;
+      this.streams = [];
+      this.create = function() {};
+    };
   };
 
   /**
@@ -66,25 +74,30 @@ OO.Video.plugin((function(_, $) {
     var isM3u8 = false;
     this._readyToPlay = false;
     var videoEnded = false;
+    var listeners = {};
 
     /************************************************************************************/
     // Required. Methods that Video Controller calls
     /************************************************************************************/
     this.subscribeAllEvents = function(callback) {
-
-
       // events minimum set
-      this._video.addEventListener("playing", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("ended", _.bind(raiseEndedEvent, this, callback));
-      this._video.addEventListener("error", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("seeking", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("seeked", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("pause", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("ratechange", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("stalled", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("volumechange", _.bind(raiseGeneralEvent, this, callback));
-      this._video.addEventListener("timeupdate", _.bind(raiseTimeUpdate, this, callback));
-      this._video.addEventListener("waiting", _.bind(raiseWaitingEvent, this, callback));
+      listeners = { "playing": _.bind(raiseGeneralEvent, this, callback),
+                    "ended": _.bind(raiseEndedEvent, this, callback),
+                    "error": _.bind(raiseGeneralEvent, this, callback),
+                    "seeking": _.bind(raiseGeneralEvent, this, callback),
+                    "seeked": _.bind(raiseGeneralEvent, this, callback),
+                    "pause": _.bind(raiseGeneralEvent, this, callback),
+                    "ratechange": _.bind(raiseGeneralEvent, this, callback),
+                    "stalled": _.bind(raiseGeneralEvent, this, callback),
+                    "volumechange": _.bind(raiseGeneralEvent, this, callback),
+                    "timeupdate": _.bind(raiseTimeUpdate, this, callback),
+                    "waiting": _.bind(raiseWaitingEvent, this, callback)
+                  };
+      _.each(listeners, function(v, i) { $(this._video).on(i, v); }, this);
+    };
+
+    this.unsubscribeAllEvents = function(callback) {
+      _.each(listeners, function(v, i) { $(this._video).off(i, v); }, this);
     };
 
     // Allow for the video src to be changed without loading the video
@@ -149,9 +162,9 @@ OO.Video.plugin((function(_, $) {
     };
 
     this.destroy = function() {
-      // TODO: unsubscribe all events
       this._video.pause();
       this._video.src = '';
+      this.unsubscribeAllEvents();
       $(this._video).remove();
     };
 
