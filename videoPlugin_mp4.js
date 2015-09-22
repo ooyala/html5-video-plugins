@@ -32,8 +32,9 @@ OO.Video.plugin((function(_, $) {
      * @param {object} parentContainer
      * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
+     * @param {object} controller A reference to the video controller in the Ooyala player
      */
-    this.create = function(parentContainer, stream, id) {
+    this.create = function(parentContainer, stream, id, controller) {
       var video = $("<video>");
       video.attr("class", "video");
       video.attr("preload", "none");
@@ -44,8 +45,10 @@ OO.Video.plugin((function(_, $) {
       video.attr("style", "width:100%;height:100%");
 
       element = new OoyalaVideoWrapper(id, video[0]);
-      element.setVideoUrl(stream);
       element.streams = this.streams;
+      element.controller = controller;
+      element.setVideoUrl(stream);
+      element.subscribeAllEvents();
 
       parentContainer.append(video);
       return element;
@@ -75,28 +78,34 @@ OO.Video.plugin((function(_, $) {
     this._readyToPlay = false;
     var videoEnded = false;
     var listeners = {};
+    this.controller = {};
 
     /************************************************************************************/
-    // Required. Methods that Video Controller calls
+    // Required. Methods that Video Controller or Factory call
     /************************************************************************************/
-    this.subscribeAllEvents = function(callback) {
+    this.subscribeAllEvents = function() {
       // events minimum set
-      listeners = { "playing": _.bind(raiseGeneralEvent, this, callback),
-                    "ended": _.bind(raiseEndedEvent, this, callback),
-                    "error": _.bind(raiseGeneralEvent, this, callback),
-                    "seeking": _.bind(raiseGeneralEvent, this, callback),
-                    "seeked": _.bind(raiseGeneralEvent, this, callback),
-                    "pause": _.bind(raiseGeneralEvent, this, callback),
-                    "ratechange": _.bind(raiseGeneralEvent, this, callback),
-                    "stalled": _.bind(raiseGeneralEvent, this, callback),
-                    "volumechange": _.bind(raiseGeneralEvent, this, callback),
-                    "timeupdate": _.bind(raiseTimeUpdate, this, callback),
-                    "waiting": _.bind(raiseWaitingEvent, this, callback)
+      listeners = { "playing": _.bind(raisePlayingEvent, this),
+                    "ended": _.bind(raiseEndedEvent, this),
+                    "error": _.bind(raiseErrorEvent, this),
+                    "seeking": _.bind(raiseSeekingEvent, this),
+                    "seeked": _.bind(raiseSeekedEvent, this),
+                    "pause": _.bind(raisePauseEvent, this),
+                    "ratechange": _.bind(raiseRatechangeEvent, this),
+                    "stalled": _.bind(raiseStalledEvent, this),
+                    "volumechange": _.bind(raiseVolumeEvent, this),
+                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
+                    "waiting": _.bind(raiseWaitingEvent, this),
+                    "timeupdate": _.bind(raiseTimeUpdate, this),
+                    "durationchange": _.bind(raiseDurationChange, this)
                   };
+      // events not used:
+      // suspend, progress, play, pause, loadstart, loadedmetadata, loadeddata, emptied,
+      // canplaythrough, canplay, abort
       _.each(listeners, function(v, i) { $(this._video).on(i, v); }, this);
     };
 
-    this.unsubscribeAllEvents = function(callback) {
+    this.unsubscribeAllEvents = function() {
       _.each(listeners, function(v, i) { $(this._video).off(i, v); }, this);
     };
 
@@ -168,28 +177,62 @@ OO.Video.plugin((function(_, $) {
       $(this._video).remove();
     };
 
-    /************************************************************************************/
+
+    // **********************************************************************************/
     // Event callback methods
-    /************************************************************************************/
+    // **********************************************************************************/
 
-    var raiseGeneralEvent = function(callback, event) {
-      callback(event.type, event);
+    var raisePlayingEvent = function(event) {
+      this.controller.notify(this.controller.EVENTS.PLAYING, event);
     };
 
-    var raiseWaitingEvent = function(callback, event) {
-      videoEnded = false;
-      callback(event.type, event);
-    };
-
-    var raiseEndedEvent = function(callback, event) {
+    var raiseEndedEvent = function(event) {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
-      callback(event.type, event);
+      this.controller.notify(this.controller.EVENTS.ENDED, event);
     };
 
-    var raiseTimeUpdate = function(callback, event) {
-      // calls callback(eventname, [currentTime, duration]);
-      callback(event.type, [event.srcElement.currentTime, event.srcElement.duration]);
+    var raiseErrorEvent = function(event) {
+      this.controller.notify(this.controller.ERROR, event);
+    };
+
+    var raiseSeekingEvent = function(event) {
+      this.controller.notify(this.controller.SEEKING, event);
+    };
+
+    var raiseSeekedEvent = function(event) {
+      this.controller.notify(this.controller.SEEKED, event);
+    };
+
+    var raisePauseEvent = function(event) {
+      this.controller.notify(this.controller.PAUSE, event);
+    };
+
+    var raiseRatechangeEvent = function(event) {
+      this.controller.notify(this.controller.RATE_CHANGE, event);
+    };
+
+    var raiseStalledEvent = function(event) {
+      this.controller.notify(this.controller.STALLED, event);
+    };
+
+    var raiseVolumeEvent = function(event) {
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, event);
+    };
+
+    var raiseWaitingEvent = function(event) {
+      videoEnded = false;
+      this.controller.notify(this.controller.EVENTS.WAITING, event);
+    };
+
+    var raiseTimeUpdate = function(event) {
+      this.controller.notify(this.controller.EVENTS.TIME_UPDATE,
+                             [event.srcElement.currentTime, event.srcElement.duration]);
+    };
+
+    var raiseDurationChange = function(event) {
+      this.controller.notify(this.controller.EVENTS.DURATION_CHANGE,
+                             [event.srcElement.currentTime, event.srcElement.duration]);
     };
 
     /************************************************************************************/
