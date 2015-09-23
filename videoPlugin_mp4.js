@@ -1,38 +1,49 @@
 /*
- * Simple HTML5 video tag plugin for mp4
+ * Simple HTML5 video tag plugin for mp4 and hls
  * version: 0.1
  */
 
 OO.Video.plugin((function(_, $) {
-  var pluginName = "ooyalaVideoPlugin";
+  var pluginName = "ooyalaHtml5VideoTech";
 
   /**
-   * @class OoyalaVideoPlugin
-   * @classdesc
+   * @class OoyalaVideoFactory
+   * @classdesc Factory for creating video player objects that use HTML5 video tags
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
+   * @property {array} streams A list of supported encoding types (ex. m3u8, mp4)
    */
-  OoyalaVideoPlugin = function() {
+  OoyalaVideoFactory = function() {
     this.name = pluginName;
-    this.ready = false;
 
-    var video = document.createElement("video");
-    this.streams = (!!video.canPlayType("application/vnd.apple.mpegurl") || !!video.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
+    // This module defaults to ready because no setup or external loading is required
+    this.ready = true;
 
-    /************************************************************************************/
-    // Required. Methods that Video Controller calls
-    /************************************************************************************/
+    // Determine supported stream types
+    var videoElement = document.createElement("video");
+    this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") || !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
+    videoElement = null;
+
+    /**
+     * Creates a video player instance using OoyalaVideoWrapper
+     * @public
+     * @method OoyalaVideoFactory#create
+     * @memberOf OoyalaVideoFactory
+     * @param {object} parentContainer
+     * @param {string} stream The url of the stream to play
+     * @param {string} id The id of the video player instance to create
+     */
     this.create = function(parentContainer, stream, id) {
       var video = $("<video>");
       video.attr("class", "video");
       video.attr("preload", "none");
       video.attr("crossorigin", "anonymous");
-      if (this.isIos()) {
+      if (platform.isIos) {
         video.attr("x-webkit-airplay", "allow");
       }
       video.attr("style", "width:100%;height:100%");
 
-      element = new VideoWrapper(id, video[0]);
+      element = new OoyalaVideoWrapper(id, video[0]);
       element.setVideoUrl(stream);
       element.streams = this.streams;
 
@@ -40,45 +51,53 @@ OO.Video.plugin((function(_, $) {
       return element;
     };
 
-    /************************************************************************************/
-    // Helper methods
-    /************************************************************************************/
-
-    this.isIos = function() {
-      var platform = window.navigator.platform;
-      return platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/);
+    this.destroy = function() {
+      this.ready = false;
+      this.streams = [];
+      this.create = function() {};
     };
   };
 
-  VideoWrapper = function(id, video) {
+  /**
+   * @class OoyalaVideoWrapper
+   * @classdesc Player object that wraps HTML5 video tags
+   * @param {string} id The id of the video player element
+   * @param {object} video The core video object to wrap
+   * @property {string} _id The id of the video player element
+   * @property {object} _video The core video object
+   * @property {string} _currentUrl The url of the current video stream
+   */
+  OoyalaVideoWrapper = function(id, video) {
     this._id = id;
     this._video = video;
     this._currentUrl = '';
-    this.isM3u8 = false;
+    var isM3u8 = false;
     this._readyToPlay = false;
+    var videoEnded = false;
+    var listeners = {};
 
-    // Callback takes: videoId, pluginName, event, params
-    this.subscribe = function(callback) {
-      var raiseEvent = function(callback, event) {
-        callback(event.type, event);
-      }
-
+    /************************************************************************************/
+    // Required. Methods that Video Controller calls
+    /************************************************************************************/
+    this.subscribeAllEvents = function(callback) {
       // events minimum set
-      this._video.addEventListener("playing", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("ended", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("error", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("seeking", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("seeked", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("pause", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("ratechange", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("stalled", _.bind(raiseEvent, this, callback));
-      this._video.addEventListener("volumechange", _.bind(raiseEvent, this, callback));
+      listeners = { "playing": _.bind(raiseGeneralEvent, this, callback),
+                    "ended": _.bind(raiseEndedEvent, this, callback),
+                    "error": _.bind(raiseGeneralEvent, this, callback),
+                    "seeking": _.bind(raiseGeneralEvent, this, callback),
+                    "seeked": _.bind(raiseGeneralEvent, this, callback),
+                    "pause": _.bind(raiseGeneralEvent, this, callback),
+                    "ratechange": _.bind(raiseGeneralEvent, this, callback),
+                    "stalled": _.bind(raiseGeneralEvent, this, callback),
+                    "volumechange": _.bind(raiseGeneralEvent, this, callback),
+                    "timeupdate": _.bind(raiseTimeUpdate, this, callback),
+                    "waiting": _.bind(raiseWaitingEvent, this, callback)
+                  };
+      _.each(listeners, function(v, i) { $(this._video).on(i, v); }, this);
+    };
 
-      // calls callback(eventname, [currentTime, duration]);
-      var raiseTimeUpdate = function(callback, event) {
-        callback(event.type, [event.srcElement.currentTime, event.srcElement.duration]);
-      }
-      this._video.addEventListener("timeupdate", _.bind(raiseTimeUpdate, this, callback));
+    this.unsubscribeAllEvents = function(callback) {
+      _.each(listeners, function(v, i) { $(this._video).off(i, v); }, this);
     };
 
     // Allow for the video src to be changed without loading the video
@@ -91,11 +110,11 @@ OO.Video.plugin((function(_, $) {
         this._currentUrl = url || "";
 
         // bust the chrome stupid caching bug
-        if(this._currentUrl.length > 0 && isChrome) {
+        if(this._currentUrl.length > 0 && platform.isChrome) {
           this._currentUrl = this._currentUrl + (/\?/.test(this._currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
-        this.isM3u8 = (this._currentUrl.toLowerCase().indexOf("m3u8") > 0);
+        isM3u8 = (this._currentUrl.toLowerCase().indexOf("m3u8") > 0);
         this._readyToPlay = false;
         urlChanged = true;
         this._video.src = this._currentUrl;
@@ -110,7 +129,7 @@ OO.Video.plugin((function(_, $) {
     this.load = function(rewind) {
       // if(!!rewind) {
       //   try {
-      //     if (OO.isIos && OO.iosMajorVersion == 8) {
+      //     if (platform.isIos && OO.iosMajorVersion == 8) {
       //       $(this._video).one("durationchange", _.bind(function() {
       //         this._video.currentTime = 0;}, this));
       //     } else {
@@ -134,8 +153,6 @@ OO.Video.plugin((function(_, $) {
     };
 
     this.seek = function(time) {
-      // video_dom_wrapper has better implementation on safeSeekRange
-      // bug to watch out for "Failed to set the 'currentTime' property on 'HTMLMediaElement': The provided double value is non-finite."
       this._video.currentTime = safeSeekTime(time);
     };
 
@@ -144,28 +161,71 @@ OO.Video.plugin((function(_, $) {
       this._video.volume = volume;
     };
 
-    // Private Helpers
+    this.destroy = function() {
+      this._video.pause();
+      this._video.src = '';
+      this.unsubscribeAllEvents();
+      $(this._video).remove();
+    };
 
+    /************************************************************************************/
+    // Event callback methods
+    /************************************************************************************/
+
+    var raiseGeneralEvent = function(callback, event) {
+      callback(event.type, event);
+    };
+
+    var raiseWaitingEvent = function(callback, event) {
+      videoEnded = false;
+      callback(event.type, event);
+    };
+
+    var raiseEndedEvent = function(callback, event) {
+      if (videoEnded) { return; } // no double firing ended event.
+      videoEnded = true;
+      callback(event.type, event);
+    };
+
+    var raiseTimeUpdate = function(callback, event) {
+      // calls callback(eventname, [currentTime, duration]);
+      callback(event.type, [event.srcElement.currentTime, event.srcElement.duration]);
+    };
+
+    /************************************************************************************/
+    // Helper methods
+    /************************************************************************************/
     var getRandomString = function() {
       return Math.random().toString(36).substring(7);
     };
 
     var safeSeekTime = _.bind(function(time) {
+      // If seeking within some threshold of the end of the stream, seek to end of stream directly
+      // TODO: populate OO.CONSTANTS.SEEK_TO_END_LIMIT somehow
+      //if (this._video.duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) { time = this._video.duration; }
+
       var safeTime = time >= this._video.duration ? this._video.duration - 0.01 : (time < 0 ? 0 : time);
       // iPad with 6.1 has an intersting bug that causes the video to break if seeking exactly to zero
-      if (isIpad && safeTime < 0.1) { safeTime = 0.1; }
+      if (platform.isIpad && safeTime < 0.1) { safeTime = 0.1; }
       return safeTime;
     }, this);
-
-    // Platform
-    var isIpad = (function() {
-      return !!window.navigator.platform.match(/iPad/);
-    })();
-
-    var isChrome = (function() {
-      return !!window.navigator.userAgent.match(/Chrome/);
-    })();
   };
 
-  return new OoyalaVideoPlugin();
+  // Platform
+  var platform = {
+    isIos: (function() {
+      var platform = window.navigator.platform;
+      return !!(platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/));
+    })(),
+
+    isIpad: (function() {
+      return !!window.navigator.platform.match(/iPad/);
+    })(),
+
+    isChrome: (function() {
+      return !!window.navigator.userAgent.match(/Chrome/);
+    })(),
+  }
+
+  return new OoyalaVideoFactory();
 }(OO._, OO.$)));
