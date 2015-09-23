@@ -85,7 +85,8 @@ OO.Video.plugin((function(_, $) {
     /************************************************************************************/
     this.subscribeAllEvents = function() {
       // events minimum set
-      listeners = { "playing": _.bind(raisePlayingEvent, this),
+      listeners = { "play": _.bind(raisePlayEvent, this),
+                    "playing": _.bind(raisePlayingEvent, this),
                     "ended": _.bind(raiseEndedEvent, this),
                     "error": _.bind(raiseErrorEvent, this),
                     "seeking": _.bind(raiseSeekingEvent, this),
@@ -97,10 +98,15 @@ OO.Video.plugin((function(_, $) {
                     "volumechangeNew": _.bind(raiseVolumeEvent, this),
                     "waiting": _.bind(raiseWaitingEvent, this),
                     "timeupdate": _.bind(raiseTimeUpdate, this),
-                    "durationchange": _.bind(raiseDurationChange, this)
+                    "durationchange": _.bind(raiseDurationChange, this),
+                    "progress": _.bind(raiseProgress, this),
+                    "canplaythrough": _.bind(raiseCanPlayThrough, this),
+                        // ios webkit browser fullscreen events
+                    "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
+                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
                   };
       // events not used:
-      // suspend, progress, play, pause, loadstart, loadedmetadata, loadeddata, emptied,
+      // suspend, play, pause, loadstart, loadedmetadata, loadeddata, emptied,
       // canplaythrough, canplay, abort
       _.each(listeners, function(v, i) { $(this._video).on(i, v); }, this);
     };
@@ -166,7 +172,7 @@ OO.Video.plugin((function(_, $) {
     };
 
     this.setVolume = function(volume) {
-      // video_dom_wrapper has better implementation on safe volume set
+      //  TODO check if we need to capture any exception here. ios device will not allow volume set.
       this._video.volume = volume;
     };
 
@@ -182,62 +188,130 @@ OO.Video.plugin((function(_, $) {
     // Event callback methods
     // **********************************************************************************/
 
-    var raisePlayingEvent = function(event) {
-      this.controller.notify(this.controller.EVENTS.PLAYING, event);
+    var raisePlayEvent = function(event) {
+      this.controller.notify(this.controller.EVENTS.PLAY, { url: event.target.src });
+    };
+
+    var raisePlayingEvent = function() {
+      this.controller.notify(this.controller.EVENTS.PLAYING);
     };
 
     var raiseEndedEvent = function(event) {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
-      this.controller.notify(this.controller.EVENTS.ENDED, event);
+
+      this.controller.notify(this.controller.EVENTS.ENDED, event.target.src);
     };
 
     var raiseErrorEvent = function(event) {
-      this.controller.notify(this.controller.ERROR, event);
+      var code = event.target.error ? event.target.error.code : -1;
+      /*
+      if (this._emitErrors) {
+        this._emitError(event, code);
+      } else {
+        // The error occurred when the page was probably unloading.
+        // Happens more often on low bandwith.
+        OO.d("Error not emitted: " + event.type);
+        this._unemittedErrors.push({error: event, code: code});
+        //this.mb.publish(OO.EVENTS.PAGE_PROBABLY_UNLOADING);
+      }
+      */
+
+      this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
     };
 
-    var raiseSeekingEvent = function(event) {
-      this.controller.notify(this.controller.SEEKING, event);
+    var raiseSeekingEvent = function() {
+      this.controller.notify(this.controller.EVENTS.SEEKING);
     };
 
-    var raiseSeekedEvent = function(event) {
-      this.controller.notify(this.controller.SEEKED, event);
+    var raiseSeekedEvent = function() {
+      this.controller.notify(this.controller.EVENTS.SEEKED);
     };
 
-    var raisePauseEvent = function(event) {
-      this.controller.notify(this.controller.PAUSE, event);
+    var raisePauseEvent = function() {
+      this.controller.notify(this.controller.EVENTS.PAUSED);
     };
 
-    var raiseRatechangeEvent = function(event) {
-      this.controller.notify(this.controller.RATE_CHANGE, event);
+    var raiseRatechangeEvent = function() {
+      this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     };
 
     var raiseStalledEvent = function(event) {
-      this.controller.notify(this.controller.STALLED, event);
+      // Fix multiple video tag error in iPad
+      if (platform.isIpad && event.target.currentTime === 0) {
+        this._video.pause();
+      }
+
+      this.controller.notify(this.controller.EVENTS.STALLED);
     };
 
     var raiseVolumeEvent = function(event) {
-      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, event);
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: event.target.volume });
     };
 
-    var raiseWaitingEvent = function(event) {
+    var raiseWaitingEvent = function() {
       videoEnded = false;
-      this.controller.notify(this.controller.EVENTS.WAITING, event);
+      this.controller.notify(this.controller.EVENTS.WAITING);
     };
 
     var raiseTimeUpdate = function(event) {
-      this.controller.notify(this.controller.EVENTS.TIME_UPDATE,
-                             [event.srcElement.currentTime, event.srcElement.duration]);
+      raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
     };
 
     var raiseDurationChange = function(event) {
-      this.controller.notify(this.controller.EVENTS.DURATION_CHANGE,
-                             [event.srcElement.currentTime, event.srcElement.duration]);
+      raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
     };
+
+    var raisePlayhead = _.bind(function(eventname, event) {
+      var buffer = 0;
+      if (event.target.buffered && event.target.buffered.length > 0) {
+        buffer = event.target.buffered.end(0); // in sec;
+      }
+      var seekRange = event.target.seekable;
+      seekRange = { start : seekRange.length > 0 ? seekRange.start(0) : 0,
+                    end : seekRange.length > 0 ? seekRange.end(0) : 0 };
+      this.controller.notify(this.controller.EVENTS.TIME_UPDATE,
+                             { "currentTime": event.target.currentTime,
+                               "duration": event.target.duration,
+                               "buffer": buffer,
+                               "seekRange": seekRange });
+    }, this);
+
+    var raiseProgress = function(event) {
+      var buffer = 0;
+      if (event.target.buffered && event.target.buffered.length > 0) {
+        buffer = event.target.buffered.end(0); // in sec;
+      }
+      var seekRange = event.target.seekable;
+      seekRange = { start : seekRange.length > 0 ? seekRange.start(0) : 0,
+                    end : seekRange.length > 0 ? seekRange.end(0) : 0 };
+      this.controller.notify(this.controller.EVENTS.PROGRESS,
+                             { "currentTime": event.target.currentTime,
+                               "duration": event.target.duration,
+                               "buffer": buffer,
+                               "seekRange": seekRange,
+                               "url": event.target.src });
+    };
+
+    var raiseCanPlayThrough = function(event) {
+      this.controller.notify(this.controller.EVENTS.BUFFERED);
+    };
+
+    var raiseFullScreenBegin = function(event) {
+      this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
+                             { isFullScreen: true, paused: event.target.paused });
+    };
+
+    var raiseFullScreenEnd = function(event) {
+      this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
+                             { "isFullScreen": false, "paused": event.target.paused });
+    };
+
 
     /************************************************************************************/
     // Helper methods
     /************************************************************************************/
+
     var getRandomString = function() {
       return Math.random().toString(36).substring(7);
     };
