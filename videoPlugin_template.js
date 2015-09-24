@@ -26,10 +26,10 @@ OO.Video.plugin((function(_, $) {
      * @public
      * @method TemplateVideoFactory#create
      * @memberOf TemplateVideoFactory
-     * @param {object} parentContainer
+     * @param {object} parentContainer The div that should act as the parent for the video element
      * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
-     * @param {object} controller A reference to the video controller in the Template player
+     * @param {object} controller A reference to the video controller in the Ooyala player
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, stream, id, controller) {
@@ -42,6 +42,8 @@ OO.Video.plugin((function(_, $) {
     /**
      * Destroys the video technology factory
      * @public
+     * @method TemplateVideoFactory#destroy
+     * @memberOf TemplateVideoFactory
      */
     this.destroy = function() {
       this.ready = false;
@@ -52,22 +54,19 @@ OO.Video.plugin((function(_, $) {
 
   /**
    * @class TemplateVideoWrapper
-   * @classdesc Player object that wraps HTML5 video tags
+   * @classdesc Player object that wraps the video element
    * @param {string} id The id of the video player element
    * @param {object} video The core video object to wrap
-   * @property {string} _id The id of the video player element
-   * @property {object} _video The core video object
-   * @property {string} _currentUrl The url of the current video stream
+   * @property {object} streams A list of the stream supported by this video element
+   * @property {object} controller A reference to the Ooyala Video Tech Controller
    */
   TemplateVideoWrapper = function(id, video) {
-    this._id = id;
-    this._video = video;
-    this._currentUrl = '';
-    var isM3u8 = false;
-    this._readyToPlay = false;
-    var videoEnded = false;
+    var _id = id;
+    var _video = video;
     var listeners = {};
+
     this.controller = {};
+    this.streams = [];
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -102,7 +101,7 @@ OO.Video.plugin((function(_, $) {
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
                     "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
                   };
-      _.each(listeners, function(v, i) { $(this._video).on(i, v); }, this);
+      _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
     };
 
     /**
@@ -113,7 +112,7 @@ OO.Video.plugin((function(_, $) {
      * @memberOf TemplateVideoWrapper
      */
     this.unsubscribeAllEvents = function() {
-      _.each(listeners, function(v, i) { $(this._video).off(i, v); }, this);
+      _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
     };
 
     /**
@@ -121,7 +120,7 @@ OO.Video.plugin((function(_, $) {
      * @public
      * @method TemplateVideoWrapper#setVideoUrl
      * @memberOf TemplateVideoWrapper
-     * @param url: the new url to insert into the video element's src attribute
+     * @param {string} url The new url to insert into the video element's src attribute
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url) {
