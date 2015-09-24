@@ -47,6 +47,8 @@ OO.Video.plugin((function(_, $) {
       element = new OoyalaVideoWrapper(id, video[0]);
       element.streams = this.streams;
       element.controller = controller;
+
+      // TODO: Wait for loadstart before calling these?
       element.setVideoUrl(stream);
       element.subscribeAllEvents();
 
@@ -78,9 +80,10 @@ OO.Video.plugin((function(_, $) {
     var _currentUrl = '';
     var videoEnded = false;
     var listeners = {};
+    var loaded = false;
 
-    // TODO: These are unused
-    var _readyToPlay = false;
+    // TODO: These are unused currently
+    var _readyToPlay = false; // should be set to true on canplay event
     var isM3u8 = false;
 
     /************************************************************************************/
@@ -104,12 +107,13 @@ OO.Video.plugin((function(_, $) {
                     "durationchange": _.bind(raiseDurationChange, this),
                     "progress": _.bind(raiseProgress, this),
                     "canplaythrough": _.bind(raiseCanPlayThrough, this),
+                    "loadstart": _.bind(onLoadStart, this),
                         // ios webkit browser fullscreen events
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
                     "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
                   };
       // events not used:
-      // suspend, play, pause, loadstart, loadedmetadata, loadeddata, emptied,
+      // suspend, play, pause, loadedmetadata, loadeddata, emptied,
       // canplaythrough, canplay, abort
       _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
     };
@@ -146,6 +150,7 @@ OO.Video.plugin((function(_, $) {
     };
 
     this.load = function(rewind) {
+      if (loaded && !rewind) return;
       if (!!rewind) {
         try {
           if (platform.isIos && platform.iosMajorVersion == 8) {
@@ -163,10 +168,12 @@ OO.Video.plugin((function(_, $) {
         }
       }
       _video.load();
+      loaded = true;
     };
 
     this.play = function() {
       _video.play();
+      loaded = true;
     };
 
     this.pause = function() {
@@ -313,6 +320,9 @@ OO.Video.plugin((function(_, $) {
                              { "isFullScreen": false, "paused": event.target.paused });
     };
 
+    var onLoadStart = function() {
+      _currentUrl = _video.src;
+    };
 
     /************************************************************************************/
     // Helper methods
