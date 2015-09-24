@@ -66,19 +66,22 @@ OO.Video.plugin((function(_, $) {
    * @classdesc Player object that wraps HTML5 video tags
    * @param {string} id The id of the video player element
    * @param {object} video The core video object to wrap
-   * @property {string} _id The id of the video player element
-   * @property {object} _video The core video object
-   * @property {string} _currentUrl The url of the current video stream
+   * @property {object} streams
+   * @property {object} controller
    */
   OoyalaVideoWrapper = function(id, video) {
-    this._id = id;
-    this._video = video;
-    this._currentUrl = '';
-    var isM3u8 = false;
-    this._readyToPlay = false;
+    this.streams = [];
+    this.controller = {};
+
+    var _id = id;
+    var _video = video;
+    var _currentUrl = '';
     var videoEnded = false;
     var listeners = {};
-    this.controller = {};
+
+    // TODO: These are unused
+    var _readyToPlay = false;
+    var isM3u8 = false;
 
     /************************************************************************************/
     // Required. Methods that Video Controller or Factory call
@@ -108,11 +111,11 @@ OO.Video.plugin((function(_, $) {
       // events not used:
       // suspend, play, pause, loadstart, loadedmetadata, loadeddata, emptied,
       // canplaythrough, canplay, abort
-      _.each(listeners, function(v, i) { $(this._video).on(i, v); }, this);
+      _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
     };
 
     this.unsubscribeAllEvents = function() {
-      _.each(listeners, function(v, i) { $(this._video).off(i, v); }, this);
+      _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
     };
 
     // Allow for the video src to be changed without loading the video
@@ -121,66 +124,69 @@ OO.Video.plugin((function(_, $) {
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
       var urlChanged = false;
-      if (this._currentUrl.replace(/[\?\&]_=[^&]+$/,'') != url) {
-        this._currentUrl = url || "";
+      if (_currentUrl.replace(/[\?\&]_=[^&]+$/,'') != url) {
+        _currentUrl = url || "";
 
-        // bust the chrome stupid caching bug
-        if(this._currentUrl.length > 0 && platform.isChrome) {
-          this._currentUrl = this._currentUrl + (/\?/.test(this._currentUrl) ? "&" : "?") + "_=" + getRandomString();
+        // bust the chrome caching bug
+        if (_currentUrl.length > 0 && platform.isChrome) {
+          _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
-        isM3u8 = (this._currentUrl.toLowerCase().indexOf("m3u8") > 0);
-        this._readyToPlay = false;
+        isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
+        _readyToPlay = false;
         urlChanged = true;
-        this._video.src = this._currentUrl;
+        _video.src = _currentUrl;
       }
 
-      // if(_.isEmpty(url)) {
-      //   this.trigger(OO.VideoElementWrapper.ERROR, 0); //0 -> no stream
-      // }
+      if (_.isEmpty(url)) {
+        this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
+      }
+
       return urlChanged;
     };
 
     this.load = function(rewind) {
-      // if(!!rewind) {
-      //   try {
-      //     if (platform.isIos && OO.iosMajorVersion == 8) {
-      //       $(this._video).one("durationchange", _.bind(function() {
-      //         this._video.currentTime = 0;}, this));
-      //     } else {
-      //       this._video.currentTime = 0;
-      //     }
-      //     this._video.pause();
-      //   } catch (ex) {
-      //     // error because currentTime does not exist because stream hasn't been retrieved yet
-      //     OO.log('Failed to rewind video, probably ok');
-      //   }
-      // }
-      this._video.load();
+      if (!!rewind) {
+        try {
+          if (platform.isIos && platform.iosMajorVersion == 8) {
+            // On iOS, wait for durationChange before setting currenttime
+            $(_video).on("durationchange", _.bind(function() {
+                                                               _video.currentTime = 0;
+                                                             }, this));
+          } else {
+            _video.currentTime = 0;
+          }
+          _video.pause();
+        } catch (ex) {
+          // error because currentTime does not exist because stream hasn't been retrieved yet
+          console.log('VTC_OO: Failed to rewind video, probably ok; continuing');
+        }
+      }
+      _video.load();
     };
 
     this.play = function() {
-      this._video.play();
+      _video.play();
     };
 
     this.pause = function() {
-      this._video.pause();
+      _video.pause();
     };
 
     this.seek = function(time) {
-      this._video.currentTime = safeSeekTime(time);
+      _video.currentTime = safeSeekTime(time);
     };
 
     this.setVolume = function(volume) {
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
-      this._video.volume = volume;
+      _video.volume = volume;
     };
 
     this.destroy = function() {
-      this._video.pause();
-      this._video.src = '';
+      _video.pause();
+      _video.src = '';
       this.unsubscribeAllEvents();
-      $(this._video).remove();
+      $(_video).remove();
     };
 
 
@@ -239,7 +245,7 @@ OO.Video.plugin((function(_, $) {
     var raiseStalledEvent = function(event) {
       // Fix multiple video tag error in iPad
       if (platform.isIpad && event.target.currentTime === 0) {
-        this._video.pause();
+        _video.pause();
       }
 
       this.controller.notify(this.controller.EVENTS.STALLED);
@@ -319,9 +325,9 @@ OO.Video.plugin((function(_, $) {
     var safeSeekTime = _.bind(function(time) {
       // If seeking within some threshold of the end of the stream, seek to end of stream directly
       // TODO: populate OO.CONSTANTS.SEEK_TO_END_LIMIT somehow
-      //if (this._video.duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) { time = this._video.duration; }
+      //if (_video.duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) { time = _video.duration; }
 
-      var safeTime = time >= this._video.duration ? this._video.duration - 0.01 : (time < 0 ? 0 : time);
+      var safeTime = time >= _video.duration ? _video.duration - 0.01 : (time < 0 ? 0 : time);
       // iPad with 6.1 has an intersting bug that causes the video to break if seeking exactly to zero
       if (platform.isIpad && safeTime < 0.1) { safeTime = 0.1; }
       return safeTime;
@@ -341,6 +347,18 @@ OO.Video.plugin((function(_, $) {
 
     isChrome: (function() {
       return !!window.navigator.userAgent.match(/Chrome/);
+    })(),
+
+    iosMajorVersion: (function(){
+      try {
+        if (window.navigator.userAgent.match(/(iPad|iPhone|iPod)/)) {
+          return parseInt(window.navigator.userAgent.match(/OS (\d+)/)[1], 10);
+        } else {
+          return null;
+        }
+      } catch(err) {
+        return null;
+      }
     })(),
   }
 
