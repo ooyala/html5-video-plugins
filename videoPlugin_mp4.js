@@ -11,9 +11,9 @@ OO.Video.plugin((function(_, $) {
    * @classdesc Factory for creating video player objects that use HTML5 video tags
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {array} streams A list of supported encoding types (ex. m3u8, mp4)
+   * @property {object} streams An array of supported encoding types (ex. m3u8, mp4)
    */
-  OoyalaVideoFactory = function() {
+  var OoyalaVideoFactory = function() {
     this.name = pluginName;
 
     // This module defaults to ready because no setup or external loading is required
@@ -29,7 +29,7 @@ OO.Video.plugin((function(_, $) {
      * @public
      * @method OoyalaVideoFactory#create
      * @memberOf OoyalaVideoFactory
-     * @param {object} parentContainer The div that should act as the parent for the video element
+     * @param {object} parentContainer The jquery div that should act as the parent for the video element
      * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
@@ -40,10 +40,14 @@ OO.Video.plugin((function(_, $) {
       video.attr("class", "video");
       video.attr("preload", "none");
       video.attr("crossorigin", "anonymous");
+
+      // enable airplay for iOS
+      // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
       if (platform.isIos) {
         video.attr("x-webkit-airplay", "allow");
       }
-      video.attr("style", "width:100%;height:100%");
+      // TODO: Move the style here?
+      //video.attr("style", "width:100%; height:100%; z-index:10000; position:absolute");
 
       element = new OoyalaVideoWrapper(id, video[0]);
       element.streams = this.streams;
@@ -78,20 +82,20 @@ OO.Video.plugin((function(_, $) {
    * @property {object} streams A list of the stream supported by this video element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    */
-  OoyalaVideoWrapper = function(id, video) {
+  var OoyalaVideoWrapper = function(id, video) {
     this.streams = [];
     this.controller = {};
 
-    var _id = id;
     var _video = video;
     var _currentUrl = '';
     var videoEnded = false;
     var listeners = {};
     var loaded = false;
+    var queuedSeekTime = null;
+    var isM3u8 = false;
 
     // TODO: These are unused currently
     var _readyToPlay = false; // should be set to true on canplay event
-    var isM3u8 = false;
 
     /************************************************************************************/
     // Required. Methods that Video Controller or Factory call
@@ -123,7 +127,7 @@ OO.Video.plugin((function(_, $) {
                     "volumechangeNew": _.bind(raiseVolumeEvent, this),
                         // ios webkit browser fullscreen events
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
-                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
+                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
                   };
       // events not used:
       // suspend, abort, emptied, loadedmetadata, loadeddata, canplay, resize, change, addtrack, removetrack
@@ -155,7 +159,7 @@ OO.Video.plugin((function(_, $) {
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
       var urlChanged = false;
-      if (_currentUrl.replace(/[\?\&]_=[^&]+$/,'') != url) {
+      if (_currentUrl.replace(/[\?&]_=[^&]+$/,'') != url) {
         _currentUrl = url || "";
 
         // bust the chrome caching bug
@@ -234,7 +238,13 @@ OO.Video.plugin((function(_, $) {
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      _video.currentTime = safeSeekTime(time);
+      var safeTime = getSafeSeekTimeIfPossible(_video, time);
+      if (safeTime !== null) {
+        _video.currentTime = safeTime;
+        return true;
+      }
+      queueSeek(time);
+      return false;
     };
 
     /**
@@ -276,14 +286,11 @@ OO.Video.plugin((function(_, $) {
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
-      var seekRange = event.target.seekable;
-      seekRange = { start : seekRange.length > 0 ? seekRange.start(0) : 0,
-                    end : seekRange.length > 0 ? seekRange.end(0) : 0 };
       this.controller.notify(this.controller.EVENTS.PROGRESS,
                              { "currentTime": event.target.currentTime,
-                               "duration": event.target.duration,
+                               "duration": resolveDuration(event.target.duration),
                                "buffer": buffer,
-                               "seekRange": seekRange,
+                               "seekRange": getSafeSeekRange(event.target.seekable),
                                "url": event.target.src });
     };
 
@@ -313,7 +320,7 @@ OO.Video.plugin((function(_, $) {
       this.controller.notify(this.controller.EVENTS.STALLED);
     };
 
-    var raiseCanPlayThrough = function(event) {
+    var raiseCanPlayThrough = function() {
       this.controller.notify(this.controller.EVENTS.BUFFERED);
     };
 
@@ -334,11 +341,11 @@ OO.Video.plugin((function(_, $) {
       this.controller.notify(this.controller.EVENTS.SEEKED);
     };
 
-    var raiseEndedEvent = function(event) {
+    var raiseEndedEvent = function() {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
 
-      this.controller.notify(this.controller.EVENTS.ENDED, event.target.src);
+      this.controller.notify(this.controller.EVENTS.ENDED);
     };
 
     var raiseDurationChange = function(event) {
@@ -347,6 +354,19 @@ OO.Video.plugin((function(_, $) {
 
     var raiseTimeUpdate = function(event) {
       raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
+
+      // iOS has issues seeking so if we queue a seek handle it here
+      dequeueSeek();
+
+      // This is a hack fix for m3u8, current iOS has a bug that if the m3u8 EXTINF indication a different
+      // duration, the ended event never got dispatched. Monkey patch here to manual trigger a onEnded event
+      // need to wait OTS to fix their end.
+      var duration = resolveDuration(event.target.duration);
+      var durationInt = Math.floor(duration);
+      if (this.isM3u8 && _video.currentTime == duration && duration > durationInt) {
+        OO.log("manually triggering end", this._currentUrl, duration, _video.currentTime);
+        _.delay(_.bind(this.onEnded, this), 0, e);
+      }
     };
 
     var raisePlayEvent = function(event) {
@@ -384,15 +404,53 @@ OO.Video.plugin((function(_, $) {
       return Math.random().toString(36).substring(7);
     };
 
-    var safeSeekTime = _.bind(function(time) {
-      // If seeking within some threshold of the end of the stream, seek to end of stream directly
-      // TODO: populate OO.CONSTANTS.SEEK_TO_END_LIMIT somehow
-      //if (_video.duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) { time = _video.duration; }
+    var getSafeSeekRange = function(seekRange) {
+      if (!seekRange || !seekRange.length || !(typeof seekRange.start == "function") ||
+          !(typeof seekRange.end == "function" )) {
+        return { "start" : 0, "end" : 0 };
+      }
 
-      var safeTime = time >= _video.duration ? _video.duration - 0.01 : (time < 0 ? 0 : time);
-      // iPad with 6.1 has an intersting bug that causes the video to break if seeking exactly to zero
-      if (platform.isIpad && safeTime < 0.1) { safeTime = 0.1; }
+      return { "start" : seekRange.length > 0 ? seekRange.start(0) : 0,
+               "end" : seekRange.length > 0 ? seekRange.end(0) : 0 };
+    };
+
+    var convertToSafeSeekTime = function(time, duration) {
+      // If seeking within some threshold of the end of the stream, seek to end of stream directly
+      if (duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) {
+        time = duration;
+      }
+
+      var safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
+
+      // iPad with 6.1 has an interesting bug that causes the video to break if seeking exactly to zero
+      if (platform.isIpad && safeTime < 0.1) {
+        safeTime = 0.1;
+      }
       return safeTime;
+    };
+
+    // Returns null if the position cannot be seeked to, and returns the safe time to seek to if it can.
+    var getSafeSeekTimeIfPossible = function(_video, time) {
+      var range = getSafeSeekRange(_video.seekable);
+      if (range.start === 0 && range.end === 0) {
+        return null;
+      }
+
+      var safeTime = convertToSafeSeekTime(time, _video.duration);
+      if (range.start <= safeTime && range.end >= safeTime) {
+        return safeTime;
+      }
+
+      return null;
+    };
+
+    var queueSeek = function(time) {
+      queuedSeekTime = time;
+    };
+
+    var dequeueSeek = _.bind(function() {
+      if (queuedSeekTime === null) { return; }
+      if (this.seek(queuedSeekTime)) { queuedSeekTime = null; }
     }, this);
 
     var raisePlayhead = _.bind(function(eventname, event) {
@@ -400,15 +458,19 @@ OO.Video.plugin((function(_, $) {
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
-      var seekRange = event.target.seekable;
-      seekRange = { start : seekRange.length > 0 ? seekRange.start(0) : 0,
-                    end : seekRange.length > 0 ? seekRange.end(0) : 0 };
-      this.controller.notify(this.controller.EVENTS.TIME_UPDATE,
+      this.controller.notify(eventname,
                              { "currentTime": event.target.currentTime,
-                               "duration": event.target.duration,
+                               "duration": resolveDuration(event.target.duration),
                                "buffer": buffer,
-                               "seekRange": seekRange });
+                               "seekRange": getSafeSeekRange(event.target.seekable) });
     }, this);
+
+    var resolveDuration = function(duration) {
+      if (duration === Infinity || isNaN(duration)) {
+        return 0;
+      }
+      return duration; // in seconds;
+    };
   };
 
   // Platform
@@ -436,7 +498,7 @@ OO.Video.plugin((function(_, $) {
       } catch(err) {
         return null;
       }
-    })(),
+    })()
   };
 
   return new OoyalaVideoFactory();
