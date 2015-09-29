@@ -8,39 +8,39 @@ OO.Video.plugin((function(_, $) {
 
   /**
    * @class TemplateVideoFactory
-   * @classdesc Factory for creating video player objects that use HTML5 video tags
+   * @classdesc Factory for creating video player objects that use HTML5 video tags.
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {array} streams A list of supported encoding types (ex. m3u8, mp4)
+   * @property {object} streams An array of supported encoding types (ex. m3u8, mp4)
    */
-  TemplateVideoFactory = function() {
+  var TemplateVideoFactory = function() {
     this.name = "templateVideoTech";
     this.streams = ["m3u8", "mp4"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
 
-
     /**
-     * Creates a video player instance using TemplateVideoWrapper
+     * Creates a video player instance using TemplateVideoWrapper.
      * @public
      * @method TemplateVideoFactory#create
      * @memberOf TemplateVideoFactory
-     * @param {object} parentContainer The div that should act as the parent for the video element
+     * @param {object} parentContainer The jquery div that should act as the parent for the video element
      * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
-     * @param {object} controller A reference to the video controller in the Ooyala player
+     * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, stream, id, controller) {
+    this.create = function(parentContainer, stream, id, ooyalaVideoController) {
       var element = {};
       var wrapper = new TemplateVideoWrapper(id, element);
+      wrapper.controller = ooyalaVideoController;
       wrapper.subscribeAllEvents();
       return wrapper;
     };
 
     /**
-     * Destroys the video technology factory
+     * Destroys the video technology factory.
      * @public
      * @method TemplateVideoFactory#destroy
      * @memberOf TemplateVideoFactory
@@ -54,14 +54,13 @@ OO.Video.plugin((function(_, $) {
 
   /**
    * @class TemplateVideoWrapper
-   * @classdesc Player object that wraps the video element
-   * @param {string} id The id of the video player element
+   * @classdesc Player object that wraps the video element.
+   * @param {string} playerId The id of the video player element
    * @param {object} video The core video object to wrap
    * @property {object} streams A list of the stream supported by this video element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    */
-  TemplateVideoWrapper = function(id, video) {
-    var _id = id;
+  var TemplateVideoWrapper = function(playerId, video) {
     var _video = video;
     var listeners = {};
 
@@ -80,7 +79,6 @@ OO.Video.plugin((function(_, $) {
      * @memberOf TemplateVideoWrapper
      */
     this.subscribeAllEvents = function() {
-      // events minimum set
       listeners = { "play": _.bind(raisePlayEvent, this),
                     "playing": _.bind(raisePlayingEvent, this),
                     "ended": _.bind(raiseEndedEvent, this),
@@ -97,9 +95,8 @@ OO.Video.plugin((function(_, $) {
                     "durationchange": _.bind(raiseDurationChange, this),
                     "progress": _.bind(raiseProgress, this),
                     "canplaythrough": _.bind(raiseCanPlayThrough, this),
-                        // ios webkit browser fullscreen events
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
-                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
+                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
                   };
       _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
     };
@@ -176,7 +173,7 @@ OO.Video.plugin((function(_, $) {
     };
 
     /**
-     * Destroys the individual video element
+     * Destroys the individual video element.
      * @public
      * @method TemplateVideoWrapper#destroy
      * @memberOf TemplateVideoWrapper
@@ -184,7 +181,8 @@ OO.Video.plugin((function(_, $) {
     this.destroy = function() {
       // Pause the video
       // Reset the source
-      // Unsbuscribe all vents
+      // Unsubscribe all events
+      this.unsubscribeAllEvents();
       // Remove the element
     };
 
@@ -201,13 +199,13 @@ OO.Video.plugin((function(_, $) {
       this.controller.notify(this.controller.EVENTS.PLAYING);
     };
 
-    var raiseEndedEvent = function(event) {
-      this.controller.notify(this.controller.EVENTS.ENDED, event.target.src);
+    var raiseEndedEvent = function() {
+      this.controller.notify(this.controller.EVENTS.ENDED);
     };
 
     var raiseErrorEvent = function(event) {
       var code = event.target.error ? event.target.error.code : -1;
-      this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
+      this.controller.notify(this.controller.EVENTS.ERROR, { "errorcode" : code });
     };
 
     var raiseSeekingEvent = function() {
@@ -226,12 +224,12 @@ OO.Video.plugin((function(_, $) {
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     };
 
-    var raiseStalledEvent = function(event) {
+    var raiseStalledEvent = function() {
       this.controller.notify(this.controller.EVENTS.STALLED);
     };
 
     var raiseVolumeEvent = function(event) {
-      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: event.target.volume });
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.target.volume });
     };
 
     var raiseWaitingEvent = function() {
@@ -247,11 +245,11 @@ OO.Video.plugin((function(_, $) {
     };
 
     var raisePlayhead = _.bind(function(eventname, event) {
-      this.controller.notify(this.controller.EVENTS.TIME_UPDATE,
-                             { "currentTime": event.target.currentTime,
-                               "duration": event.target.duration,
-                               "buffer": 10,
-                               "seekRange": {"begin": 0, "end": 10} });
+      this.controller.notify(eventname,
+                             { "currentTime" : event.target.currentTime,
+                               "duration" : event.target.duration,
+                               "buffer" : 10,
+                               "seekRange" : { "begin" : 0, "end" : 10 } });
     }, this);
 
     var raiseProgress = function(event) {
@@ -259,21 +257,21 @@ OO.Video.plugin((function(_, $) {
                              { "currentTime": event.target.currentTime,
                                "duration": event.target.duration,
                                "buffer": 10,
-                               "seekRange": {"begin": 0, "end": 10} });
+                               "seekRange": { "begin": 0, "end": 10 } });
     };
 
-    var raiseCanPlayThrough = function(event) {
+    var raiseCanPlayThrough = function() {
       this.controller.notify(this.controller.EVENTS.BUFFERED);
     };
 
     var raiseFullScreenBegin = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen": true, "paused": event.target.paused });
+                             { "isFullScreen" : true, "paused" : event.target.paused });
     };
 
     var raiseFullScreenEnd = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen": false, "paused": event.target.paused });
+                             { "isFullScreen" : false, "paused" : event.target.paused });
     };
   };
 
