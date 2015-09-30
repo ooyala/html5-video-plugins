@@ -296,18 +296,6 @@ OO.Video.plugin((function(_, $) {
 
     var raiseErrorEvent = function(event) {
       var code = event.target.error ? event.target.error.code : -1;
-      /*
-      if (this._emitErrors) {
-        this._emitError(event, code);
-      } else {
-        // The error occurred when the page was probably unloading.
-        // Happens more often on low bandwith.
-        OO.d("Error not emitted: " + event.type);
-        this._unemittedErrors.push({error: event, code: code});
-        //this.mb.publish(OO.EVENTS.PAGE_PROBABLY_UNLOADING);
-      }
-      */
-
       this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
     };
 
@@ -359,13 +347,16 @@ OO.Video.plugin((function(_, $) {
       dequeueSeek();
 
       // This is a hack fix for m3u8, current iOS has a bug that if the m3u8 EXTINF indication a different
-      // duration, the ended event never got dispatched. Monkey patch here to manual trigger a onEnded event
+      // duration, the ended event never got dispatched. Monkey patch here to manual trigger an ended event
       // need to wait OTS to fix their end.
-      var duration = resolveDuration(event.target.duration);
-      var durationInt = Math.floor(duration);
-      if (this.isM3u8 && _video.currentTime == duration && duration > durationInt) {
-        OO.log("manually triggering end", this._currentUrl, duration, _video.currentTime);
-        _.delay(_.bind(this.onEnded, this), 0, e);
+      if (this.isM3u8) {
+        var duration = resolveDuration(event.target.duration);
+        var durationInt = Math.floor(duration);
+        if ((_video.currentTime == duration) && (duration > durationInt)) {
+          console.log("VTC_OO: manually triggering end of stream for m3u8", _currentUrl, duration,
+                      _video.currentTime);
+          _.defer(raiseEndedEvent, this, event);
+        }
       }
     };
 
