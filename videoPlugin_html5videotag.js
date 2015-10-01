@@ -33,21 +33,21 @@ OO.Video.plugin((function(_, $) {
      * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
+     * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, stream, id, controller) {
+    this.create = function(parentContainer, stream, id, controller, css) {
       var video = $("<video>");
       video.attr("class", "video");
       video.attr("preload", "none");
       video.attr("crossorigin", "anonymous");
+      video.css(css);
 
       // enable airplay for iOS
       // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
       if (platform.isIos) {
         video.attr("x-webkit-airplay", "allow");
       }
-      // TODO: Move the style here?
-      //video.attr("style", "width:100%; height:100%; z-index:10000; position:absolute");
 
       element = new OoyalaVideoWrapper(id, video[0]);
       element.streams = this.streams;
@@ -257,6 +257,16 @@ OO.Video.plugin((function(_, $) {
     this.setVolume = function(volume) {
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
       _video.volume = volume;
+    };
+
+    /**
+     * Applies the given css to the video element.
+     * @public
+     * @method OoyalaVideoWrapper#applyCss
+     * @param {object} css The css to apply in key value pairs
+     */
+    this.applyCss = function(css) {
+      $(_video).css(css);
     };
 
     /**
