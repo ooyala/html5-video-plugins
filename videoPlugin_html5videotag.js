@@ -3,7 +3,7 @@
  * version: 0.1
  */
 
-OO.Video.plugin((function(_, $) {
+(function(_, $) {
   var pluginName = "ooyalaHtml5VideoTech";
 
   /**
@@ -28,7 +28,6 @@ OO.Video.plugin((function(_, $) {
      * Creates a video player instance using OoyalaVideoWrapper
      * @public
      * @method OoyalaVideoFactory#create
-     * @memberOf OoyalaVideoFactory
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
      * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
@@ -45,7 +44,7 @@ OO.Video.plugin((function(_, $) {
 
       // enable airplay for iOS
       // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
-      if (platform.isIos) {
+      if (Platform.isIos) {
         video.attr("x-webkit-airplay", "allow");
       }
 
@@ -65,7 +64,6 @@ OO.Video.plugin((function(_, $) {
      * Destroys the video technology factory
      * @public
      * @method OoyalaVideoFactory#destroy
-     * @memberOf OoyalaVideoFactory
      */
     this.destroy = function() {
       this.ready = false;
@@ -105,7 +103,6 @@ OO.Video.plugin((function(_, $) {
      * This is called by the Factory during creation.
      * @public
      * @method OoyalaVideoWrapper#subscribeAllEvents
-     * @memberOf OoyalaVideoWrapper
      */
     this.subscribeAllEvents = function() {
       listeners = { "loadstart": _.bind(onLoadStart, this),
@@ -139,7 +136,6 @@ OO.Video.plugin((function(_, $) {
      * This is called by the destroy function.
      * @public
      * @method OoyalaVideoWrapper#unsubscribeAllEvents
-     * @memberOf OoyalaVideoWrapper
      */
     this.unsubscribeAllEvents = function() {
       _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
@@ -149,12 +145,10 @@ OO.Video.plugin((function(_, $) {
      * Sets the url of the video.
      * @public
      * @method OoyalaVideoWrapper#setVideoUrl
-     * @memberOf OoyalaVideoWrapper
      * @param {string} url The new url to insert into the video element's src attribute
      * @returns {boolean} True or false indicating success
      */
     // Allow for the video src to be changed without loading the video
-    // @param url: the new url to insert into the video element's src attribute
     this.setVideoUrl = function(url) {
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
@@ -163,7 +157,7 @@ OO.Video.plugin((function(_, $) {
         _currentUrl = url || "";
 
         // bust the chrome caching bug
-        if (_currentUrl.length > 0 && platform.isChrome) {
+        if (_currentUrl.length > 0 && Platform.isChrome) {
           _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
@@ -184,14 +178,13 @@ OO.Video.plugin((function(_, $) {
      * Loads the current stream url in the video element; the element should be left paused.
      * @public
      * @method OoyalaVideoWrapper#load
-     * @memberOf OoyalaVideoWrapper
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
       if (loaded && !rewind) return;
       if (!!rewind) {
         try {
-          if (platform.isIos && platform.iosMajorVersion == 8) {
+          if (Platform.isIos && Platform.iosMajorVersion == 8) {
             // On iOS, wait for durationChange before setting currenttime
             $(_video).on("durationchange", _.bind(function() {
                                                                _video.currentTime = 0;
@@ -213,7 +206,6 @@ OO.Video.plugin((function(_, $) {
      * Triggers playback on the video element.
      * @public
      * @method OoyalaVideoWrapper#play
-     * @memberOf OoyalaVideoWrapper
      */
     this.play = function() {
       _video.play();
@@ -224,7 +216,6 @@ OO.Video.plugin((function(_, $) {
      * Triggers a pause on the video element.
      * @public
      * @method OoyalaVideoWrapper#pause
-     * @memberOf OoyalaVideoWrapper
      */
     this.pause = function() {
       _video.pause();
@@ -234,7 +225,6 @@ OO.Video.plugin((function(_, $) {
      * Triggers a seek on the video element.
      * @public
      * @method OoyalaVideoWrapper#seek
-     * @memberOf OoyalaVideoWrapper
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
@@ -251,7 +241,6 @@ OO.Video.plugin((function(_, $) {
      * Triggers a volume change on the video element.
      * @public
      * @method OoyalaVideoWrapper#setVolume
-     * @memberOf OoyalaVideoWrapper
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
@@ -270,10 +259,9 @@ OO.Video.plugin((function(_, $) {
     };
 
     /**
-     * Destroys the individual video element
+     * Destroys the individual video element.
      * @public
      * @method OoyalaVideoWrapper#destroy
-     * @memberOf OoyalaVideoWrapper
      */
     this.destroy = function() {
       _video.pause();
@@ -287,10 +275,21 @@ OO.Video.plugin((function(_, $) {
     // Event callback methods
     // **********************************************************************************/
 
+    /**
+     * Stores the url of the video when load is started.
+     * @private
+     * @method OoyalaVideoWrapper#onLoadStart
+     */
     var onLoadStart = function() {
       _currentUrl = _video.src;
     };
 
+    /**
+     * Notifies the controller that a progress event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseProgress
+     * @param {object} event The event from the video
+     */
     var raiseProgress = function(event) {
       var buffer = 0;
       if (event.target.buffered && event.target.buffered.length > 0) {
@@ -304,41 +303,83 @@ OO.Video.plugin((function(_, $) {
                                "url": event.target.src });
     };
 
+    /**
+     * Notifies the controller that an error event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseErrorEvent
+     * @param {object} event The event from the video
+     */
     var raiseErrorEvent = function(event) {
       var code = event.target.error ? event.target.error.code : -1;
       this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
     };
 
+    /**
+     * Notifies the controller that a stalled event was raised.  Pauses the video on iPad if the currentTime is 0.
+     * @private
+     * @method OoyalaVideoWrapper#raiseStalledEvent
+     * @param {object} event The event from the video
+     */
     var raiseStalledEvent = function(event) {
       // Fix multiple video tag error in iPad
-      if (platform.isIpad && event.target.currentTime === 0) {
+      if (Platform.isIpad && event.target.currentTime === 0) {
         _video.pause();
       }
 
       this.controller.notify(this.controller.EVENTS.STALLED);
     };
 
+    /**
+     * Notifies the controller that a buffered event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseCanPlayThrough
+     */
     var raiseCanPlayThrough = function() {
       this.controller.notify(this.controller.EVENTS.BUFFERED);
     };
 
+    /**
+     * Notifies the controller that a playing event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raisePlayingEvent
+     */
     var raisePlayingEvent = function() {
       this.controller.notify(this.controller.EVENTS.PLAYING);
     };
 
+    /**
+     * Notifies the controller that a waiting event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseWaitingEvent
+     */
     var raiseWaitingEvent = function() {
       videoEnded = false;
       this.controller.notify(this.controller.EVENTS.WAITING);
     };
 
+    /**
+     * Notifies the controller that a seeking event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseSeekingEvent
+     */
     var raiseSeekingEvent = function() {
       this.controller.notify(this.controller.EVENTS.SEEKING);
     };
 
+    /**
+     * Notifies the controller that a seeked event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseSeekedEvent
+     */
     var raiseSeekedEvent = function() {
       this.controller.notify(this.controller.EVENTS.SEEKED);
     };
 
+    /**
+     * Notifies the controller that a ended event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseEndedEvent
+     */
     var raiseEndedEvent = function() {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
@@ -346,10 +387,23 @@ OO.Video.plugin((function(_, $) {
       this.controller.notify(this.controller.EVENTS.ENDED);
     };
 
+    /**
+     * Notifies the controller that the duration has changed.
+     * @private
+     * @method OoyalaVideoWrapper#raiseDurationChange
+     * @param {object} event The event from the video
+     */
     var raiseDurationChange = function(event) {
       raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
     };
 
+    /**
+     * Notifies the controller that the time position has changed.  Handles seeks if seeks were enqueued and
+     * the stream has become seekable.  Triggers end of stream for m3u8 if the stream won't raise it itself.
+     * @private
+     * @method OoyalaVideoWrapper#raiseTimeUpdate
+     * @param {object} event The event from the video
+     */
     var raiseTimeUpdate = function(event) {
       raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
 
@@ -370,27 +424,61 @@ OO.Video.plugin((function(_, $) {
       }
     };
 
+    /**
+     * Notifies the controller that the play event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raisePlayEvent
+     * @param {object} event The event from the video
+     */
     var raisePlayEvent = function(event) {
       this.controller.notify(this.controller.EVENTS.PLAY, { url: event.target.src });
     };
 
+    /**
+     * Notifies the controller that the pause event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raisePauseEvent
+     */
     var raisePauseEvent = function() {
       this.controller.notify(this.controller.EVENTS.PAUSED);
     };
 
+    /**
+     * Notifies the controller that the ratechange event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseRatechangeEvent
+     */
     var raiseRatechangeEvent = function() {
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     };
 
+    /**
+     * Notifies the controller that the volume event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseVolumeEvent
+     * @param {object} event The event raised by the video.
+     */
     var raiseVolumeEvent = function(event) {
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: event.target.volume });
     };
 
+    /**
+     * Notifies the controller that the fullscreenBegin event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseFullScreenBegin
+     * @param {object} event The event raised by the video.
+     */
     var raiseFullScreenBegin = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { isFullScreen: true, paused: event.target.paused });
     };
 
+    /**
+     * Notifies the controller that the fullscreenEnd event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseFullScreenEnd
+     * @param {object} event The event raised by the video.
+     */
     var raiseFullScreenEnd = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { "isFullScreen": false, "paused": event.target.paused });
@@ -401,10 +489,24 @@ OO.Video.plugin((function(_, $) {
     // Helper methods
     /************************************************************************************/
 
+    /**
+     * Generates a random string.
+     * @private
+     * @method OoyalaVideoWrapper#getRandomString
+     * @returns {string} A random string
+     */
     var getRandomString = function() {
       return Math.random().toString(36).substring(7);
     };
 
+    /**
+     * Gets the range of video that can be safely seeked to.
+     * @private
+     * @method OoyalaVideoWrapper#getSafeSeekRange
+     * @param {object} seekRange The seek range object from the video element.  It contains a length, a start
+     *                           function, and an end function.
+     * @returns {object} The safe seek range object containing { "start": number, "end": number}
+     */
     var getSafeSeekRange = function(seekRange) {
       if (!seekRange || !seekRange.length || !(typeof seekRange.start == "function") ||
           !(typeof seekRange.end == "function" )) {
@@ -415,6 +517,15 @@ OO.Video.plugin((function(_, $) {
                "end" : seekRange.length > 0 ? seekRange.end(0) : 0 };
     };
 
+    /**
+     * Converts the desired seek time to a safe seek time based on the duration and platform.  If seeking
+     * within OO.CONSTANTS.SEEK_TO_END_LIMIT of the end of the stream, seeks to the end of the stream.
+     * @private
+     * @method OoyalaVideoWrapper#convertToSafeSeekTime
+     * @param {number} time The desired seek-to position
+     * @param {number} duration The video's duration
+     * @returns {number} The safe seek-to position
+     */
     var convertToSafeSeekTime = function(time, duration) {
       // If seeking within some threshold of the end of the stream, seek to end of stream directly
       if (duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) {
@@ -424,13 +535,20 @@ OO.Video.plugin((function(_, $) {
       var safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
 
       // iPad with 6.1 has an interesting bug that causes the video to break if seeking exactly to zero
-      if (platform.isIpad && safeTime < 0.1) {
+      if (Platform.isIpad && safeTime < 0.1) {
         safeTime = 0.1;
       }
       return safeTime;
     };
 
-    // Returns null if the position cannot be seeked to, and returns the safe time to seek to if it can.
+    /**
+     * Returns the safe seek time if seeking is possible.  Null if seeking is not possible.
+     * @private
+     * @method OoyalaVideoWrapper#getSafeSeekTimeIfPossible
+     * @param {object} _video The video element
+     * @param {number} time The desired seek-to position
+     * @returns {?number} The seek-to position, or null if seeking is not possible
+     */
     var getSafeSeekTimeIfPossible = function(_video, time) {
       var range = getSafeSeekRange(_video.seekable);
       if (range.start === 0 && range.end === 0) {
@@ -445,15 +563,31 @@ OO.Video.plugin((function(_, $) {
       return null;
     };
 
+    /**
+     * Adds the desired seek time to a queue so as to be used later.
+     * @private
+     * @method OoyalaVideoWrapper#queueSeek
+     * @param {number} time The desired seek-to position
+     */
     var queueSeek = function(time) {
       queuedSeekTime = time;
     };
 
+    /**
+     * If a seek was previously queued, triggers a seek to the queued seek time.
+     * @private
+     * @method OoyalaVideoWrapper#dequeueSeek
+     */
     var dequeueSeek = _.bind(function() {
       if (queuedSeekTime === null) { return; }
       if (this.seek(queuedSeekTime)) { queuedSeekTime = null; }
     }, this);
 
+    /**
+     * Notifies the controller of events that provide playhead information.
+     * @private
+     * @method OoyalaVideoWrapper#raisePlayhead
+     */
     var raisePlayhead = _.bind(function(eventname, event) {
       var buffer = 0;
       if (event.target.buffered && event.target.buffered.length > 0) {
@@ -466,29 +600,63 @@ OO.Video.plugin((function(_, $) {
                                "seekRange": getSafeSeekRange(event.target.seekable) });
     }, this);
 
+    /**
+     * Resolves the duration of the video to a valid value.
+     * @private
+     * @method OoyalaVideoWrapper#raisePlayhead
+     * @param {number} duration The reported duration of the video in seconds
+     * @returns {number} The resolved duration of the video in seconds
+     */
     var resolveDuration = function(duration) {
       if (duration === Infinity || isNaN(duration)) {
         return 0;
       }
-      return duration; // in seconds;
+      return duration;
     };
   };
 
-  // Platform
-  var platform = {
+  /**
+   * @class Platform
+   * @classdesc Functions that provide platform information
+   */
+  var Platform = {
+    /**
+     * Checks if the system is running on iOS.
+     * @private
+     * @method Platform#isIos
+     * @returns {boolean} True if the system is running on iOS
+     */
     isIos: (function() {
       var platform = window.navigator.platform;
       return !!(platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/));
     })(),
 
+    /**
+     * Checks if the system is an iPad
+     * @private
+     * @method Platform#isIpad
+     * @returns {boolean} True if the system is an Ipad
+     */
     isIpad: (function() {
       return !!window.navigator.platform.match(/iPad/);
     })(),
 
+    /**
+     * Checks if the player is running in chrome.
+     * @private
+     * @method Platform#isChrome
+     * @returns {boolean} True if the player is running in chrome
+     */
     isChrome: (function() {
       return !!window.navigator.userAgent.match(/Chrome/);
     })(),
 
+    /**
+     * Gets the iOS major version.
+     * @private
+     * @method Platform#iosMajorVersion
+     * @returns {?number} The iOS major version; null if the system is not running iOS
+     */
     iosMajorVersion: (function(){
       try {
         if (window.navigator.userAgent.match(/(iPad|iPhone|iPod)/)) {
@@ -496,11 +664,11 @@ OO.Video.plugin((function(_, $) {
         } else {
           return null;
         }
-      } catch(err) {
+      } catch (err) {
         return null;
       }
     })()
   };
 
-  return new OoyalaVideoFactory();
-}(OO._, OO.$)));
+  OO.Video.plugin(new OoyalaVideoFactory());
+}(OO._, OO.$));
