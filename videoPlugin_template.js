@@ -27,9 +27,10 @@
      * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
      * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
+     * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, stream, id, ooyalaVideoController) {
+    this.create = function(parentContainer, stream, id, ooyalaVideoController, css) {
       var element = {};
       var wrapper = new TemplateVideoWrapper(id, element);
       wrapper.controller = ooyalaVideoController;
@@ -159,6 +160,15 @@
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+    };
+
+    /**
+     * Applies the given css to the video element.
+     * @public
+     * @method OoyalaVideoWrapper#applyCss
+     * @param {object} css The css to apply in key value pairs
+     */
+    this.applyCss = function(css) {
     };
 
     /**
