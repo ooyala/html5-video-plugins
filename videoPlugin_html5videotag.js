@@ -21,7 +21,8 @@ OO.Video.plugin((function(_, $) {
 
     // Determine supported stream types
     var videoElement = document.createElement("video");
-    this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") || !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
+    this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
+      !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4", "webm"] : ["mp4", "webm"];
     videoElement = null;
 
     /**
@@ -40,7 +41,7 @@ OO.Video.plugin((function(_, $) {
       var video = $("<video>");
       video.attr("class", "video");
       video.attr("preload", "none");
-      video.attr("crossorigin", "anonymous");
+      // video.attr("crossorigin", "anonymous"); // this causes webm to fail
       video.css(css);
 
       // enable airplay for iOS
