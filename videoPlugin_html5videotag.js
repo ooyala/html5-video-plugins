@@ -40,6 +40,7 @@ OO.Video.plugin((function(_, $) {
     this.create = function(parentContainer, stream, id, controller, css) {
       var video = $("<video>");
       video.attr("class", "video");
+      video.attr("id", id);
       video.attr("preload", "none");
       // video.attr("crossorigin", "anonymous"); // this causes webm to fail
       video.css(css);
