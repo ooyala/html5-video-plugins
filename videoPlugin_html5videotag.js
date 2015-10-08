@@ -5,6 +5,7 @@
 
 OO.Video.plugin((function(_, $) {
   var pluginName = "ooyalaHtml5VideoTech";
+  var currentInstances = 0;
 
   /**
    * @class OoyalaVideoFactory
@@ -52,6 +53,7 @@ OO.Video.plugin((function(_, $) {
       }
 
       element = new OoyalaVideoWrapper(id, video[0]);
+      currentInstances++;
       element.streams = this.streams;
       element.controller = controller;
 
@@ -74,6 +76,29 @@ OO.Video.plugin((function(_, $) {
       this.streams = [];
       this.create = function() {};
     };
+
+    /**
+     * Represents the max number of support instances of video elements that can be supported on the
+     * current platform. 0 implies no limit.
+     * @public
+     * @property OoyalaVideoFactory#maxSupportedInstances
+     */
+    this.maxSupportedInstances = (function() {
+      var iosRequireSingleElement = platform.isIos;
+      var androidRequireSingleElement = platform.isAndroid &&
+                                        (!platform.isAndroid4Plus || platform.chromeMajorVersion < 40);
+      return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : 0;
+    })();
+
+    /**
+     * Returns the number of video elements currently instantiated.
+     * @public
+     * @method OoyalaVideoFactory#getCurrentNumberOfInstances
+     * @returns {int} The number of video elements created by this factory that have not been destroyed
+     */
+    this.getCurrentNumberOfInstances = function() {
+     return currentInstances;
+    }
   };
 
   /**
@@ -282,6 +307,7 @@ OO.Video.plugin((function(_, $) {
       _video.src = '';
       this.unsubscribeAllEvents();
       $(_video).remove();
+      currentInstances--;
     };
 
 
@@ -501,7 +527,24 @@ OO.Video.plugin((function(_, $) {
       } catch(err) {
         return null;
       }
-    })()
+    })(),
+
+    isAndroid: (function(){
+      return !!window.navigator.appVersion.match(/Android/);
+    })(),
+
+    isAndroid4Plus: (function(){
+      return !!window.navigator.appVersion.match(/Android/) &&
+             !window.navigator.appVersion.match(/Android [23]/);
+    })(),
+
+    chromeMajorVersion: (function(){
+      try {
+        return parseInt(window.navigator.userAgent.match(/Chrome.([0-9]*)/)[1], 10);
+      } catch(err) {
+        return null;
+      }
+    })(),
   };
 
   return new OoyalaVideoFactory();
