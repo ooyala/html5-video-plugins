@@ -39,6 +39,10 @@ OO.Video.plugin((function(_, $) {
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, stream, id, controller, css) {
+      if (this.maxSupportedInstances > 0 && currentInstances >= this.maxSupportedInstances) {
+        return;
+      }
+
       var video = $("<video>");
       video.attr("class", "video");
       video.attr("id", id);
@@ -98,7 +102,7 @@ OO.Video.plugin((function(_, $) {
      */
     this.getCurrentNumberOfInstances = function() {
      return currentInstances;
-    }
+    };
   };
 
   /**

@@ -51,6 +51,23 @@ OO.Video.plugin((function(_, $) {
       this.streams = [];
       this.create = function() {};
     };
+
+    /**
+     * Represents the max number of support instances of video elements that can be supported on the
+     * current platform. 0 implies no limit.
+     * @public
+     * @property TemplateVideoFactory#maxSupportedInstances
+     */
+    this.maxSupportedInstances = 0;
+
+    /**
+     * Returns the number of video elements currently instantiated.
+     * @public
+     * @method TemplateVideoFactory#getCurrentNumberOfInstances
+     * @returns {int} The number of video elements created by this factory that have not been destroyed
+     */
+    this.getCurrentNumberOfInstances = function() {
+    };
   };
 
   /**
@@ -176,7 +193,7 @@ OO.Video.plugin((function(_, $) {
     /**
      * Applies the given css to the video element.
      * @public
-     * @method OoyalaVideoWrapper#applyCss
+     * @method TemplateVideoWrapper#applyCss
      * @param {object} css The css to apply in key value pairs
      */
     this.applyCss = function(css) {
