@@ -83,6 +83,7 @@
   var OoyalaVideoWrapper = function(id, video) {
     this.streams = [];
     this.controller = {};
+    this.canSeek = true;
 
     var _video = video;
     var _currentUrl = '';
@@ -90,6 +91,8 @@
     var listeners = {};
     var loaded = false;
     var queuedSeekTime = null;
+    var isSeeking = false;
+    var currentTime = 0;
     var isM3u8 = false;
 
     // TODO: These are unused currently
@@ -363,6 +366,7 @@
      * @method OoyalaVideoWrapper#raiseSeekingEvent
      */
     var raiseSeekingEvent = function() {
+      isSeeking = true;
       this.controller.notify(this.controller.EVENTS.SEEKING);
     };
 
@@ -372,7 +376,17 @@
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
     var raiseSeekedEvent = function() {
+      // PBI-718 - If seeking is disabled and a native seek was received, seek back to the previous position.
+      // This is required for platforms with native controls that cannot be disabled, such as iOS
+      if (!this.canSeek) {
+        var fixedSeekedTime = Math.floor(_video.currentTime);
+        var fixedCurrentTime = Math.floor(currentTime);
+        if (fixedSeekedTime !== fixedCurrentTime) {
+          _video.currentTime = currentTime;
+        }
+      }
       this.controller.notify(this.controller.EVENTS.SEEKED);
+      isSeeking = false;
     };
 
     /**
@@ -405,6 +419,9 @@
      * @param {object} event The event from the video
      */
     var raiseTimeUpdate = function(event) {
+      if (!isSeeking) {
+        currentTime = _video.currentTime;
+      }
       raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
 
       // iOS has issues seeking so if we queue a seek handle it here

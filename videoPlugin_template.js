@@ -57,6 +57,8 @@
    * @param {object} video The core video object to wrap
    * @property {object} streams A list of the stream supported by this video element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
+   * @property {boolean} canSeek When false, the plugin should supress or undo seeks that come from native
+   *                             video controls
    */
   var TemplateVideoWrapper = function(playerId, video) {
     var _video = video;
@@ -64,6 +66,7 @@
 
     this.controller = {};
     this.streams = [];
+    this.canSeek = true;
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
