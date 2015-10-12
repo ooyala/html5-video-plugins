@@ -33,19 +33,19 @@ OO.Video.plugin((function(_, $) {
      * @memberOf OoyalaVideoFactory
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
      * @param {string} stream The url of the stream to play
-     * @param {string} id The id of the video player instance to create
+     * @param {string} domId The dom id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, stream, id, controller, css) {
+    this.create = function(parentContainer, stream, domId, controller, css) {
       if (this.maxSupportedInstances > 0 && currentInstances >= this.maxSupportedInstances) {
         return;
       }
 
       var video = $("<video>");
       video.attr("class", "video");
-      video.attr("id", id);
+      video.attr("id", domId);
       video.attr("preload", "none");
       // video.attr("crossorigin", "anonymous"); // this causes webm to fail
       video.css(css);
