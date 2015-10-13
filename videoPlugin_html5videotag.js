@@ -32,13 +32,12 @@ OO.Video.plugin((function(_, $) {
      * @method OoyalaVideoFactory#create
      * @memberOf OoyalaVideoFactory
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
-     * @param {string} stream The url of the stream to play
      * @param {string} domId The dom id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, stream, domId, controller, css) {
+    this.create = function(parentContainer, domId, controller, css) {
       if (this.maxSupportedInstances > 0 && currentInstances >= this.maxSupportedInstances) {
         return;
       }
@@ -61,8 +60,7 @@ OO.Video.plugin((function(_, $) {
       element.streams = this.streams;
       element.controller = controller;
 
-      // TODO: Wait for loadstart before calling these?
-      element.setVideoUrl(stream);
+      // TODO: Wait for loadstart before calling this?
       element.subscribeAllEvents();
 
       parentContainer.append(video);

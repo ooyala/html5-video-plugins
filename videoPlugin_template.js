@@ -26,13 +26,12 @@ OO.Video.plugin((function(_, $) {
      * @method TemplateVideoFactory#create
      * @memberOf TemplateVideoFactory
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
-     * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
      * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, stream, id, ooyalaVideoController, css) {
+    this.create = function(parentContainer, id, ooyalaVideoController, css) {
       var element = {};
       var wrapper = new TemplateVideoWrapper(id, element);
       wrapper.controller = ooyalaVideoController;
