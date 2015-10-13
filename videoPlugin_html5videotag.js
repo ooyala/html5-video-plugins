@@ -56,7 +56,7 @@ OO.Video.plugin((function(_, $) {
         video.attr("x-webkit-airplay", "allow");
       }
 
-      element = new OoyalaVideoWrapper(id, video[0]);
+      element = new OoyalaVideoWrapper(domId, video[0]);
       currentInstances++;
       element.streams = this.streams;
       element.controller = controller;
@@ -108,12 +108,12 @@ OO.Video.plugin((function(_, $) {
   /**
    * @class OoyalaVideoWrapper
    * @classdesc Player object that wraps HTML5 video tags
-   * @param {string} id The id of the video player element
+   * @param {string} domId The domId of the video player element
    * @param {object} video The core video object to wrap
    * @property {object} streams A list of the stream supported by this video element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    */
-  var OoyalaVideoWrapper = function(id, video) {
+  var OoyalaVideoWrapper = function(domId, video) {
     this.streams = [];
     this.controller = {};
 
