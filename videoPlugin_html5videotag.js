@@ -21,7 +21,8 @@
 
     // Determine supported stream types
     var videoElement = document.createElement("video");
-    this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") || !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4"] : ["mp4"];
+    this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
+      !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4", "webm"] : ["mp4", "webm"];
     videoElement = null;
 
     /**
@@ -38,8 +39,10 @@
     this.create = function(parentContainer, stream, id, controller, css) {
       var video = $("<video>");
       video.attr("class", "video");
+      video.attr("id", id);
       video.attr("preload", "none");
-      video.attr("crossorigin", "anonymous");
+      // TODO: Fix CORS headers to work with all streams.  This setting fails on the webm test ads
+      // video.attr("crossorigin", "anonymous");
       video.css(css);
 
       // enable airplay for iOS
