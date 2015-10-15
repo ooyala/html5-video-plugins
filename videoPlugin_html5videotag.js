@@ -85,7 +85,6 @@ OO.Video.plugin((function(_, $) {
      * @property OoyalaVideoFactory#maxSupportedInstances
      */
     this.maxSupportedInstances = (function() {
-      //return 1;
       var iosRequireSingleElement = platform.isIos;
       var androidRequireSingleElement = platform.isAndroid &&
                                         (!platform.isAndroid4Plus || platform.chromeMajorVersion < 40);
@@ -106,7 +105,7 @@ OO.Video.plugin((function(_, $) {
   /**
    * @class OoyalaVideoWrapper
    * @classdesc Player object that wraps HTML5 video tags
-   * @param {string} domId The domId of the video player element
+   * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    */
