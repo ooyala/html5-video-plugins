@@ -74,7 +74,6 @@ OO.Video.plugin((function(_, $) {
    * @classdesc Player object that wraps the video element.
    * @param {string} playerId The id of the video player element
    * @param {object} video The core video object to wrap
-   * @property {object} streams A list of the stream supported by this video element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    */
   var TemplateVideoWrapper = function(playerId, video) {
@@ -82,7 +81,6 @@ OO.Video.plugin((function(_, $) {
     var listeners = {};
 
     this.controller = {};
-    this.streams = [];
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -183,11 +181,19 @@ OO.Video.plugin((function(_, $) {
      * Triggers a volume change on the video element.
      * @public
      * @method TemplateVideoWrapper#setVolume
-     * @memberOf TemplateVideoWrapper
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
     };
+
+    /**
+     * Gets the current time position of the video.
+     * @public
+     * @method TemplateVideoWrapper#getCurrentTime
+     * @returns {number} The current time position of the video (seconds)
+     */
+    this.getCurrentTime = function() {
+    }
 
     /**
      * Applies the given css to the video element.

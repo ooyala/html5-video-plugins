@@ -57,7 +57,6 @@ OO.Video.plugin((function(_, $) {
 
       element = new OoyalaVideoWrapper(domId, video[0]);
       currentInstances++;
-      element.streams = this.streams;
       element.controller = controller;
 
       // TODO: Wait for loadstart before calling this?
@@ -86,6 +85,7 @@ OO.Video.plugin((function(_, $) {
      * @property OoyalaVideoFactory#maxSupportedInstances
      */
     this.maxSupportedInstances = (function() {
+      //return 1;
       var iosRequireSingleElement = platform.isIos;
       var androidRequireSingleElement = platform.isAndroid &&
                                         (!platform.isAndroid4Plus || platform.chromeMajorVersion < 40);
@@ -108,11 +108,9 @@ OO.Video.plugin((function(_, $) {
    * @classdesc Player object that wraps HTML5 video tags
    * @param {string} domId The domId of the video player element
    * @param {object} video The core video object to wrap
-   * @property {object} streams A list of the stream supported by this video element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    */
   var OoyalaVideoWrapper = function(domId, video) {
-    this.streams = [];
     this.controller = {};
 
     var _video = video;
@@ -286,6 +284,16 @@ OO.Video.plugin((function(_, $) {
     this.setVolume = function(volume) {
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
       _video.volume = volume;
+    };
+
+    /**
+     * Gets the current time position of the video.
+     * @public
+     * @method OoyalaVideoWrapper#getCurrentTime
+     * @returns {number} The current time position of the video (seconds)
+     */
+    this.getCurrentTime = function() {
+      return _video.currentTime;
     };
 
     /**
