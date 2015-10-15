@@ -83,9 +83,9 @@
      * @property OoyalaVideoFactory#maxSupportedInstances
      */
     this.maxSupportedInstances = (function() {
-      var iosRequireSingleElement = platform.isIos;
-      var androidRequireSingleElement = platform.isAndroid &&
-                                        (!platform.isAndroid4Plus || platform.chromeMajorVersion < 40);
+      var iosRequireSingleElement = Platform.isIos;
+      var androidRequireSingleElement = Platform.isAndroid &&
+                                        (!Platform.isAndroid4Plus || Platform.chromeMajorVersion < 40);
       return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : 0;
     })();
   };
@@ -96,6 +96,8 @@
    * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
    * @property {object} controller A reference to the Ooyala Video Tech Controller
+   * @property {boolean} canSeek When false, the plugin should supress or undo seeks that come from
+   *                                   native video controls
    */
   var OoyalaVideoWrapper = function(domId, video) {
     this.controller = {};
