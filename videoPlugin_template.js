@@ -4,8 +4,7 @@
  * version: 0.1
  */
 
-OO.Video.plugin((function(_, $) {
-
+(function(_, $) {
   /**
    * @class TemplateVideoFactory
    * @classdesc Factory for creating video player objects that use HTML5 video tags.
@@ -24,7 +23,6 @@ OO.Video.plugin((function(_, $) {
      * Creates a video player instance using TemplateVideoWrapper.
      * @public
      * @method TemplateVideoFactory#create
-     * @memberOf TemplateVideoFactory
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
      * @param {string} id The id of the video player instance to create
      * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
@@ -43,7 +41,6 @@ OO.Video.plugin((function(_, $) {
      * Destroys the video technology factory.
      * @public
      * @method TemplateVideoFactory#destroy
-     * @memberOf TemplateVideoFactory
      */
     this.destroy = function() {
       this.ready = false;
@@ -75,12 +72,15 @@ OO.Video.plugin((function(_, $) {
    * @param {string} playerId The id of the video player element
    * @param {object} video The core video object to wrap
    * @property {object} controller A reference to the Ooyala Video Tech Controller
+   * @property {boolean} canSeek When false, the plugin should supress or undo seeks that come from native
+   *                             video controls
    */
   var TemplateVideoWrapper = function(playerId, video) {
     var _video = video;
     var listeners = {};
 
     this.controller = {};
+    this.canSeek = true;
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -91,7 +91,6 @@ OO.Video.plugin((function(_, $) {
      * This is called by the Factory during creation.
      * @public
      * @method TemplateVideoWrapper#subscribeAllEvents
-     * @memberOf TemplateVideoWrapper
      */
     this.subscribeAllEvents = function() {
       listeners = { "play": _.bind(raisePlayEvent, this),
@@ -121,7 +120,6 @@ OO.Video.plugin((function(_, $) {
      * This should be called by the destroy function.
      * @public
      * @method TemplateVideoWrapper#unsubscribeAllEvents
-     * @memberOf TemplateVideoWrapper
      */
     this.unsubscribeAllEvents = function() {
       _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
@@ -131,7 +129,6 @@ OO.Video.plugin((function(_, $) {
      * Sets the url of the video.
      * @public
      * @method TemplateVideoWrapper#setVideoUrl
-     * @memberOf TemplateVideoWrapper
      * @param {string} url The new url to insert into the video element's src attribute
      * @returns {boolean} True or false indicating success
      */
@@ -143,7 +140,6 @@ OO.Video.plugin((function(_, $) {
      * Loads the current stream url in the video element; the element should be left paused.
      * @public
      * @method TemplateVideoWrapper#load
-     * @memberOf TemplateVideoWrapper
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
@@ -153,7 +149,6 @@ OO.Video.plugin((function(_, $) {
      * Triggers playback on the video element.
      * @public
      * @method TemplateVideoWrapper#play
-     * @memberOf TemplateVideoWrapper
      */
     this.play = function() {
     };
@@ -162,7 +157,6 @@ OO.Video.plugin((function(_, $) {
      * Triggers a pause on the video element.
      * @public
      * @method TemplateVideoWrapper#pause
-     * @memberOf TemplateVideoWrapper
      */
     this.pause = function() {
     };
@@ -171,7 +165,6 @@ OO.Video.plugin((function(_, $) {
      * Triggers a seek on the video element.
      * @public
      * @method TemplateVideoWrapper#seek
-     * @memberOf TemplateVideoWrapper
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
@@ -208,7 +201,6 @@ OO.Video.plugin((function(_, $) {
      * Destroys the individual video element.
      * @public
      * @method TemplateVideoWrapper#destroy
-     * @memberOf TemplateVideoWrapper
      */
     this.destroy = function() {
       // Pause the video
@@ -307,5 +299,5 @@ OO.Video.plugin((function(_, $) {
     };
   };
 
-  return new TemplateVideoFactory();
-}(OO._, OO.$)));
+  OO.Video.plugin(new TemplateVideoFactory());
+}(OO._, OO.$));
