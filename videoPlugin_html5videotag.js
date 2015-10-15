@@ -90,16 +90,6 @@ OO.Video.plugin((function(_, $) {
                                         (!platform.isAndroid4Plus || platform.chromeMajorVersion < 40);
       return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : 0;
     })();
-
-    /**
-     * Returns the number of video elements currently instantiated.
-     * @public
-     * @method OoyalaVideoFactory#getCurrentNumberOfInstances
-     * @returns {int} The number of video elements created by this factory that have not been destroyed
-     */
-    this.getCurrentNumberOfInstances = function() {
-     return currentInstances;
-    };
   };
 
   /**
