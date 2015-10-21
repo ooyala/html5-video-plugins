@@ -50,11 +50,11 @@
 
     /**
      * Represents the max number of support instances of video elements that can be supported on the
-     * current platform. 0 implies no limit.
+     * current platform. -1 implies no limit.
      * @public
      * @property TemplateVideoFactory#maxSupportedInstances
      */
-    this.maxSupportedInstances = 0;
+    this.maxSupportedInstances = -1;
 
     /**
      * Returns the number of video elements currently instantiated.

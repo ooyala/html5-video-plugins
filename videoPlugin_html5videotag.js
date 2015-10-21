@@ -12,7 +12,7 @@
    * @classdesc Factory for creating video player objects that use HTML5 video tags
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} streams An array of supported encoding types (ex. m3u8, mp4)
+   * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
    */
   var OoyalaVideoFactory = function() {
     this.name = pluginName;
@@ -22,7 +22,7 @@
 
     // Determine supported stream types
     var videoElement = document.createElement("video");
-    this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
+    this.encodings = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
       !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4", "webm"] : ["mp4", "webm"];
     videoElement = null;
 
@@ -73,13 +73,13 @@
      */
     this.destroy = function() {
       this.ready = false;
-      this.streams = [];
+      this.encodings = [];
       this.create = function() {};
     };
 
     /**
      * Represents the max number of support instances of video elements that can be supported on the
-     * current platform. 0 implies no limit.
+     * current platform. -1 implies no limit.
      * @public
      * @property OoyalaVideoFactory#maxSupportedInstances
      */
@@ -87,7 +87,7 @@
       var iosRequireSingleElement = Platform.isIos;
       var androidRequireSingleElement = Platform.isAndroid &&
                                         (!Platform.isAndroid4Plus || Platform.chromeMajorVersion < 40);
-      return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : 0;
+      return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : -1;
     })();
   };
 
