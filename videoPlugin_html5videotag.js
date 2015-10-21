@@ -37,7 +37,7 @@
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, domId, controller, css) {
-      if (this.maxSupportedInstances > 0 && currentInstances >= this.maxSupportedInstances) {
+      if (this.maxSupportedElements > 0 && currentInstances >= this.maxSupportedElements) {
         return;
       }
 
@@ -81,9 +81,9 @@
      * Represents the max number of support instances of video elements that can be supported on the
      * current platform. -1 implies no limit.
      * @public
-     * @property OoyalaVideoFactory#maxSupportedInstances
+     * @property OoyalaVideoFactory#maxSupportedElements
      */
-    this.maxSupportedInstances = (function() {
+    this.maxSupportedElements = (function() {
       var iosRequireSingleElement = Platform.isIos;
       var androidRequireSingleElement = Platform.isAndroid &&
                                         (!Platform.isAndroid4Plus || Platform.chromeMajorVersion < 40);
