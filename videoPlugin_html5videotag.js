@@ -250,6 +250,7 @@
       _video.play();
       loaded = true;
       hasPlayed = true;
+      videoEnded = false;
     };
 
     /**
@@ -333,6 +334,7 @@
      */
     var onLoadStart = function() {
       _currentUrl = _video.src;
+      videoEnded = false;
     };
 
     var onLoadedMetadata = function() {
@@ -408,7 +410,6 @@
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
     var raiseWaitingEvent = function() {
-      videoEnded = false;
       this.controller.notify(this.controller.EVENTS.WAITING);
     };
 
@@ -482,11 +483,11 @@
       // This is a hack fix for m3u8, current iOS has a bug that if the m3u8 EXTINF indication a different
       // duration, the ended event never got dispatched. Monkey patch here to manual trigger an ended event
       // need to wait OTS to fix their end.
-      if (this.isM3u8) {
+      if (this.isM3u8 || Platform.isSafari) {
         var duration = resolveDuration(event.target.duration);
         var durationInt = Math.floor(duration);
         if ((_video.currentTime == duration) && (duration > durationInt)) {
-          console.log("VTC_OO: manually triggering end of stream for m3u8", _currentUrl, duration,
+          console.log("VTC_OO: manually triggering end of stream for m3u8 or Safari", _currentUrl, duration,
                       _video.currentTime);
           _.defer(raiseEndedEvent, this, event);
         }
@@ -718,6 +719,10 @@
      */
     isChrome: (function() {
       return !!window.navigator.userAgent.match(/Chrome/);
+    })(),
+
+    isSafari: (function() {
+      return !!window.navigator.userAgent.match(/Safari/);
     })(),
 
     /**
