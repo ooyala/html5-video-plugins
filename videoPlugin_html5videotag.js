@@ -250,7 +250,6 @@
       _video.play();
       loaded = true;
       hasPlayed = true;
-      videoEnded = false;
     };
 
     /**
@@ -447,12 +446,12 @@
      * @private
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
-    var raiseEndedEvent = function() {
+    var raiseEndedEvent = _.bind(function() {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
 
       this.controller.notify(this.controller.EVENTS.ENDED);
-    };
+    }, this);
 
     /**
      * Notifies the controller that the duration has changed.
@@ -489,7 +488,7 @@
         if ((_video.currentTime == duration) && (duration > durationInt)) {
           console.log("VTC_OO: manually triggering end of stream for m3u8 or Safari", _currentUrl, duration,
                       _video.currentTime);
-          _.defer(raiseEndedEvent, this, event);
+          _.defer(raiseEndedEvent);
         }
       }
     };
