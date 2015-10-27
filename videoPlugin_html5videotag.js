@@ -97,12 +97,12 @@
    * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
    * @property {object} controller A reference to the Ooyala Video Tech Controller
-   * @property {boolean} canSeek When false, the plugin should supress or undo seeks that come from
-   *                                   native video controls
+   * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
+   *                                       native video controls
    */
   var OoyalaVideoWrapper = function(domId, video) {
     this.controller = {};
-    this.canSeek = true;
+    this.disableNativeSeek = false;
 
     var _video = video;
     var _currentUrl = '';
@@ -408,7 +408,7 @@
     var raiseSeekedEvent = function() {
       // PBI-718 - If seeking is disabled and a native seek was received, seek back to the previous position.
       // This is required for platforms with native controls that cannot be disabled, such as iOS
-      if (!this.canSeek) {
+      if (this.disableNativeSeek) {
         var fixedSeekedTime = Math.floor(_video.currentTime);
         var fixedCurrentTime = Math.floor(currentTime);
         if (fixedSeekedTime !== fixedCurrentTime) {
