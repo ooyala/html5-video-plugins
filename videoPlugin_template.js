@@ -24,13 +24,12 @@
      * @public
      * @method TemplateVideoFactory#create
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
-     * @param {string} stream The url of the stream to play
      * @param {string} id The id of the video player instance to create
      * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, stream, id, ooyalaVideoController, css) {
+    this.create = function(parentContainer, id, ooyalaVideoController, css) {
       var element = {};
       var wrapper = new TemplateVideoWrapper(id, element);
       wrapper.controller = ooyalaVideoController;
@@ -48,6 +47,23 @@
       this.streams = [];
       this.create = function() {};
     };
+
+    /**
+     * Represents the max number of support instances of video elements that can be supported on the
+     * current platform. -1 implies no limit.
+     * @public
+     * @property TemplateVideoFactory#maxSupportedElements
+     */
+    this.maxSupportedElements = -1;
+
+    /**
+     * Returns the number of video elements currently instantiated.
+     * @public
+     * @method TemplateVideoFactory#getCurrentNumberOfInstances
+     * @returns {int} The number of video elements created by this factory that have not been destroyed
+     */
+    this.getCurrentNumberOfInstances = function() {
+    };
   };
 
   /**
@@ -55,7 +71,6 @@
    * @classdesc Player object that wraps the video element.
    * @param {string} playerId The id of the video player element
    * @param {object} video The core video object to wrap
-   * @property {object} streams A list of the stream supported by this video element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
@@ -65,7 +80,6 @@
     var listeners = {};
 
     this.controller = {};
-    this.streams = [];
     this.disableNativeSeek = false;
 
     /************************************************************************************/
@@ -166,9 +180,18 @@
     };
 
     /**
+     * Gets the current time position of the video.
+     * @public
+     * @method TemplateVideoWrapper#getCurrentTime
+     * @returns {number} The current time position of the video (seconds)
+     */
+    this.getCurrentTime = function() {
+    }
+
+    /**
      * Applies the given css to the video element.
      * @public
-     * @method OoyalaVideoWrapper#applyCss
+     * @method TemplateVideoWrapper#applyCss
      * @param {object} css The css to apply in key value pairs
      */
     this.applyCss = function(css) {

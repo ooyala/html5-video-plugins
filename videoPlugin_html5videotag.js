@@ -5,13 +5,14 @@
 
 (function(_, $) {
   var pluginName = "ooyalaHtml5VideoTech";
+  var currentInstances = 0;
 
   /**
    * @class OoyalaVideoFactory
    * @classdesc Factory for creating video player objects that use HTML5 video tags
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} streams An array of supported encoding types (ex. m3u8, mp4)
+   * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
    */
   var OoyalaVideoFactory = function() {
     this.name = pluginName;
@@ -21,7 +22,7 @@
 
     // Determine supported stream types
     var videoElement = document.createElement("video");
-    this.streams = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
+    this.encodings = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
       !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4", "webm"] : ["mp4", "webm"];
     videoElement = null;
 
@@ -30,16 +31,19 @@
      * @public
      * @method OoyalaVideoFactory#create
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
-     * @param {string} stream The url of the stream to play
-     * @param {string} id The id of the video player instance to create
+     * @param {string} domId The dom id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, stream, id, controller, css) {
+    this.create = function(parentContainer, domId, controller, css) {
+      if (this.maxSupportedElements > 0 && currentInstances >= this.maxSupportedElements) {
+        return;
+      }
+
       var video = $("<video>");
       video.attr("class", "video");
-      video.attr("id", id);
+      video.attr("id", domId);
       video.attr("preload", "none");
       // TODO: Fix CORS headers to work with all streams.  This setting fails on the webm test ads
       // video.attr("crossorigin", "anonymous");
@@ -51,12 +55,11 @@
         video.attr("x-webkit-airplay", "allow");
       }
 
-      element = new OoyalaVideoWrapper(id, video[0]);
-      element.streams = this.streams;
+      element = new OoyalaVideoWrapper(domId, video[0]);
+      currentInstances++;
       element.controller = controller;
 
-      // TODO: Wait for loadstart before calling these?
-      element.setVideoUrl(stream);
+      // TODO: Wait for loadstart before calling this?
       element.subscribeAllEvents();
 
       parentContainer.append(video);
@@ -70,23 +73,34 @@
      */
     this.destroy = function() {
       this.ready = false;
-      this.streams = [];
+      this.encodings = [];
       this.create = function() {};
     };
+
+    /**
+     * Represents the max number of support instances of video elements that can be supported on the
+     * current platform. -1 implies no limit.
+     * @public
+     * @property OoyalaVideoFactory#maxSupportedElements
+     */
+    this.maxSupportedElements = (function() {
+      var iosRequireSingleElement = Platform.isIos;
+      var androidRequireSingleElement = Platform.isAndroid &&
+                                        (!Platform.isAndroid4Plus || Platform.chromeMajorVersion < 40);
+      return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : -1;
+    })();
   };
 
   /**
    * @class OoyalaVideoWrapper
    * @classdesc Player object that wraps HTML5 video tags
-   * @param {string} id The id of the video player element
+   * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
-   * @property {object} streams A list of the stream supported by this video element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaVideoWrapper = function(id, video) {
-    this.streams = [];
+  var OoyalaVideoWrapper = function(domId, video) {
     this.controller = {};
     this.disableNativeSeek = false;
 
@@ -257,6 +271,16 @@
     };
 
     /**
+     * Gets the current time position of the video.
+     * @public
+     * @method OoyalaVideoWrapper#getCurrentTime
+     * @returns {number} The current time position of the video (seconds)
+     */
+    this.getCurrentTime = function() {
+      return _video.currentTime;
+    };
+
+    /**
      * Applies the given css to the video element.
      * @public
      * @method OoyalaVideoWrapper#applyCss
@@ -276,6 +300,7 @@
       _video.src = '';
       this.unsubscribeAllEvents();
       $(_video).remove();
+      currentInstances--;
     };
 
 
@@ -689,7 +714,24 @@
       } catch (err) {
         return null;
       }
-    })()
+    })(),
+
+    isAndroid: (function(){
+      return !!window.navigator.appVersion.match(/Android/);
+    })(),
+
+    isAndroid4Plus: (function(){
+      return !!window.navigator.appVersion.match(/Android/) &&
+             !window.navigator.appVersion.match(/Android [23]/);
+    })(),
+
+    chromeMajorVersion: (function(){
+      try {
+        return parseInt(window.navigator.userAgent.match(/Chrome.([0-9]*)/)[1], 10);
+      } catch(err) {
+        return null;
+      }
+    })(),
   };
 
   OO.Video.plugin(new OoyalaVideoFactory());
