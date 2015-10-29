@@ -12,7 +12,7 @@
    * @classdesc Factory for creating video player objects that use HTML5 video tags
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
+   * @property {object} encodings An array of supported encoding types (ex. hls, mp4)
    */
   var OoyalaVideoFactory = function() {
     this.name = pluginName;
@@ -29,7 +29,7 @@
       }
       if (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
           !!videoElement.canPlayType("application/x-mpegURL")) {
-        list.push("m3u8");
+        list.push("hls");
       }
       return list;
     };
