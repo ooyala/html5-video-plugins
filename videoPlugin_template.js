@@ -146,6 +146,15 @@
     };
 
     /**
+     * Sets the initial time of the video playback.
+     * @public
+     * @method TemplateVideoWrapper#setInitialTime
+     * @param {number} initialTime The initial time of the video (seconds)
+     */
+    this.setInitialTime = function(initialTime) {
+    };
+
+    /**
      * Triggers playback on the video element.
      * @public
      * @method TemplateVideoWrapper#play
