@@ -109,6 +109,7 @@
     var videoEnded = false;
     var listeners = {};
     var loaded = false;
+    var hasPlayed = false;
     var queuedSeekTime = null;
     var isSeeking = false;
     var currentTime = 0;
@@ -128,6 +129,7 @@
      */
     this.subscribeAllEvents = function() {
       listeners = { "loadstart": _.bind(onLoadStart, this),
+                    "loadedmetadata": _.bind(onLoadedMetadata, this),
                     "progress": _.bind(raiseProgress, this),
                     "error": _.bind(raiseErrorEvent, this),
                     "stalled": _.bind(raiseStalledEvent, this),
@@ -149,7 +151,7 @@
                     "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
                   };
       // events not used:
-      // suspend, abort, emptied, loadedmetadata, loadeddata, canplay, resize, change, addtrack, removetrack
+      // suspend, abort, emptied, loadeddata, canplay, resize, change, addtrack, removetrack
       _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
     };
 
@@ -186,6 +188,8 @@
         isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
         _readyToPlay = false;
         urlChanged = true;
+        hasPlayed = false;
+        loaded = false;
         _video.src = _currentUrl;
       }
 
@@ -225,6 +229,19 @@
     };
 
     /**
+     * Sets the initial time of the video playback.  For this plugin that is simply a seek which will be
+     * triggered upon 'loadedmetadata' event.
+     * @public
+     * @method OoyalaVideoWrapper#setInitialTime
+     * @param {number} initialTime The initial time of the video (seconds)
+     */
+    this.setInitialTime = function(initialTime) {
+      if (!hasPlayed) {
+        this.seek(initialTime);
+      }
+    };
+
+    /**
      * Triggers playback on the video element.
      * @public
      * @method OoyalaVideoWrapper#play
@@ -232,6 +249,7 @@
     this.play = function() {
       _video.play();
       loaded = true;
+      hasPlayed = true;
     };
 
     /**
@@ -315,6 +333,10 @@
      */
     var onLoadStart = function() {
       _currentUrl = _video.src;
+    };
+
+    var onLoadedMetadata = function() {
+      dequeueSeek();
     };
 
     /**
