@@ -1,0 +1,32 @@
+{
+  "name": "html5-video-plugins",
+  "version": "1.0.0",
+  "description": "Video Tech Plugins for the Ooyala HTML5 player",
+  "dependencies": {
+    "aws-sdk": "^2.1.49"
+  },
+  "devDependencies": {
+    "browserify": "11.0.1",
+    "file-lister": "^1.1.0",
+    "uglify": "^0.1.5",
+    "gulp": "3.8.11",
+    "gulp-filenames": "^2.0.0",
+    "gulp-rename": "1.2.2",
+    "gulp-shell": "0.4.2",
+    "gulp-sourcemaps": "1.5.2",
+    "gulp-uglify": "1.1.0",
+    "gulp-util": "3.0.6",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ooyala/html5-video-plugins.git"
+  },
+  "author": "Ooyala",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ooyala/html5-video-plugins/issues"
+  },
+  "homepage": "https://github.com/ooyala/html5-video-plugins"
+}
