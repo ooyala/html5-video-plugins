@@ -12,7 +12,7 @@
    * @classdesc Factory for creating video player objects that use HTML5 video tags
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
+   * @property {object} encodings An array of supported encoding types (ex. hls, mp4)
    */
   var OoyalaVideoFactory = function() {
     this.name = pluginName;
@@ -20,11 +20,20 @@
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
 
-    // Determine supported stream types
-    var videoElement = document.createElement("video");
-    this.encodings = (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
-      !!videoElement.canPlayType("application/x-mpegURL")) ? ["m3u8", "mp4", "webm"] : ["mp4", "webm"];
-    videoElement = null;
+    // Determine supported encodings
+    var getSupportedEncodings = function() {
+      var videoElement = document.createElement("video");
+      var list = ["mp4"];
+      if (!Platform.isSafari) {
+        list.push("webm");
+      }
+      if (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
+          !!videoElement.canPlayType("application/x-mpegURL")) {
+        list.push("hls");
+      }
+      return list;
+    };
+    this.encodings = getSupportedEncodings();
 
     /**
      * Creates a video player instance using OoyalaVideoWrapper
@@ -188,8 +197,7 @@
         isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
         _readyToPlay = false;
         urlChanged = true;
-        hasPlayed = false;
-        loaded = false;
+        resetStreamData();
         _video.src = _currentUrl;
       }
 
@@ -199,6 +207,12 @@
 
       return urlChanged;
     };
+
+    var resetStreamData = _.bind(function() {
+      hasPlayed = false;
+      loaded = false;
+      videoEnded = false;
+    }, this);
 
     /**
      * Loads the current stream url in the video element; the element should be left paused.
@@ -247,8 +261,10 @@
      * @method OoyalaVideoWrapper#play
      */
     this.play = function() {
+      if (!loaded) {
+        this.load(true);
+      }
       _video.play();
-      loaded = true;
       hasPlayed = true;
     };
 
@@ -333,6 +349,7 @@
      */
     var onLoadStart = function() {
       _currentUrl = _video.src;
+      videoEnded = false;
     };
 
     var onLoadedMetadata = function() {
@@ -408,7 +425,6 @@
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
     var raiseWaitingEvent = function() {
-      videoEnded = false;
       this.controller.notify(this.controller.EVENTS.WAITING);
     };
 
@@ -446,12 +462,12 @@
      * @private
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
-    var raiseEndedEvent = function() {
+    var raiseEndedEvent = _.bind(function() {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
 
       this.controller.notify(this.controller.EVENTS.ENDED);
-    };
+    }, this);
 
     /**
      * Notifies the controller that the duration has changed.
@@ -488,7 +504,7 @@
         if ((_video.currentTime == duration) && (duration > durationInt)) {
           console.log("VTC_OO: manually triggering end of stream for m3u8", _currentUrl, duration,
                       _video.currentTime);
-          _.defer(raiseEndedEvent, this, event);
+          _.defer(raiseEndedEvent);
         }
       }
     };
@@ -510,6 +526,16 @@
      */
     var raisePauseEvent = function() {
       this.controller.notify(this.controller.EVENTS.PAUSED);
+      // Safari sometimes doesn't raise the ended event until the next time the video is played.  Force the
+      // event to come through by calling play if _video.ended.
+      if (Platform.isSafari) {
+        if (_video.ended) {
+          console.log("VTC_OO: Force through the end of stream for Safari", _video.currentSrc,
+                      _video.duration, _video.currentTime);
+          _video.play();
+          _video.pause();
+        }
+      }
     };
 
     /**
@@ -711,13 +737,24 @@
     })(),
 
     /**
-     * Checks if the player is running in chrome.
+     * Checks if the player is running in Chrome.
      * @private
      * @method Platform#isChrome
      * @returns {boolean} True if the player is running in chrome
      */
     isChrome: (function() {
       return !!window.navigator.userAgent.match(/Chrome/);
+    })(),
+
+    /**
+     * Checks if the player is running in Safari.
+     * @private
+     * @method Platform#isSafari
+     * @returns {boolean} True if the player is running in safari
+     */
+    isSafari: (function() {
+      return (!!window.navigator.userAgent.match(/AppleWebKit/) &&
+              !window.navigator.userAgent.match(/Chrome/));
     })(),
 
     /**
@@ -738,15 +775,34 @@
       }
     })(),
 
+    /**
+     * Checks if the player is running on an Android device.
+     * @private
+     * @method Platform#isAndroid
+     * @returns {boolean} True if the player is running on an Android device
+     */
     isAndroid: (function(){
       return !!window.navigator.appVersion.match(/Android/);
     })(),
 
+    /**
+     * Checks if the player is running on an Android device of version 4 or later.
+     * @private
+     * @method Platform#isAndroid4Plus
+     * @returns {boolean} True if the player is running on an Android device of version 4 or later
+     */
     isAndroid4Plus: (function(){
-      return !!window.navigator.appVersion.match(/Android/) &&
-             !window.navigator.appVersion.match(/Android [23]/);
+      if (!this.isAndroid) return false;
+      var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
+      return (_.first(device) || "").slice(-1) >= "4";
     })(),
 
+    /**
+     * Checks if the player is running in Safari.
+     * @private
+     * @method Platform#isSafari
+     * @returns {boolean} True if the player is running in safari
+     */
     chromeMajorVersion: (function(){
       try {
         return parseInt(window.navigator.userAgent.match(/Chrome.([0-9]*)/)[1], 10);
