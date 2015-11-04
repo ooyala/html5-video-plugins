@@ -120,6 +120,7 @@
     var loaded = false;
     var hasPlayed = false;
     var queuedSeekTime = null;
+    var playQueued = false;
     var isSeeking = false;
     var currentTime = 0;
     var isM3u8 = false;
@@ -128,7 +129,7 @@
     var _readyToPlay = false; // should be set to true on canplay event
 
     /************************************************************************************/
-    // Required. Methods that Video Controller or Factory call
+    // External Methods that Video Controller or Factory call
     /************************************************************************************/
     /**
      * Subscribes to all events raised by the video element.
@@ -209,6 +210,7 @@
     };
 
     var resetStreamData = _.bind(function() {
+      playQueued = false;
       hasPlayed = false;
       loaded = false;
       videoEnded = false;
@@ -261,11 +263,12 @@
      * @method OoyalaVideoWrapper#play
      */
     this.play = function() {
-      if (!loaded) {
-        this.load(true);
+      // enqueue play command if in the process of seeking
+      if (_video.seeking) {
+        playQueued = true;
+      } else {
+        executePlay();
       }
-      _video.play();
-      hasPlayed = true;
     };
 
     /**
@@ -274,6 +277,7 @@
      * @method OoyalaVideoWrapper#pause
      */
     this.pause = function() {
+      playQueued = false;
       _video.pause();
     };
 
@@ -444,6 +448,10 @@
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
     var raiseSeekedEvent = function() {
+      // After done seeking, see if any play events were received and execute them now
+      // This fixes an issue on iPad where playing while seeking causes issues with end of stream eventing.
+      dequeuePlay();
+
       // PBI-718 - If seeking is disabled and a native seek was received, seek back to the previous position.
       // This is required for platforms with native controls that cannot be disabled, such as iOS
       if (this.disableNativeSeek) {
@@ -462,7 +470,7 @@
      * @private
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
-    var raiseEndedEvent = _.bind(function() {
+    var raiseEndedEvent = _.bind(function(event) {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
 
@@ -495,18 +503,7 @@
       // iOS has issues seeking so if we queue a seek handle it here
       dequeueSeek();
 
-      // This is a hack fix for m3u8, current iOS has a bug that if the m3u8 EXTINF indication a different
-      // duration, the ended event never got dispatched. Monkey patch here to manual trigger an ended event
-      // need to wait OTS to fix their end.
-      if (this.isM3u8) {
-        var duration = resolveDuration(event.target.duration);
-        var durationInt = Math.floor(duration);
-        if ((_video.currentTime == duration) && (duration > durationInt)) {
-          console.log("VTC_OO: manually triggering end of stream for m3u8", _currentUrl, duration,
-                      _video.currentTime);
-          _.defer(raiseEndedEvent);
-        }
-      }
+      forceEndOnTimeupdateIfRequired(event);
     };
 
     /**
@@ -526,16 +523,7 @@
      */
     var raisePauseEvent = function() {
       this.controller.notify(this.controller.EVENTS.PAUSED);
-      // Safari sometimes doesn't raise the ended event until the next time the video is played.  Force the
-      // event to come through by calling play if _video.ended.
-      if (Platform.isSafari) {
-        if (_video.ended) {
-          console.log("VTC_OO: Force through the end of stream for Safari", _video.currentSrc,
-                      _video.duration, _video.currentTime);
-          _video.play();
-          _video.pause();
-        }
-      }
+      forceEndOnPausedIfRequired();
     };
 
     /**
@@ -593,6 +581,35 @@
     var getRandomString = function() {
       return Math.random().toString(36).substring(7);
     };
+
+    /**
+     * If any plays are queued up, execute them.
+     * @private
+     * @method OoyalaVideoWrapper#dequeuePlay
+     */
+    var dequeuePlay = _.bind(function() {
+      if (playQueued) {
+        playQueued = false;
+        executePlay();
+      }
+    }, this);
+
+    /**
+     * Loads (if required) and plays the current stream.
+     * @private
+     * @method OoyalaVideoWrapper#executePlay
+     */
+    var executePlay = _.bind(function() {
+      // TODO: Check if no src url is configured?
+      if (!loaded) {
+        this.load(true);
+      }
+
+      _video.play();
+      hasPlayed = true;
+      videoEnded = false;
+    }, this);
+
 
     /**
      * Gets the range of video that can be safely seeked to.
@@ -708,6 +725,43 @@
       }
       return duration;
     };
+
+    /**
+     * Safari desktop sometimes doesn't raise the ended event until the next time the video is played.
+     * Force the event to come through by calling play if _video.ended to prevent it for coming up on the
+     * next stream.
+     * @private
+     * @method OoyalaVideoWrapper#forceEndOnPausedIfRequired
+     */
+    var forceEndOnPausedIfRequired = _.bind(function() {
+      if (Platform.isSafari && !Platform.isIos) {
+        if (_video.ended) {
+          console.log("VTC_OO: Force through the end of stream for Safari", _video.currentSrc,
+                      _video.duration, _video.currentTime);
+          _video.play();
+          _video.pause();
+        }
+      }
+    }, this);
+
+    /**
+     * Currently, iOS has a bug that if the m3u8 EXTINF indicates a different duration, the ended event never
+     * gets dispatched.  Manually trigger an ended event on all m3u8 streams where duration is a non-whole
+     * number.
+     * @private
+     * @method OoyalaVideoWrapper#forceEndOnTimeupdateIfRequired
+     */
+    var forceEndOnTimeupdateIfRequired = _.bind(function(event) {
+      if (isM3u8) {
+        var durationResolved = resolveDuration(event.target.duration);
+        var durationInt = Math.floor(durationResolved);
+        if ((_video.currentTime == durationResolved) && (durationResolved > durationInt)) {
+          console.log("VTC_OO: manually triggering end of stream for m3u8", _currentUrl, durationResolved,
+                      _video.currentTime);
+          _.defer(raiseEndedEvent);
+        }
+      }
+    }, this);
   };
 
   /**
