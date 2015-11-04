@@ -129,7 +129,7 @@
     var _readyToPlay = false; // should be set to true on canplay event
 
     /************************************************************************************/
-    // Required. Methods that Video Controller or Factory call
+    // External Methods that Video Controller or Factory call
     /************************************************************************************/
     /**
      * Subscribes to all events raised by the video element.
@@ -745,9 +745,9 @@
     }, this);
 
     /**
-     * This is a hack fix for m3u8, current iOS has a bug that if the m3u8 EXTINF indication a different
-     * duration, the ended event never got dispatched. Monkey patch here to manual trigger an ended event
-     * need to wait OTS to fix their end.
+     * Currently, iOS has a bug that if the m3u8 EXTINF indicates a different duration, the ended event never
+     * gets dispatched.  Manually trigger an ended event on all m3u8 streams where duration is a non-whole
+     * number.
      * @private
      * @method OoyalaVideoWrapper#forceEndOnTimeupdateIfRequired
      */
