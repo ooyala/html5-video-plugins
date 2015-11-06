@@ -54,8 +54,9 @@
       video.attr("class", "video");
       video.attr("id", domId);
       video.attr("preload", "none");
-      // TODO: Fix CORS headers to work with all streams.  This setting fails on the webm test ads
-      // video.attr("crossorigin", "anonymous");
+
+      // require the site to setup CORS correctly to enable track url and src url to come from different domains
+      video.attr("crossorigin", "anonymous");
       video.css(css);
 
       // enable airplay for iOS
