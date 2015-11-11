@@ -472,6 +472,11 @@
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
     var raiseEndedEvent = _.bind(function(event) {
+      if (!_video.ended) {
+        // iOS raises ended events sometimes when a new stream is played in the same video element
+        // Prevent this faulty event from making it to the player message bus
+        return;
+      }
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
 
