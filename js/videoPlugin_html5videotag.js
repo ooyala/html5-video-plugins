@@ -852,7 +852,7 @@
      * @returns {boolean} True if the player is running on an Android device of version 4 or later
      */
     isAndroid4Plus: (function(){
-      if (!this.isAndroid) return false;
+      if (!window.navigator.appVersion.match(/Android/)) return false;
       var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
       return (_.first(device) || "").slice(-1) >= "4";
     })(),
