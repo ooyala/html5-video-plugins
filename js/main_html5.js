@@ -56,7 +56,9 @@
       video.attr("preload", "none");
 
       // require the site to setup CORS correctly to enable track url and src url to come from different domains
-      video.attr("crossorigin", "anonymous");
+      // Temporarily remove this.  When we implement closed captions we need to optionally add this back in.
+      // It should not be used for ad videos.  It should be used for the main video.
+      //video.attr("crossorigin", "anonymous");
       video.css(css);
 
       // enable airplay for iOS
