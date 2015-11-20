@@ -196,7 +196,17 @@
       }
 
       if (urlChanged) {
-        conf.source.dash = _currentUrl;
+        if (_isDash) {
+          conf.source.dash = _currentUrl;
+          conf.source.hls = '';
+        } else if (_isM3u8) {
+          conf.source.hls = _currentUrl;
+          conf.source.dash = '';
+        } else {
+          conf.source.hls = '';
+          conf.source.dash = '';
+          conf.source.progressive = [ _currentUrl ];
+        }
         conf.key = OO.CONSTANTS.BITDASH_KEY;
         _player.setup(conf);
       }
