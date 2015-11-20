@@ -15,7 +15,7 @@
    */
   var BitdashVideoFactory = function() {
     this.name = pluginName;
-    this.encodings = ["remote_asset", "mpd", "m3u8", "mp4"];
+    this.encodings = ["dash", "m3u8", "mp4"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
@@ -116,29 +116,7 @@
       events: {
         onError: function(data) {
           console.error("bitdash error: " + data.code + ": " + data.message);
-        },
-        onReady: function() { _onReady(arguments); },
-        onPlay: function() { _onPlay(arguments); },
-        onPause: function() { _onPause(arguments); },
-        onSeek: function() { _onSeek(arguments); },
-        onVolumeChange: function() { _onVolumeChange(arguments); },
-        onMute:  function() { _onMute(arguments); },
-        onUnmute:  function() { _onUnmute(arguments); },
-        onFullscreenEnter:  function() { _onFullscreenEnter(arguments); },
-        onFullscreenExit:  function() { _onFullscreenExit(arguments); },
-        onPlaybackFinished:  function() { _onPlaybackFinished(arguments); },
-        onStartBuffering:  function() { _onStartBuffering(arguments); },
-        onStopBuffering:  function() { _onStopBuffering(arguments); },
-        onAudioChange:  function() { _onAudioChange(arguments); },
-        onSubtitleChange:  function() { _onSubtitleChange(arguments); },
-        onVideoDownloadQualityChange:  function() { _onVideoDownloadQualityChange(arguments); },
-        onAudioDownloadQualityChange:  function() { _onAudioDownloadQualityChange(arguments); },
-        onVideoPlaybackQualityChange:  function() { _onVideoPlaybackQualityChange(arguments); },
-        onAudioPlaybackQualityChange:  function() { _onAudioPlaybackQualityChange(arguments); },
-        onTimeChanged:  function() { _onTimeChanged(arguments); },
-        onCueEnter:  function() { _onCueEnter(arguments); },
-        onCueExit:  function() { _onCueExit(arguments); },
-        onMetadata:  function() { _onMetadata(arguments); }
+        }
       }
     };
 
@@ -184,7 +162,7 @@
       if (urlChanged) {
         conf.source.dash = (_isDash ? _currentUrl : "");
         conf.source.hls = (_isM3u8 ? _currentUrl : "");
-        conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);        
+        conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
         conf.key = ''; // provide bitdash library key here
         _player.setup(conf);
       }
@@ -313,54 +291,54 @@
     // BitPlayer event callbacks
     /**************************************************/
 
-    var _onReady = _.bind(function() {
+    var _onReady = conf.events["onReady"] = _.bind(function() {
       printevent(arguments);
     }, this);
 
-    var _onPlay = _.bind(function() {
+    var _onPlay = conf.events["onPlay"] = _.bind(function() {
       _isSeeking = false;
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.PLAY);
       this.controller.notify(this.controller.EVENTS.PLAYING);
     }, this);
 
-    var _onPause = _.bind(function() {
+    var _onPause = conf.events["onPause"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.PAUSED);
     }, this);
 
-    var _onSeek = _.bind(function() {
+    var _onSeek = conf.events["onSeek"] = _.bind(function() {
       printevent(arguments);
       _isSeeking = true;
       this.controller.notify(this.controller.EVENTS.SEEKING);
     }, this);
 
-    var _onVolumeChange = _.bind(function() {
+    var _onVolumeChange = conf.events["onVolumeChange"] = _.bind(function() {
       printevent(arguments);
-      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: arguments[0][0].volumeTarget });
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: arguments[0].volumeTarget });
     }, this);
 
-    var _onMute = _.bind(function() {
-      printevent(arguments);
-    }, this);
-
-    var _onUnmute = _.bind(function() {
+    var _onMute = conf.events["onMute"] = _.bind(function() {
       printevent(arguments);
     }, this);
 
-    var _onFullscreenEnter = _.bind(function() {
+    var _onUnmute = conf.events["onUnmute"] = _.bind(function() {
+      printevent(arguments);
+    }, this);
+
+    var _onFullscreenEnter = conf.events["onFullscreenEnter"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { isFullScreen: true, paused: _player.isPaused() });
     }, this);
 
-    var _onFullscreenExit = _.bind(function() {
+    var _onFullscreenExit = conf.events["onFullscreenExit"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { isFullScreen: false, paused: _player.isPaused() });
     }, this);
 
-    var _onPlaybackFinished = _.bind(function() {
+    var _onPlaybackFinished = conf.events["onPlaybackFinished"] = _.bind(function() {
       printevent(arguments);
       if (_videoEnded) {
         // no double firing ended event
@@ -370,22 +348,22 @@
       this.controller.notify(this.controller.EVENTS.ENDED);
     }, this);
 
-    var _onStartBuffering = _.bind(function() {
+    var _onStartBuffering = conf.events["onStartBuffering"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.BUFFERING);
     }, this);
 
-    var _onStopBuffering = _.bind(function() {
+    var _onStopBuffering = conf.events["onStopBuffering"] = _.bind(function() {
       printevent(arguments);
       _isSeeking = false;
       this.controller.notify(this.controller.EVENTS.BUFFERED);
     }, this);
 
-    var _onAudioChange = _.bind(function() {
+    var _onAudioChange = conf.events["onAudioChange"] = _.bind(function() {
       printevent(arguments);
     }, this);
 
-    var _onSubtitleChange = _.bind(function() {
+    var _onSubtitleChange = conf.events["onSubtitleChange"] = _.bind(function() {
       // TO BE IMPLEMENTED
       var sub = _player.getSubtitle();
       if (sub && sub["id"]) {
@@ -400,29 +378,29 @@
       printevent(arguments);
     }, this);
 
-    var _onVideoDownloadQualityChange = _.bind(function() {
+    var _onVideoDownloadQualityChange = conf.events["onVideoDownloadQualityChange"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     }, this);
 
-    var _onAudioDownloadQualityChange = _.bind(function() {
+    var _onAudioDownloadQualityChange = conf.events["onAudioDownloadQualityChange"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     }, this);
 
-    var _onVideoPlaybackQualityChange = _.bind(function() {
+    var _onVideoPlaybackQualityChange = conf.events["onVideoPlaybackQualityChange"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     }, this);
 
-    var _onAudioPlaybackQualityChange = _.bind(function() {
+    var _onAudioPlaybackQualityChange = conf.events["onAudioPlaybackQualityChange"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     }, this);
 
-    var _onTimeChanged = _.bind(function(data) {
+    var _onTimeChanged = conf.events["onTimeChanged"] = _.bind(function(data) {
       printevent([data]);
-      _currentTime = data[0].time;
+      _currentTime = data.time;
       if (!_videoElement) {
         _videoElement = $("#bitdash-video-" + _domId)[0];
       }
@@ -437,24 +415,24 @@
                                seekRange: getSafeSeekRange(_videoElement.seekable)});
     }, this);
 
-    var _onCueEnter = _.bind(function() {
+    var _onCueEnter = conf.events["onCueEnter"] = _.bind(function() {
       // TO BE IMPLEMENTED
       printevent(arguments);
     }, this);
 
-    var _onCueExit = _.bind(function() {
+    var _onCueExit = conf.events["onCueExit"] = _.bind(function() {
       // TO BE IMPLEMENTED
       printevent(arguments);
     }, this);
 
-    var _onMetadata = _.bind(function() {
+    var _onMetadata = conf.events["onMetadata"] = _.bind(function() {
       // TO BE IMPLEMENTED
       printevent(arguments);
     }, this);
 
     var printevent = function(arr) {
       // XXX this is debugging code, should be removed before release
-      console.log("bitplayer:", arr[0][0].type, JSON.stringify(arr[0][0]));
+      console.log("bitplayer:", arr[0].type, JSON.stringify(arr[0]));
     };
   };
 
@@ -464,27 +442,6 @@
    */
   var Platform = {
     /**
-     * Checks if the system is running on iOS.
-     * @private
-     * @method Platform#isIos
-     * @returns {boolean} True if the system is running on iOS
-     */
-    isIos: (function() {
-      var platform = window.navigator.platform;
-      return !!(platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/));
-    })(),
-
-    /**
-     * Checks if the system is an iPad
-     * @private
-     * @method Platform#isIpad
-     * @returns {boolean} True if the system is an Ipad
-     */
-    isIpad: (function() {
-      return !!window.navigator.platform.match(/iPad/);
-    })(),
-
-    /**
      * Checks if the player is running in Chrome.
      * @private
      * @method Platform#isChrome
@@ -492,71 +449,6 @@
      */
     isChrome: (function() {
       return !!window.navigator.userAgent.match(/Chrome/);
-    })(),
-
-    /**
-     * Checks if the player is running in Safari.
-     * @private
-     * @method Platform#isSafari
-     * @returns {boolean} True if the player is running in safari
-     */
-    isSafari: (function() {
-      return (!!window.navigator.userAgent.match(/AppleWebKit/) &&
-              !window.navigator.userAgent.match(/Chrome/));
-    })(),
-
-    /**
-     * Gets the iOS major version.
-     * @private
-     * @method Platform#iosMajorVersion
-     * @returns {?number} The iOS major version; null if the system is not running iOS
-     */
-    iosMajorVersion: (function(){
-      try {
-        if (window.navigator.userAgent.match(/(iPad|iPhone|iPod)/)) {
-          return parseInt(window.navigator.userAgent.match(/OS (\d+)/)[1], 10);
-        } else {
-          return null;
-        }
-      } catch (err) {
-        return null;
-      }
-    })(),
-
-    /**
-     * Checks if the player is running on an Android device.
-     * @private
-     * @method Platform#isAndroid
-     * @returns {boolean} True if the player is running on an Android device
-     */
-    isAndroid: (function(){
-      return !!window.navigator.appVersion.match(/Android/);
-    })(),
-
-    /**
-     * Checks if the player is running on an Android device of version 4 or later.
-     * @private
-     * @method Platform#isAndroid4Plus
-     * @returns {boolean} True if the player is running on an Android device of version 4 or later
-     */
-    isAndroid4Plus: (function(){
-      if (!this.isAndroid) return false;
-      var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
-      return (_.first(device) || "").slice(-1) >= "4";
-    })(),
-
-    /**
-     * Checks if the player is running in Safari.
-     * @private
-     * @method Platform#isSafari
-     * @returns {boolean} True if the player is running in safari
-     */
-    chromeMajorVersion: (function(){
-      try {
-        return parseInt(window.navigator.userAgent.match(/Chrome.([0-9]*)/)[1], 10);
-      } catch(err) {
-        return null;
-      }
     })(),
   };
 
