@@ -25,20 +25,17 @@
      * @public
      * @method BitdashVideoFactory#create
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
-     * @param {string} id The id of the video player instance to create
+     * @param {string} domId The id of the video player instance to create
      * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, domId, ooyalaVideoController, arg_css) {
+    this.create = function(parentContainer, domId, ooyalaVideoController, css) {
       var element = {};
 
       var video = $("<div>");
       video.attr("id", domId);
-
-      // require the site to setup CORS correctly to enable track url and src url to come from different domains
-      video.attr("crossorigin", "anonymous");
-      video.css(arg_css);
+      video.css(css);
 
       parentContainer.append(video);
       var wrapper = new BitdashVideoWrapper(domId, video[0], _);
