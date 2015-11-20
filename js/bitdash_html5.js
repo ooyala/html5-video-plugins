@@ -33,12 +33,12 @@
     this.create = function(parentContainer, domId, ooyalaVideoController, css) {
       var element = {};
 
-      var video = $("<div>");
-      video.attr("id", domId);
-      video.css(css);
+      var videoWrapper = $("<div>");
+      videoWrapper.attr("id", domId);
+      videoWrapper.css(css);
 
-      parentContainer.append(video);
-      var wrapper = new BitdashVideoWrapper(domId, video[0]);
+      parentContainer.append(videoWrapper);
+      var wrapper = new BitdashVideoWrapper(domId, videoWrapper[0]);
       currentInstances++;
       wrapper.controller = ooyalaVideoController;
 
@@ -78,19 +78,16 @@
   /**
    * @class BitdashVideoWrapper
    * @classdesc Player object that wraps the video element.
-   * @param {string} playerId The id of the video player element
+   * @param {string} domId The id of the video player instance
    * @param {object} video The core video object to wrap
-   * @property {object} controller A reference to the Ooyala Video Tech Controller
-   * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
-   *                                       native video controls
    */
-  var BitdashVideoWrapper = function(domId, video) {
+  var BitdashVideoWrapper = function(domId, videoWrapper) {
     this.controller = {};
     this.disableNativeSeek = false;
 
     var _domId = domId;
     var _player = null;
-    var _video = video;
+    var _videoWrapper = videoWrapper;
     var _currentUrl = '';
     var _videoEnded = false;
     var _initialTime = 0;
@@ -105,12 +102,6 @@
       style: {
         width: '100%',
         height: '100%',
-        //controls: false,
-        //bufferingOverlay: false,
-        //playOverlay: false,
-        //mouse: true,
-        //keyboard: true,
-        //subtitlesHidden: true,
         ux: false
       },
       source: {
@@ -185,7 +176,6 @@
         _readyToPlay = false;
         urlChanged = true;
         resetStreamData();
-        _video.src = _currentUrl;
       }
 
       if (_.isEmpty(url)) {
@@ -297,8 +287,8 @@
      * @method BitdashVideoWrapper#applyCss
      * @param {object} css The css to apply in key value pairs
      */
-    this.applyCss = function(arg_css) {
-      $(_video).css(arg_css);
+    this.applyCss = function(css) {
+      $(_videoWrapper).css(css);
     };
 
     /**
