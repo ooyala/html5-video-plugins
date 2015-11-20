@@ -15,7 +15,7 @@
    */
   var BitdashVideoFactory = function() {
     this.name = pluginName;
-    this.encodings = ["dash", "m3u8", "mp4"];
+    this.encodings = ["dash", "hls", "mp4"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
