@@ -414,7 +414,7 @@
      * @method OoyalaVideoWrapper#raiseCanPlayThrough
      */
     var raiseCanPlayThrough = function() {
-      this.controller.notify(this.controller.EVENTS.BUFFERED);
+      this.controller.notify(this.controller.EVENTS.BUFFERED, {"url":_video.currentSrc});
     };
 
     /**
@@ -432,7 +432,7 @@
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
     var raiseWaitingEvent = function() {
-      this.controller.notify(this.controller.EVENTS.WAITING);
+      this.controller.notify(this.controller.EVENTS.WAITING, {"url":_video.currentSrc});
     };
 
     /**
