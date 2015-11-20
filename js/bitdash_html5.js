@@ -83,6 +83,7 @@
    */
   var BitdashVideoWrapper = function(domId, videoWrapper) {
     this.controller = {};
+    this.disableNativeSeek = false;
 
     var _domId = domId;
     var _player = null;
