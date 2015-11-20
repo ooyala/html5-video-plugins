@@ -182,17 +182,9 @@
       }
 
       if (urlChanged) {
-        if (_isDash) {
-          conf.source.dash = _currentUrl;
-          conf.source.hls = '';
-        } else if (_isM3u8) {
-          conf.source.hls = _currentUrl;
-          conf.source.dash = '';
-        } else {
-          conf.source.hls = '';
-          conf.source.dash = '';
-          conf.source.progressive = [ _currentUrl ];
-        }
+        conf.source.dash = (_isDash ? _currentUrl : "");
+        conf.source.hls = (_isM3u8 ? _currentUrl : "");
+        conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);        
         conf.key = ''; // provide bitdash library key here
         _player.setup(conf);
       }
