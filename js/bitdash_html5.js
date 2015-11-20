@@ -38,7 +38,7 @@
       video.css(css);
 
       parentContainer.append(video);
-      var wrapper = new BitdashVideoWrapper(domId, video[0], _);
+      var wrapper = new BitdashVideoWrapper(domId, video[0]);
       currentInstances++;
       wrapper.controller = ooyalaVideoController;
 
@@ -84,7 +84,7 @@
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var BitdashVideoWrapper = function(domId, video, _) {
+  var BitdashVideoWrapper = function(domId, video) {
     this.controller = {};
     this.disableNativeSeek = false;
 
@@ -204,7 +204,7 @@
           conf.source.dash = '';
           conf.source.progressive = [ _currentUrl ];
         }
-        conf.key = OO.CONSTANTS.BITDASH_KEY;
+        conf.key = ''; // provide bitdash library key here
         _player.setup(conf);
       }
 
