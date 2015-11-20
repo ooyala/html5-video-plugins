@@ -56,14 +56,6 @@
      */
     this.maxSupportedElements = -1;
 
-    /**
-     * Returns the number of video elements currently instantiated.
-     * @public
-     * @method TemplateVideoFactory#getCurrentNumberOfInstances
-     * @returns {int} The number of video elements created by this factory that have not been destroyed
-     */
-    this.getCurrentNumberOfInstances = function() {
-    };
   };
 
   /**

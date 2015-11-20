@@ -164,15 +164,14 @@
         _currentUrl = url || "";
 
         // bust the chrome caching bug
-        if (_currentUrl.length > 0 && OO.isChrome) {
+        if (_currentUrl.length > 0 && Platform.isChrome) {
           var rs = Math.random().toString(36).substring(7)
           _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + rs;
         }
 
         _isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
-        if (!_isM3u8) {
-          _isDash = (_currentUrl.toLowerCase().indexOf("mpd") > 0);
-        }
+        _isDash = (_currentUrl.toLowerCase().indexOf("mpd") > 0);
+
         _readyToPlay = false;
         urlChanged = true;
         resetStreamData();
@@ -329,6 +328,7 @@
     var _onPlay = _.bind(function() {
       _isSeeking = false;
       printevent(arguments);
+      this.controller.notify(this.controller.EVENTS.PLAY);
       this.controller.notify(this.controller.EVENTS.PLAYING);
     }, this);
 
@@ -391,7 +391,6 @@
 
     var _onAudioChange = _.bind(function() {
       printevent(arguments);
-      this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     }, this);
 
     var _onSubtitleChange = _.bind(function() {
@@ -462,8 +461,111 @@
     }, this);
 
     var printevent = function(arr) {
+      // XXX this is debugging code, should be removed before release
       console.log("bitplayer:", arr[0][0].type, JSON.stringify(arr[0][0]));
     };
+  };
+
+  /**
+   * @class Platform
+   * @classdesc Functions that provide platform information
+   */
+  var Platform = {
+    /**
+     * Checks if the system is running on iOS.
+     * @private
+     * @method Platform#isIos
+     * @returns {boolean} True if the system is running on iOS
+     */
+    isIos: (function() {
+      var platform = window.navigator.platform;
+      return !!(platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/));
+    })(),
+
+    /**
+     * Checks if the system is an iPad
+     * @private
+     * @method Platform#isIpad
+     * @returns {boolean} True if the system is an Ipad
+     */
+    isIpad: (function() {
+      return !!window.navigator.platform.match(/iPad/);
+    })(),
+
+    /**
+     * Checks if the player is running in Chrome.
+     * @private
+     * @method Platform#isChrome
+     * @returns {boolean} True if the player is running in chrome
+     */
+    isChrome: (function() {
+      return !!window.navigator.userAgent.match(/Chrome/);
+    })(),
+
+    /**
+     * Checks if the player is running in Safari.
+     * @private
+     * @method Platform#isSafari
+     * @returns {boolean} True if the player is running in safari
+     */
+    isSafari: (function() {
+      return (!!window.navigator.userAgent.match(/AppleWebKit/) &&
+              !window.navigator.userAgent.match(/Chrome/));
+    })(),
+
+    /**
+     * Gets the iOS major version.
+     * @private
+     * @method Platform#iosMajorVersion
+     * @returns {?number} The iOS major version; null if the system is not running iOS
+     */
+    iosMajorVersion: (function(){
+      try {
+        if (window.navigator.userAgent.match(/(iPad|iPhone|iPod)/)) {
+          return parseInt(window.navigator.userAgent.match(/OS (\d+)/)[1], 10);
+        } else {
+          return null;
+        }
+      } catch (err) {
+        return null;
+      }
+    })(),
+
+    /**
+     * Checks if the player is running on an Android device.
+     * @private
+     * @method Platform#isAndroid
+     * @returns {boolean} True if the player is running on an Android device
+     */
+    isAndroid: (function(){
+      return !!window.navigator.appVersion.match(/Android/);
+    })(),
+
+    /**
+     * Checks if the player is running on an Android device of version 4 or later.
+     * @private
+     * @method Platform#isAndroid4Plus
+     * @returns {boolean} True if the player is running on an Android device of version 4 or later
+     */
+    isAndroid4Plus: (function(){
+      if (!this.isAndroid) return false;
+      var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
+      return (_.first(device) || "").slice(-1) >= "4";
+    })(),
+
+    /**
+     * Checks if the player is running in Safari.
+     * @private
+     * @method Platform#isSafari
+     * @returns {boolean} True if the player is running in safari
+     */
+    chromeMajorVersion: (function(){
+      try {
+        return parseInt(window.navigator.userAgent.match(/Chrome.([0-9]*)/)[1], 10);
+      } catch(err) {
+        return null;
+      }
+    })(),
   };
 
   OO.Video.plugin(new BitdashVideoFactory());
