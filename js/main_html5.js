@@ -58,7 +58,7 @@
       // require the site to setup CORS correctly to enable track url and src url to come from different domains
       // Temporarily remove this.  When we implement closed captions we need to optionally add this back in.
       // It should not be used for ad videos.  It should be used for the main video.
-      //video.attr("crossorigin", "anonymous");
+      video.attr("crossorigin", "anonymous");
       video.css(css);
 
       // enable airplay for iOS
@@ -127,6 +127,7 @@
     var isSeeking = false;
     var currentTime = 0;
     var isM3u8 = false;
+    var trackClass = "track_cc";
 
     // TODO: These are unused currently
     var _readyToPlay = false; // should be set to true on canplay event
@@ -344,6 +345,25 @@
       currentInstances--;
     };
 
+    //Needs documentation
+    this.setClosedCaptions = function(language, captions, params) {
+      console.log("ryne: setClosedCaptions called in html5 plugin");
+      console.log("language: ", captions.name);
+      console.log("params: ", params);
+
+      $(_video).find('.' + trackClass).remove();
+
+      var label = captions.name;
+      var src = captions.url;
+      var mode = (!!params && params.mode) ? params.mode : 'showing';
+
+      $(_video).append("<track class='" + trackClass + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "'></track>");
+
+      _.delay(function() {
+        _video.textTracks[0].mode = mode;
+        _video.textTracks[0].oncuechange = _onCueChanged;
+      }, 10);
+    }
 
     // **********************************************************************************/
     // Event callback methods
@@ -769,6 +789,17 @@
           _.defer(raiseEndedEvent);
         }
       }
+    }, this);
+
+    var _onCueChanged = _.bind(function(event) {
+      var cue = event.target.activeCues;
+      var cueTexts = [];
+      if (cue) {
+        for (var index = 0; index < cue.length; index++) {
+          cueTexts.push(cue[index].text);
+        }
+      }
+      //this.mb.publish(OO.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueTexts);
     }, this);
   };
 
