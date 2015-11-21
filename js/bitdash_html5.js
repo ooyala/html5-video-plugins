@@ -11,7 +11,7 @@
    * @classdesc Factory for creating bitdash player objects that use HTML5 video tags.
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} streams An array of supported encoding types (ex. m3u8, mp4)
+   * @property {object} encodings An array of supported encoding types (ex. dash, mp4)
    */
   var BitdashVideoFactory = function() {
     this.name = pluginName;
@@ -63,16 +63,6 @@
      * @property BitdashVideoFactory#maxSupportedElements
      */
     this.maxSupportedElements = -1;
-
-    /**
-     * Returns the number of video elements currently instantiated.
-     * @public
-     * @method BitdashVideoFactory#getCurrentNumberOfInstances
-     * @returns {int} The number of video elements created by this factory that have not been destroyed
-     */
-    this.getCurrentNumberOfInstances = function() {
-      return 1;
-    };
   };
 
   /**
@@ -80,6 +70,9 @@
    * @classdesc Player object that wraps the video element.
    * @param {string} domId The id of the video player instance
    * @param {object} video The core video object to wrap
+   * @property {object} controller A reference to the Ooyala Video Tech Controller
+   * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
+   *                                       native video controls
    */
   var BitdashVideoWrapper = function(domId, videoWrapper) {
     this.controller = {};
@@ -92,7 +85,6 @@
     var _videoEnded = false;
     var _initialTime = 0;
     var _hasPlayed = false;
-    var _isSeeking = false;
     var _currentTime = 0;
     var _isM3u8 = false;
     var _isDash = false;
@@ -163,8 +155,13 @@
         conf.source.dash = (_isDash ? _currentUrl : "");
         conf.source.hls = (_isM3u8 ? _currentUrl : "");
         conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
-        conf.key = ''; // provide bitdash library key here
-        _player.setup(conf);
+
+        if (_hasPlayed) {
+          this.load(false);
+        } else {
+          conf.key = ''; // provide bitdash library key here
+          _player.setup(conf);
+        }
       }
 
       return urlChanged;
@@ -182,12 +179,7 @@
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      var source = {
-        dash : (_isDash ? _currentUrl : ""),
-        hls  : (_isM3u8 ? _currentUrl : ""),
-        progressive: (_isDash || _isM3u8 ? "" : [ _currentUrl ])
-      }
-      _player.load(source);
+      _player.load(conf.source);
     };
 
     /**
@@ -296,7 +288,6 @@
     }, this);
 
     var _onPlay = conf.events["onPlay"] = _.bind(function() {
-      _isSeeking = false;
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.PLAY);
       this.controller.notify(this.controller.EVENTS.PLAYING);
@@ -309,7 +300,6 @@
 
     var _onSeek = conf.events["onSeek"] = _.bind(function() {
       printevent(arguments);
-      _isSeeking = true;
       this.controller.notify(this.controller.EVENTS.SEEKING);
     }, this);
 
@@ -355,7 +345,6 @@
 
     var _onStopBuffering = conf.events["onStopBuffering"] = _.bind(function() {
       printevent(arguments);
-      _isSeeking = false;
       this.controller.notify(this.controller.EVENTS.BUFFERED);
     }, this);
 

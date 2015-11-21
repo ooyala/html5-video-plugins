@@ -14,7 +14,7 @@
    */
   var TemplateVideoFactory = function() {
     this.name = "templateVideoTech";
-    this.encodings = ["m3u8", "mp4"];
+    this.encodings = ["dash", "mp4"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
