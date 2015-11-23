@@ -31,6 +31,8 @@
           !!videoElement.canPlayType("application/x-mpegURL")) {
         list.push("hls");
       }
+
+      console.log("ryne supported encodings: ", list);
       return list;
     };
     this.encodings = getSupportedEncodings();
@@ -55,10 +57,6 @@
       video.attr("id", domId);
       video.attr("preload", "none");
 
-      // require the site to setup CORS correctly to enable track url and src url to come from different domains
-      // Temporarily remove this.  When we implement closed captions we need to optionally add this back in.
-      // It should not be used for ad videos.  It should be used for the main video.
-      video.attr("crossorigin", "anonymous");
       video.css(css);
 
       // enable airplay for iOS
@@ -353,22 +351,56 @@
 
       $(_video).find('.' + trackClass).remove();
 
-      var label = captions.name;
-      var src = captions.url;
-      var mode = (!!params && params.mode) ? params.mode : 'showing';
+      // TODO: See if this is necessary
+      // Safari only allow mode change when video is playing.. Otherwise it will reset all to disabled. Will not fix
+      // The textTrack added by QuickTime will not be removed by removing track element
+      // But the textTrack that we added by adding track element will be removed by removing track element.
+      // if (Platform.isSafari && _video.textTracks.length !== 0) {
+      //   for (var i = 0; i < _video.textTracks.length; i++) {
+      //     if (_video.textTracks[i].language === language ||
+      //         (language == "CC" && _video.textTracks[i].kind === "captions")) { // to check for live CC
+      //       var mode = (!!params && params.mode) ? params.mode : 'showing';
+      //       _video.textTracks[i].mode = mode;
+      //     } else {
+      //      _video.textTracks[i].mode = 'disabled';
+      //     }
+      //   }
+      // } else {
+        var label = captions.name;
+        var src = captions.url;
+        var mode = (!!params && params.mode) ? params.mode : 'showing';
 
-      $(_video).append("<track class='" + trackClass + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "'></track>");
+        $(_video).append("<track class='" + trackClass + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
 
-      _.delay(function() {
-        _video.textTracks[0].mode = mode;
-        _video.textTracks[0].oncuechange = _onCueChanged;
-      }, 10);
-    }
+        _.delay(function() {
+          _video.textTracks[0].mode = mode;
+          // I don't believe this is needed until alice is to render the captions
+          // _video.textTracks[0].oncuechange = _onCueChanged;
+        }, 10);
+      // }
+    };
+
+    //Needs documentation
+    this.disableClosedCaptions = function() {
+      for (var i = 0; i < _video.textTracks.length; i++) {
+        _video.textTracks[i].mode = 'disabled';
+      }
+    };
 
     //Needs documentation
     this.removeClosedCaptions = function() {
       $(_video).find('.' + trackClass).remove();
-    }
+    };
+
+    this.setCrossorigin = function(crossorigin) {
+      console.log("ryne setting cross origin from plugin");
+      $(_video).attr("crossorigin", crossorigin[0]);
+    };
+
+    this.removeCrossorigin = function() {
+      console.log("ryne removing cross origin from plugin");
+      $(_video).removeAttr("crossorigin");
+    };
 
     // **********************************************************************************/
     // Event callback methods
@@ -794,17 +826,6 @@
           _.defer(raiseEndedEvent);
         }
       }
-    }, this);
-
-    var _onCueChanged = _.bind(function(event) {
-      var cue = event.target.activeCues;
-      var cueTexts = [];
-      if (cue) {
-        for (var index = 0; index < cue.length; index++) {
-          cueTexts.push(cue[index].text);
-        }
-      }
-      //this.mb.publish(OO.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueTexts);
     }, this);
   };
 
