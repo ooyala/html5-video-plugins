@@ -474,9 +474,10 @@
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
     var raiseEndedEvent = _.bind(function(event) {
-      if (!_video.ended) {
+      if (!_video.ended && Platform.isIos) {
         // iOS raises ended events sometimes when a new stream is played in the same video element
         // Prevent this faulty event from making it to the player message bus
+        // Desktop Safari, however, will raise this event while ended == false and we shouldn't block it.
         return;
       }
       if (videoEnded) { return; } // no double firing ended event.
@@ -812,7 +813,7 @@
      * Checks if the player is running in Safari.
      * @private
      * @method Platform#isSafari
-     * @returns {boolean} True if the player is running in safari
+     * @returns {boolean} True if the player is running in Safari
      */
     isSafari: (function() {
       return (!!window.navigator.userAgent.match(/AppleWebKit/) &&
