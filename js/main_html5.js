@@ -345,27 +345,26 @@
 
     //Needs documentation
     this.setClosedCaptions = function(language, captions, params) {
-      console.log("ryne: setClosedCaptions called in html5 plugin");
-      console.log("language: ", captions.name);
-      console.log("params: ", params);
+      console.log("ryne: setClosedCaptions called in plugin");
+      console.log("ryne language: ", language);
+      console.log("ryne params: ", params);
 
       $(_video).find('.' + trackClass).remove();
 
-      // TODO: See if this is necessary
-      // Safari only allow mode change when video is playing.. Otherwise it will reset all to disabled. Will not fix
       // The textTrack added by QuickTime will not be removed by removing track element
       // But the textTrack that we added by adding track element will be removed by removing track element.
-      // if (Platform.isSafari && _video.textTracks.length !== 0) {
-      //   for (var i = 0; i < _video.textTracks.length; i++) {
-      //     if (_video.textTracks[i].language === language ||
-      //         (language == "CC" && _video.textTracks[i].kind === "captions")) { // to check for live CC
-      //       var mode = (!!params && params.mode) ? params.mode : 'showing';
-      //       _video.textTracks[i].mode = mode;
-      //     } else {
-      //      _video.textTracks[i].mode = 'disabled';
-      //     }
-      //   }
-      // } else {
+      // This first check is to check for live CC
+      if (Platform.isSafari && _video.textTracks.length !== 0) {
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          if (_video.textTracks[i].language === language ||
+              (language == "CC" && _video.textTracks[i].kind === "captions")) {
+            var mode = (!!params && params.mode) ? params.mode : 'showing';
+            _video.textTracks[i].mode = mode;
+          } else {
+           _video.textTracks[i].mode = 'disabled';
+          }
+        }
+      } else {
         var label = captions.name;
         var src = captions.url;
         var mode = (!!params && params.mode) ? params.mode : 'showing';
@@ -377,13 +376,13 @@
           // I don't believe this is needed until alice is to render the captions
           // _video.textTracks[0].oncuechange = _onCueChanged;
         }, 10);
-      // }
+      }
     };
 
     //Needs documentation
-    this.disableClosedCaptions = function() {
+    this.setClosedCaptionsMode = function(mode) {
       for (var i = 0; i < _video.textTracks.length; i++) {
-        _video.textTracks[i].mode = 'disabled';
+        _video.textTracks[i].mode = mode;
       }
     };
 
@@ -392,15 +391,30 @@
       $(_video).find('.' + trackClass).remove();
     };
 
+    //Needs documentation
     this.setCrossorigin = function(crossorigin) {
       console.log("ryne setting cross origin from plugin");
-      $(_video).attr("crossorigin", crossorigin[0]);
+      $(_video).attr("crossorigin", crossorigin);
     };
 
+    //Needs documentation
     this.removeCrossorigin = function() {
       console.log("ryne removing cross origin from plugin");
       $(_video).removeAttr("crossorigin");
     };
+
+    //Needs Documentation
+    this.hasLiveClosedCaptions = function() {
+      if (_video.textTracks.length !== 0) {
+        var languages = [];
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          if (_video.textTracks[i].kind === "captions") {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
 
     // **********************************************************************************/
     // Event callback methods
