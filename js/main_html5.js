@@ -78,7 +78,6 @@
 
       // On Android, we need to "activate" the video on a click so we can control it with JS later on mobile
       if (Platform.isAndroid) {
-        console.log("VTC_OO: Prepping android with play/pause");
         element.play();
         element.pause();
       }
