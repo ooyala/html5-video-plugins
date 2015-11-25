@@ -32,7 +32,6 @@
         list.push("hls");
       }
 
-      console.log("ryne supported encodings: ", list);
       return list;
     };
     this.encodings = getSupportedEncodings();
@@ -343,12 +342,15 @@
       currentInstances--;
     };
 
-    //Needs documentation
+    /**
+     * Sets the closed captions on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setClosedCaptions
+     * @param {String} language The language of the closed captions
+     * @param {Object} captions The captions object
+     * @param {Object} params The params to set with closed captions
+     */
     this.setClosedCaptions = function(language, captions, params) {
-      console.log("ryne: setClosedCaptions called in plugin");
-      console.log("ryne language: ", language);
-      console.log("ryne params: ", params);
-
       $(_video).find('.' + trackClass).remove();
 
       // The textTrack added by QuickTime will not be removed by removing track element
@@ -379,31 +381,52 @@
       }
     };
 
-    //Needs documentation
+    /**
+     * Sets the closed captions mode on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setClosedCaptionsMode
+     * @param {String} mode The mode to set the text tracks element
+     */
     this.setClosedCaptionsMode = function(mode) {
       for (var i = 0; i < _video.textTracks.length; i++) {
         _video.textTracks[i].mode = mode;
       }
     };
 
-    //Needs documentation
+    /**
+     * Removes the added track element from the video element.
+     * @public
+     * @method OoyalaVideoWrapper#removeClosedCaptions
+     */
     this.removeClosedCaptions = function() {
       $(_video).find('.' + trackClass).remove();
     };
 
-    //Needs documentation
+    /**
+     * Sets the crossorigin attribute on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setCrossorigin
+     * @param {String} crossorigin The value to set the crossorigin attribute
+     */
     this.setCrossorigin = function(crossorigin) {
-      console.log("ryne setting cross origin from plugin");
       $(_video).attr("crossorigin", crossorigin);
     };
 
-    //Needs documentation
+    /**
+     * Removes the crossorigin attribute from the video element.
+     * @public
+     * @method OoyalaVideoWrapper#removeCrossorigin
+     */
     this.removeCrossorigin = function() {
-      console.log("ryne removing cross origin from plugin");
       $(_video).removeAttr("crossorigin");
     };
 
-    //Needs Documentation
+    /**
+     * Checks whether or not the video element has live closed captions.
+     * @public
+     * @method OoyalaVideoWrapper#hasLiveClosedCaptions
+     * @returns {boolean} Whether or not the video element has live closed captions
+     */
     this.hasLiveClosedCaptions = function() {
       if (_video.textTracks.length !== 0) {
         var languages = [];
