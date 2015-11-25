@@ -75,6 +75,12 @@
       element.subscribeAllEvents();
 
       parentContainer.append(video);
+
+      // On Android, we need to "activate" the video on a click so we can control it with JS later on mobile
+      if (Platform.isAndroid) {
+        element.play();
+        element.pause();
+      }
       return element;
     };
 
@@ -855,7 +861,7 @@
      * @returns {boolean} True if the player is running on an Android device of version 4 or later
      */
     isAndroid4Plus: (function(){
-      if (!this.isAndroid) return false;
+      if (!window.navigator.appVersion.match(/Android/)) return false;
       var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
       return (_.first(device) || "").slice(-1) >= "4";
     })(),
