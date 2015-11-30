@@ -24,14 +24,15 @@
      * @public
      * @method TemplateVideoFactory#create
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
-     * @param {string} id The id of the video player instance to create
+     * @param {string} domId The dom id of the video player instance to create
      * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
+     * @param {string} playerId The unique player identifier of the player creating this instance
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, id, ooyalaVideoController, css) {
+    this.create = function(parentContainer, domId, ooyalaVideoController, css, playerId) {
       var element = {};
-      var wrapper = new TemplateVideoWrapper(id, element);
+      var wrapper = new TemplateVideoWrapper(domId, element);
       wrapper.controller = ooyalaVideoController;
       wrapper.subscribeAllEvents();
       return wrapper;
@@ -69,13 +70,13 @@
   /**
    * @class TemplateVideoWrapper
    * @classdesc Player object that wraps the video element.
-   * @param {string} playerId The id of the video player element
+   * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var TemplateVideoWrapper = function(playerId, video) {
+  var TemplateVideoWrapper = function(domId, video) {
     var _video = video;
     var listeners = {};
 
@@ -195,7 +196,7 @@
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
-    }
+    };
 
     /**
      * Applies the given css to the video element.

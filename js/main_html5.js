@@ -72,6 +72,12 @@
       element.subscribeAllEvents();
 
       parentContainer.append(video);
+
+      // On Android, we need to "activate" the video on a click so we can control it with JS later on mobile
+      if (Platform.isAndroid) {
+        element.play();
+        element.pause();
+      }
       return element;
     };
 
@@ -508,7 +514,7 @@
      * @method OoyalaVideoWrapper#raiseCanPlayThrough
      */
     var raiseCanPlayThrough = function() {
-      this.controller.notify(this.controller.EVENTS.BUFFERED);
+      this.controller.notify(this.controller.EVENTS.BUFFERED, {"url":_video.currentSrc});
     };
 
     /**
@@ -526,7 +532,7 @@
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
     var raiseWaitingEvent = function() {
-      this.controller.notify(this.controller.EVENTS.WAITING);
+      this.controller.notify(this.controller.EVENTS.WAITING, {"url":_video.currentSrc});
     };
 
     /**
@@ -568,9 +574,10 @@
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
     var raiseEndedEvent = _.bind(function(event) {
-      if (!_video.ended) {
+      if (!_video.ended && Platform.isIos) {
         // iOS raises ended events sometimes when a new stream is played in the same video element
         // Prevent this faulty event from making it to the player message bus
+        // Desktop Safari, however, will raise this event while ended == false and we shouldn't block it.
         return;
       }
       if (videoEnded) { return; } // no double firing ended event.
@@ -906,7 +913,7 @@
      * Checks if the player is running in Safari.
      * @private
      * @method Platform#isSafari
-     * @returns {boolean} True if the player is running in safari
+     * @returns {boolean} True if the player is running in Safari
      */
     isSafari: (function() {
       return (!!window.navigator.userAgent.match(/AppleWebKit/) &&
@@ -948,7 +955,7 @@
      * @returns {boolean} True if the player is running on an Android device of version 4 or later
      */
     isAndroid4Plus: (function(){
-      if (!this.isAndroid) return false;
+      if (!window.navigator.appVersion.match(/Android/)) return false;
       var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
       return (_.first(device) || "").slice(-1) >= "4";
     })(),
