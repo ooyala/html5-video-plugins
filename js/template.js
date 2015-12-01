@@ -223,7 +223,7 @@
     /**
      * Sets the crossorigin attribute on the video element.
      * @public
-     * @method OoyalaVideoWrapper#setCrossorigin
+     * @method TemplateVideoWrapper#setCrossorigin
      * @param {string} crossorigin The value to set the crossorigin attribute
      */
     this.setCrossorigin = function(crossorigin) {

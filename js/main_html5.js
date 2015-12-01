@@ -384,7 +384,6 @@
 
           _.delay(function() {
             _video.textTracks[0].mode = mode;
-            // _video.textTracks[0].oncuechange = _onCueChanged;
           }, 10);
         }
       }
