@@ -366,7 +366,7 @@
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].language === language ||
               (language == "CC" && _video.textTracks[i].kind === "captions")) {
-            var mode = (!!params && params.mode) ? params.mode : 'showing';
+            var mode = (!!params && params.mode) || 'showing';
             _video.textTracks[i].mode = mode;
           } else {
            _video.textTracks[i].mode = 'disabled';
