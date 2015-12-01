@@ -433,24 +433,6 @@
       $(_video).removeAttr("crossorigin");
     };
 
-    /**
-     * Checks whether or not the video element has live closed captions.
-     * @public
-     * @method OoyalaVideoWrapper#hasLiveClosedCaptions
-     * @returns {boolean} Whether or not the video element has live closed captions
-     */
-    this.hasLiveClosedCaptions = function() {
-      if (_video.textTracks.length !== 0) {
-        var languages = [];
-        for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].kind === "captions") {
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-
     // **********************************************************************************/
     // Event callback methods
     // **********************************************************************************/
@@ -530,6 +512,16 @@
      */
     var raisePlayingEvent = function() {
       this.controller.notify(this.controller.EVENTS.PLAYING);
+
+      //Check for live closed captions and notify controller
+      if (_video.textTracks && _video.textTracks.length > 0) {
+        var languages = [];
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          if (_video.textTracks[i].kind === "captions") {
+            this.controller.notify(this.controller.EVENTS.HAS_LIVE_CLOSED_CAPTIONS);
+          }
+        }
+      }
     };
 
     /**
