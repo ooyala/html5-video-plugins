@@ -130,7 +130,7 @@
     var isSeeking = false;
     var currentTime = 0;
     var isM3u8 = false;
-    var trackClass = "track_cc";
+    var TRACK_CLASS = "track_cc";
 
     // TODO: These are unused currently
     var _readyToPlay = false; // should be set to true on canplay event
@@ -357,7 +357,7 @@
      * @param {object} params The params to set with closed captions
      */
     this.setClosedCaptions = function(language, closedCaptions, params) {
-      $(_video).find('.' + trackClass).remove();
+      $(_video).find('.' + TRACK_CLASS).remove();
 
       // The textTrack added by QuickTime will not be removed by removing track element
       // But the textTrack that we added by adding track element will be removed by removing track element.
@@ -378,9 +378,9 @@
           var captions = closedCaptions[captionsFormat][language];
           var label = captions.name;
           var src = captions.url;
-          var mode = (!!params && params.mode) ? params.mode : 'showing';
+          var mode = (!!params && params.mode) || 'showing';
 
-          $(_video).append("<track class='" + trackClass + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
+          $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
 
           _.delay(function() {
             _video.textTracks[0].mode = mode;
@@ -398,8 +398,10 @@
      * @param {string} mode The mode to set the text tracks element
      */
     this.setClosedCaptionsMode = function(mode) {
-      for (var i = 0; i < _video.textTracks.length; i++) {
-        _video.textTracks[i].mode = mode;
+      if (_video.textTracks) {
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          _video.textTracks[i].mode = mode;
+        }
       }
     };
 
@@ -409,7 +411,7 @@
      * @method OoyalaVideoWrapper#removeClosedCaptions
      */
     this.removeClosedCaptions = function() {
-      $(_video).find('.' + trackClass).remove();
+      $(_video).find('.' + TRACK_CLASS).remove();
     };
 
     /**
