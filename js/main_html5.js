@@ -384,7 +384,6 @@
 
           _.delay(function() {
             _video.textTracks[0].mode = mode;
-            // I don't believe this is needed until alice is to render the captions
             // _video.textTracks[0].oncuechange = _onCueChanged;
           }, 10);
         }
