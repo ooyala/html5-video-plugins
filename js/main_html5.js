@@ -420,16 +420,11 @@
      * @param {string} crossorigin The value to set the crossorigin attribute
      */
     this.setCrossorigin = function(crossorigin) {
-      $(_video).attr("crossorigin", crossorigin);
-    };
-
-    /**
-     * Removes the crossorigin attribute from the video element.
-     * @public
-     * @method OoyalaVideoWrapper#removeCrossorigin
-     */
-    this.removeCrossorigin = function() {
-      $(_video).removeAttr("crossorigin");
+      if (crossorigin) {
+        $(_video).attr("crossorigin", crossorigin);
+      } else {
+        $(_video).removeAttr("crossorigin");
+      }
     };
 
     // **********************************************************************************/

@@ -229,15 +229,6 @@
     this.setCrossorigin = function(crossorigin) {
     };
 
-    /**
-     * Removes the crossorigin attribute from the video element.
-     * @public
-     * @method OoyalaVideoWrapper#removeCrossorigin
-     */
-    this.removeCrossorigin = function() {
-    };
-
-
     // **********************************************************************************/
     // Example callback methods
     // **********************************************************************************/
