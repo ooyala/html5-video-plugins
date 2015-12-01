@@ -352,9 +352,9 @@
      * Sets the closed captions on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
-     * @param {String} language The language of the closed captions
-     * @param {Object} closedCaptions The closedCaptions object
-     * @param {Object} params The params to set with closed captions
+     * @param {string} language The language of the closed captions
+     * @param {object} closedCaptions The closedCaptions object
+     * @param {object} params The params to set with closed captions
      */
     this.setClosedCaptions = function(language, closedCaptions, params) {
       $(_video).find('.' + trackClass).remove();
@@ -395,7 +395,7 @@
      * Sets the closed captions mode on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptionsMode
-     * @param {String} mode The mode to set the text tracks element
+     * @param {string} mode The mode to set the text tracks element
      */
     this.setClosedCaptionsMode = function(mode) {
       for (var i = 0; i < _video.textTracks.length; i++) {
@@ -416,7 +416,7 @@
      * Sets the crossorigin attribute on the video element.
      * @public
      * @method OoyalaVideoWrapper#setCrossorigin
-     * @param {String} crossorigin The value to set the crossorigin attribute
+     * @param {string} crossorigin The value to set the crossorigin attribute
      */
     this.setCrossorigin = function(crossorigin) {
       $(_video).attr("crossorigin", crossorigin);
