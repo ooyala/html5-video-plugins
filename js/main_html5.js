@@ -353,10 +353,10 @@
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
      * @param {String} language The language of the closed captions
-     * @param {Object} captions The captions object
+     * @param {Object} closedCaptions The closedCaptions object
      * @param {Object} params The params to set with closed captions
      */
-    this.setClosedCaptions = function(language, captions, params) {
+    this.setClosedCaptions = function(language, closedCaptions, params) {
       $(_video).find('.' + trackClass).remove();
 
       // The textTrack added by QuickTime will not be removed by removing track element
@@ -373,17 +373,21 @@
           }
         }
       } else {
-        var label = captions.name;
-        var src = captions.url;
-        var mode = (!!params && params.mode) ? params.mode : 'showing';
+        var captionsFormat = "closed_captions_vtt";
+        if (closedCaptions[captionsFormat] && closedCaptions[captionsFormat][language]) {
+          var captions = closedCaptions[captionsFormat][language];
+          var label = captions.name;
+          var src = captions.url;
+          var mode = (!!params && params.mode) ? params.mode : 'showing';
 
-        $(_video).append("<track class='" + trackClass + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
+          $(_video).append("<track class='" + trackClass + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
 
-        _.delay(function() {
-          _video.textTracks[0].mode = mode;
-          // I don't believe this is needed until alice is to render the captions
-          // _video.textTracks[0].oncuechange = _onCueChanged;
-        }, 10);
+          _.delay(function() {
+            _video.textTracks[0].mode = mode;
+            // I don't believe this is needed until alice is to render the captions
+            // _video.textTracks[0].oncuechange = _onCueChanged;
+          }, 10);
+        }
       }
     };
 
