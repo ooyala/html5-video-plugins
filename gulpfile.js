@@ -18,6 +18,7 @@ var path = {
 
 // Build All
 gulp.task('build', ['browserify']);
+gulp.task('test', ['test']);
 
 gulp.task('browserify', function() {
 
@@ -68,6 +69,8 @@ var getFileNameFromPath = function(path)
   var start = path.lastIndexOf('/') + 1;
   return path.substring(start);
 }
+
+gulp.task('test', shell.task(['jest --verbose']));
 
 // Initiate a watch
 gulp.task('watch', function() {
