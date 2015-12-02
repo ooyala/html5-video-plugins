@@ -241,14 +241,6 @@
     };
 
     /**
-     * Removes the added track element from the video element.
-     * @public
-     * @method OoyalaVideoWrapper#removeClosedCaptions
-     */
-    this.removeClosedCaptions = function() {
-    };
-
-    /**
      * Sets the crossorigin attribute on the video element.
      * @public
      * @method TemplateVideoWrapper#setCrossorigin
