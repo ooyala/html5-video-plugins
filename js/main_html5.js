@@ -353,12 +353,13 @@
      * Sets the closed captions on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
-     * @param {string} language The language of the closed captions
+     * @param {string} language The language of the closed captions. If null, the current closed captions will be removed.
      * @param {object} closedCaptions The closedCaptions object
      * @param {object} params The params to set with closed captions
      */
     this.setClosedCaptions = function(language, closedCaptions, params) {
       $(_video).find('.' + TRACK_CLASS).remove();
+      if (language == null) return;
 
       // The textTrack added by QuickTime will not be removed by removing track element
       // But the textTrack that we added by adding track element will be removed by removing track element.
@@ -405,19 +406,10 @@
     };
 
     /**
-     * Removes the added track element from the video element.
-     * @public
-     * @method OoyalaVideoWrapper#removeClosedCaptions
-     */
-    this.removeClosedCaptions = function() {
-      $(_video).find('.' + TRACK_CLASS).remove();
-    };
-
-    /**
      * Sets the crossorigin attribute on the video element.
      * @public
      * @method OoyalaVideoWrapper#setCrossorigin
-     * @param {string} crossorigin The value to set the crossorigin attribute
+     * @param {string} crossorigin The value to set the crossorigin attribute. Will remove crossorigin attribute if null.
      */
     this.setCrossorigin = function(crossorigin) {
       if (crossorigin) {
@@ -507,10 +499,10 @@
      */
     var raisePlayingEvent = function() {
       this.controller.notify(this.controller.EVENTS.PLAYING);
+      firstPlay = false;
 
       //Check for live closed captions and notify controller
       if (firstPlay && _video.textTracks && _video.textTracks.length > 0) {
-        firstPlay = false;
         var languages = [];
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].kind === "captions") {

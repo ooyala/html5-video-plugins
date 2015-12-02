@@ -221,10 +221,38 @@
     };
 
     /**
+     * Sets the closed captions on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setClosedCaptions
+     * @param {string} language The language of the closed captions
+     * @param {object} closedCaptions The closedCaptions object
+     * @param {object} params The params to set with closed captions
+     */
+    this.setClosedCaptions = function(language, closedCaptions, params) {
+    };
+
+    /**
+     * Sets the closed captions mode on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setClosedCaptionsMode
+     * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
+     */
+    this.setClosedCaptionsMode = function(mode) {
+    };
+
+    /**
+     * Removes the added track element from the video element.
+     * @public
+     * @method OoyalaVideoWrapper#removeClosedCaptions
+     */
+    this.removeClosedCaptions = function() {
+    };
+
+    /**
      * Sets the crossorigin attribute on the video element.
      * @public
      * @method TemplateVideoWrapper#setCrossorigin
-     * @param {string} crossorigin The value to set the crossorigin attribute
+     * @param {string} crossorigin The value to set the crossorigin attribute.
      */
     this.setCrossorigin = function(crossorigin) {
     };
