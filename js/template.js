@@ -10,11 +10,11 @@
    * @classdesc Factory for creating video player objects that use HTML5 video tags.
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} streams An array of supported encoding types (ex. m3u8, mp4)
+   * @property {object} streams An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
    */
   var TemplateVideoFactory = function() {
     this.name = "templateVideoTech";
-    this.streams = ["m3u8", "mp4"];
+    this.streams = [OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
