@@ -514,7 +514,7 @@
         var languages = [];
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].kind === "captions") {
-            this.controller.notify(this.controller.EVENTS.HAS_LIVE_CLOSED_CAPTIONS);
+            this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING);
           }
         }
       }
