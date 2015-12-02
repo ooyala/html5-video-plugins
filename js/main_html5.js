@@ -210,10 +210,6 @@
         _video.src = _currentUrl;
       }
 
-      if (_.isEmpty(url)) {
-        this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
-      }
-
       return urlChanged;
     };
 
