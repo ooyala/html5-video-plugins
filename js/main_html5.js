@@ -131,6 +131,7 @@
     var currentTime = 0;
     var isM3u8 = false;
     var TRACK_CLASS = "track_cc";
+    var firstPlay = true;
 
     // TODO: These are unused currently
     var _readyToPlay = false; // should be set to true on canplay event
@@ -393,7 +394,7 @@
      * Sets the closed captions mode on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptionsMode
-     * @param {string} mode The mode to set the text tracks element
+     * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
      */
     this.setClosedCaptionsMode = function(mode) {
       if (_video.textTracks) {
@@ -437,6 +438,7 @@
      */
     var onLoadStart = function() {
       _currentUrl = _video.src;
+      firstPlay = true;
       videoEnded = false;
     };
 
@@ -507,7 +509,8 @@
       this.controller.notify(this.controller.EVENTS.PLAYING);
 
       //Check for live closed captions and notify controller
-      if (_video.textTracks && _video.textTracks.length > 0) {
+      if (firstPlay && _video.textTracks && _video.textTracks.length > 0) {
+        firstPlay = false;
         var languages = [];
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].kind === "captions") {
