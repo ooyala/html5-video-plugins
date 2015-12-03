@@ -24,8 +24,8 @@ describe('main_html5 factory tests', function () {
 
   it('should report max supported elements', function(){
     expect(pluginFactory.maxSupportedElements).to.be.ok();
-    expect(typeof pluginFactory.maxSupportedElements).to.eql("number");
-    expect(pluginFactory.maxSupportedElements >= -1).to.be(true);
+    expect(pluginFactory.maxSupportedElements).to.be.a("number");
+    expect(pluginFactory.maxSupportedElements).to.be.above(-2);
   });
 
   it('should be able to create an element', function(){
@@ -42,7 +42,7 @@ describe('main_html5 factory tests', function () {
   it('should create element under parentElement', function(){
     var parentElement = $("<div>");
     pluginFactory.create(parentElement, "test", {}, {});
-    expect(parentElement.children().length).to.eql(1);
+    expect(parentElement.children()).to.have.length(1);
   });
 
   it('should create element of class "video"', function(){
@@ -66,7 +66,8 @@ describe('main_html5 factory tests', function () {
     pluginFactory.create(parentElement, "test", {}, css);
     var element = parentElement.children()[0];
     expect(element.getAttribute("style")).to.be.ok();
-    expect(element.getAttribute("style")).to.eql("visibility: hidden;");
+    expect(element.getAttribute("style")).to.contain("visibility");
+    expect(element.getAttribute("style")).to.contain("hidden");
   });
 
   it('should create element with proper attributes', function(){
