@@ -224,7 +224,7 @@
      * Sets the closed captions on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
-     * @param {string} language The language of the closed captions
+     * @param {string} language The language of the closed captions. Set to null to remove captions.
      * @param {object} closedCaptions The closedCaptions object
      * @param {object} params The params to set with closed captions
      */
