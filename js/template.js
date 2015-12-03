@@ -10,11 +10,11 @@
    * @classdesc Factory for creating video player objects that use HTML5 video tags.
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} streams An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
+   * @property {object} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
    */
   var TemplateVideoFactory = function() {
     this.name = "templateVideoTech";
-    this.streams = [OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4];
+    this.encodings = [OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
@@ -45,7 +45,7 @@
      */
     this.destroy = function() {
       this.ready = false;
-      this.streams = [];
+      this.encodings = [];
       this.create = function() {};
     };
 
@@ -57,14 +57,6 @@
      */
     this.maxSupportedElements = -1;
 
-    /**
-     * Returns the number of video elements currently instantiated.
-     * @public
-     * @method TemplateVideoFactory#getCurrentNumberOfInstances
-     * @returns {int} The number of video elements created by this factory that have not been destroyed
-     */
-    this.getCurrentNumberOfInstances = function() {
-    };
   };
 
   /**
@@ -224,7 +216,7 @@
      * Sets the closed captions on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
-     * @param {string} language The language of the closed captions
+     * @param {string} language The language of the closed captions. Set to null to remove captions.
      * @param {object} closedCaptions The closedCaptions object
      * @param {object} params The params to set with closed captions
      */
@@ -238,14 +230,6 @@
      * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
      */
     this.setClosedCaptionsMode = function(mode) {
-    };
-
-    /**
-     * Removes the added track element from the video element.
-     * @public
-     * @method OoyalaVideoWrapper#removeClosedCaptions
-     */
-    this.removeClosedCaptions = function() {
     };
 
     /**
