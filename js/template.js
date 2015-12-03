@@ -10,11 +10,11 @@
    * @classdesc Factory for creating video player objects that use HTML5 video tags.
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} streams An array of supported encoding types (ex. m3u8, mp4)
+   * @property {object} encodings An array of supported encoding types (ex. dash, mp4)
    */
   var TemplateVideoFactory = function() {
     this.name = "templateVideoTech";
-    this.streams = ["m3u8", "mp4"];
+    this.encodings = ["dash", "mp4"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
@@ -45,7 +45,7 @@
      */
     this.destroy = function() {
       this.ready = false;
-      this.streams = [];
+      this.encodings = [];
       this.create = function() {};
     };
 
@@ -57,14 +57,6 @@
      */
     this.maxSupportedElements = -1;
 
-    /**
-     * Returns the number of video elements currently instantiated.
-     * @public
-     * @method TemplateVideoFactory#getCurrentNumberOfInstances
-     * @returns {int} The number of video elements created by this factory that have not been destroyed
-     */
-    this.getCurrentNumberOfInstances = function() {
-    };
   };
 
   /**
