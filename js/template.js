@@ -216,7 +216,7 @@
      * Sets the closed captions on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
-     * @param {string} language The language of the closed captions
+     * @param {string} language The language of the closed captions. Set to null to remove captions.
      * @param {object} closedCaptions The closedCaptions object
      * @param {object} params The params to set with closed captions
      */
@@ -230,14 +230,6 @@
      * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
      */
     this.setClosedCaptionsMode = function(mode) {
-    };
-
-    /**
-     * Removes the added track element from the video element.
-     * @public
-     * @method OoyalaVideoWrapper#removeClosedCaptions
-     */
-    this.removeClosedCaptions = function() {
     };
 
     /**
