@@ -382,7 +382,12 @@
 
           _.delay(function() {
             _video.textTracks[0].mode = mode;
-          }, 10);
+            if (Platform.isFirefox) {
+              for (var i=0; i < _video.textTracks[0].cues.length; i++) {
+                _video.textTracks[0].cues[i].line = 15;
+              }
+            }
+          }, 100);
         }
       }
     };
@@ -889,6 +894,16 @@
      */
     isChrome: (function() {
       return !!window.navigator.userAgent.match(/Chrome/);
+    })(),
+
+    /**
+     * Checks if the player is running in Firefox.
+     * @private
+     * @method Platform#isFirefox
+     * @returns {boolean} True if the player is running in firefox
+     */
+    isFirefox: (function() {
+      return !!window.navigator.userAgent.match(/Firefox/);
     })(),
 
     /**
