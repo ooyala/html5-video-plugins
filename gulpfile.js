@@ -18,7 +18,6 @@ var path = {
 
 // Build All
 gulp.task('build', ['browserify']);
-gulp.task('test', ['test']);
 
 gulp.task('browserify', function() {
 

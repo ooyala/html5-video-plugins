@@ -120,8 +120,9 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify BUFFERED on video \'canPlayThrough\' event', function(){
     vtc.interface.EVENTS.BUFFERED = "buffered";
+    element.currentSrc = "url";
     $(element).triggerHandler("canplaythrough");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED]);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
   });
 
   it('should notify PLAYING on video \'playing\' event', function(){
@@ -132,8 +133,9 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify WAITING on video \'waiting\' event', function(){
     vtc.interface.EVENTS.WAITING = "waiting";
+    element.currentSrc = "url";
     $(element).triggerHandler("waiting");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING]);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
   });
 
   it('should notify SEEKING on video \'seeking\' event', function(){
