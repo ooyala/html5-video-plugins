@@ -10,11 +10,11 @@
    * @classdesc Factory for creating video player objects that use HTML5 video tags.
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} streams An array of supported encoding types (ex. m3u8, mp4)
+   * @property {object} encodings An array of supported encoding types (ex. dash, mp4)
    */
   var TemplateVideoFactory = function() {
     this.name = "templateVideoTech";
-    this.streams = ["m3u8", "mp4"];
+    this.encodings = ["dash", "mp4"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
@@ -24,14 +24,15 @@
      * @public
      * @method TemplateVideoFactory#create
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
-     * @param {string} id The id of the video player instance to create
+     * @param {string} domId The dom id of the video player instance to create
      * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
+     * @param {string} playerId The unique player identifier of the player creating this instance
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, id, ooyalaVideoController, css) {
+    this.create = function(parentContainer, domId, ooyalaVideoController, css, playerId) {
       var element = {};
-      var wrapper = new TemplateVideoWrapper(id, element);
+      var wrapper = new TemplateVideoWrapper(domId, element);
       wrapper.controller = ooyalaVideoController;
       wrapper.subscribeAllEvents();
       return wrapper;
@@ -44,7 +45,7 @@
      */
     this.destroy = function() {
       this.ready = false;
-      this.streams = [];
+      this.encodings = [];
       this.create = function() {};
     };
 
@@ -56,26 +57,18 @@
      */
     this.maxSupportedElements = -1;
 
-    /**
-     * Returns the number of video elements currently instantiated.
-     * @public
-     * @method TemplateVideoFactory#getCurrentNumberOfInstances
-     * @returns {int} The number of video elements created by this factory that have not been destroyed
-     */
-    this.getCurrentNumberOfInstances = function() {
-    };
   };
 
   /**
    * @class TemplateVideoWrapper
    * @classdesc Player object that wraps the video element.
-   * @param {string} playerId The id of the video player element
+   * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var TemplateVideoWrapper = function(playerId, video) {
+  var TemplateVideoWrapper = function(domId, video) {
     var _video = video;
     var listeners = {};
 
@@ -195,7 +188,7 @@
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
-    }
+    };
 
     /**
      * Applies the given css to the video element.
@@ -219,6 +212,34 @@
       // Remove the element
     };
 
+    /**
+     * Sets the closed captions on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setClosedCaptions
+     * @param {string} language The language of the closed captions. Set to null to remove captions.
+     * @param {object} closedCaptions The closedCaptions object
+     * @param {object} params The params to set with closed captions
+     */
+    this.setClosedCaptions = function(language, closedCaptions, params) {
+    };
+
+    /**
+     * Sets the closed captions mode on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setClosedCaptionsMode
+     * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
+     */
+    this.setClosedCaptionsMode = function(mode) {
+    };
+
+    /**
+     * Sets the crossorigin attribute on the video element.
+     * @public
+     * @method TemplateVideoWrapper#setCrossorigin
+     * @param {string} crossorigin The value to set the crossorigin attribute.
+     */
+    this.setCrossorigin = function(crossorigin) {
+    };
 
     // **********************************************************************************/
     // Example callback methods

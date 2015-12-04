@@ -31,6 +31,7 @@
           !!videoElement.canPlayType("application/x-mpegURL")) {
         list.push("hls");
       }
+
       return list;
     };
     this.encodings = getSupportedEncodings();
@@ -55,10 +56,6 @@
       video.attr("id", domId);
       video.attr("preload", "none");
 
-      // require the site to setup CORS correctly to enable track url and src url to come from different domains
-      // Temporarily remove this.  When we implement closed captions we need to optionally add this back in.
-      // It should not be used for ad videos.  It should be used for the main video.
-      //video.attr("crossorigin", "anonymous");
       video.css(css);
 
       // enable airplay for iOS
@@ -75,6 +72,12 @@
       element.subscribeAllEvents();
 
       parentContainer.append(video);
+
+      // On Android, we need to "activate" the video on a click so we can control it with JS later on mobile
+      if (Platform.isAndroid) {
+        element.play();
+        element.pause();
+      }
       return element;
     };
 
@@ -127,6 +130,8 @@
     var isSeeking = false;
     var currentTime = 0;
     var isM3u8 = false;
+    var TRACK_CLASS = "track_cc";
+    var firstPlay = true;
 
     /************************************************************************************/
     // External Methods that Video Controller or Factory call
@@ -199,10 +204,6 @@
         urlChanged = true;
         resetStreamData();
         _video.src = _currentUrl;
-      }
-
-      if (_.isEmpty(url)) {
-        this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
       }
 
       return urlChanged;
@@ -349,6 +350,80 @@
       currentInstances--;
     };
 
+    /**
+     * Sets the closed captions on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setClosedCaptions
+     * @param {string} language The language of the closed captions. If null, the current closed captions will be removed.
+     * @param {object} closedCaptions The closedCaptions object
+     * @param {object} params The params to set with closed captions
+     */
+    this.setClosedCaptions = function(language, closedCaptions, params) {
+      $(_video).find('.' + TRACK_CLASS).remove();
+      if (language == null) return;
+
+      // The textTrack added by QuickTime will not be removed by removing track element
+      // But the textTrack that we added by adding track element will be removed by removing track element.
+      // This first check is to check for live CC
+      if (Platform.isSafari && _video.textTracks.length !== 0) {
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          if (_video.textTracks[i].language === language ||
+              (language == "CC" && _video.textTracks[i].kind === "captions")) {
+            var mode = (!!params && params.mode) || 'showing';
+            _video.textTracks[i].mode = mode;
+          } else {
+           _video.textTracks[i].mode = 'disabled';
+          }
+        }
+      } else {
+        var captionsFormat = "closed_captions_vtt";
+        if (closedCaptions[captionsFormat] && closedCaptions[captionsFormat][language]) {
+          var captions = closedCaptions[captionsFormat][language];
+          var label = captions.name;
+          var src = captions.url;
+          var mode = (!!params && params.mode) || 'showing';
+
+          $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
+
+          _.delay(function() {
+            _video.textTracks[0].mode = mode;
+            if (Platform.isFirefox) {
+              for (var i=0; i < _video.textTracks[0].cues.length; i++) {
+                _video.textTracks[0].cues[i].line = 15;
+              }
+            }
+          }, 100);
+        }
+      }
+    };
+
+    /**
+     * Sets the closed captions mode on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setClosedCaptionsMode
+     * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
+     */
+    this.setClosedCaptionsMode = function(mode) {
+      if (_video.textTracks) {
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          _video.textTracks[i].mode = mode;
+        }
+      }
+    };
+
+    /**
+     * Sets the crossorigin attribute on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setCrossorigin
+     * @param {string} crossorigin The value to set the crossorigin attribute. Will remove crossorigin attribute if null.
+     */
+    this.setCrossorigin = function(crossorigin) {
+      if (crossorigin) {
+        $(_video).attr("crossorigin", crossorigin);
+      } else {
+        $(_video).removeAttr("crossorigin");
+      }
+    };
 
     // **********************************************************************************/
     // Event callback methods
@@ -361,6 +436,7 @@
      */
     var onLoadStart = function() {
       _currentUrl = _video.src;
+      firstPlay = true;
       videoEnded = false;
     };
 
@@ -419,7 +495,7 @@
      * @method OoyalaVideoWrapper#raiseCanPlayThrough
      */
     var raiseCanPlayThrough = function() {
-      this.controller.notify(this.controller.EVENTS.BUFFERED);
+      this.controller.notify(this.controller.EVENTS.BUFFERED, {"url":_video.currentSrc});
     };
 
     /**
@@ -429,6 +505,17 @@
      */
     var raisePlayingEvent = function() {
       this.controller.notify(this.controller.EVENTS.PLAYING);
+      firstPlay = false;
+
+      //Check for live closed captions and notify controller
+      if (firstPlay && _video.textTracks && _video.textTracks.length > 0) {
+        var languages = [];
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          if (_video.textTracks[i].kind === "captions") {
+            this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING);
+          }
+        }
+      }
     };
 
     /**
@@ -437,7 +524,7 @@
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
     var raiseWaitingEvent = function() {
-      this.controller.notify(this.controller.EVENTS.WAITING);
+      this.controller.notify(this.controller.EVENTS.WAITING, {"url":_video.currentSrc});
     };
 
     /**
@@ -826,6 +913,16 @@
     })(),
 
     /**
+     * Checks if the player is running in Firefox.
+     * @private
+     * @method Platform#isFirefox
+     * @returns {boolean} True if the player is running in firefox
+     */
+    isFirefox: (function() {
+      return !!window.navigator.userAgent.match(/Firefox/);
+    })(),
+
+    /**
      * Checks if the player is running in Safari.
      * @private
      * @method Platform#isSafari
@@ -871,7 +968,7 @@
      * @returns {boolean} True if the player is running on an Android device of version 4 or later
      */
     isAndroid4Plus: (function(){
-      if (!this.isAndroid) return false;
+      if (!window.navigator.appVersion.match(/Android/)) return false;
       var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
       return (_.first(device) || "").slice(-1) >= "4";
     })(),
