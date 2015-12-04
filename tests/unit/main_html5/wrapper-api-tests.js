@@ -161,15 +161,6 @@ describe('main_html5 wrapper tests', function () {
     expect(element.play.wasCalled).to.be(false);
   });
 
-  it('should dequeue play command if seeking completed', function(){
-    element.seeking = true;
-    spyOn(element, "play");
-    wrapper.play();
-    element.seeking = false;
-    $(element).trigger("seeked");
-    expect(element.play.wasCalled).to.be(true);
-  });
-
   it('should not act on initialTime if has played', function(){
     spyOn(wrapper, "seek");
     wrapper.play();
@@ -181,16 +172,6 @@ describe('main_html5 wrapper tests', function () {
     spyOn(wrapper, "pause");
     wrapper.pause();
     expect(wrapper.pause.wasCalled).to.be(true);
-  });
-
-  it('should not dequeue play command if stream paused before seeking completed', function(){
-    element.seeking = true;
-    spyOn(element, "play");
-    wrapper.play();
-    wrapper.pause();
-    element.seeking = false;
-    $(element).trigger("seeked");
-    expect(element.play.wasCalled).to.be(false);
   });
 
   it('should ignore seek if seekrange is 0', function(){

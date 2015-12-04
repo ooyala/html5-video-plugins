@@ -383,8 +383,8 @@
                              { "currentTime": event.target.currentTime,
                                "duration": resolveDuration(event.target.duration),
                                "buffer": buffer,
-                               "seekRange": getSafeSeekRange(event.target.seekable),
-                               "url": event.target.src });
+                               "seekRange": getSafeSeekRange(event.target.seekable)
+                             });
     };
 
     /**
@@ -723,8 +723,15 @@
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
+
+      // durationchange event raises the currentTime as a string
+      var resolvedTime = (event && event.target) ? event.target.currentTime : null;
+      if (resolvedTime && (typeof resolvedTime !== "number")) {
+        resolvedTime = Number(resolvedTime);
+      }
+
       this.controller.notify(eventname,
-                             { "currentTime": event.target.currentTime,
+                             { "currentTime": resolvedTime,
                                "duration": resolveDuration(event.target.duration),
                                "buffer": buffer,
                                "seekRange": getSafeSeekRange(event.target.seekable) });
@@ -733,7 +740,7 @@
     /**
      * Resolves the duration of the video to a valid value.
      * @private
-     * @method OoyalaVideoWrapper#raisePlayhead
+     * @method OoyalaVideoWrapper#resolveDuration
      * @param {number} duration The reported duration of the video in seconds
      * @returns {number} The resolved duration of the video in seconds
      */
