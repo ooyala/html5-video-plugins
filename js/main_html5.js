@@ -64,7 +64,13 @@
         video.attr("x-webkit-airplay", "allow");
       }
 
-      element = new OoyalaVideoWrapper(domId, video[0]);
+      // Set initial container dimension
+      var dimension = {
+        width: parentContainer.width(),
+        height: parentContainer.height()
+      };
+
+      element = new OoyalaVideoWrapper(domId, video[0], dimension);
       currentInstances++;
       element.controller = controller;
 
@@ -111,11 +117,12 @@
    * @classdesc Player object that wraps HTML5 video tags
    * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
+   * @param {object} dimension JSON object specifying player container's initial width and height
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaVideoWrapper = function(domId, video) {
+  var OoyalaVideoWrapper = function(domId, video, dimension) {
     this.controller = {};
     this.disableNativeSeek = false;
 
@@ -132,6 +139,18 @@
     var isM3u8 = false;
     var TRACK_CLASS = "track_cc";
     var firstPlay = true;
+    var playerDimension = dimension;
+    var videoDimension = {height: 0, width: 0};
+
+    // iPad CSS constants
+    var IPAD_CSS_DEFAULT = {
+      "width":"",
+      "height":"",
+      "left":"50%",
+      "top":"50%",
+      "-webkit-transform":"translate(-50%,-50%)",
+      "visibility":"visible"
+    };
 
     /************************************************************************************/
     // External Methods that Video Controller or Factory call
@@ -214,6 +233,7 @@
       hasPlayed = false;
       loaded = false;
       videoEnded = false;
+      videoDimension = {height: 0, width: 0};
     }, this);
 
     /**
@@ -335,6 +355,7 @@
      */
     this.applyCss = function(css) {
       $(_video).css(css);
+      setVideoCentering();
     };
 
     /**
@@ -516,6 +537,7 @@
           }
         }
       }
+      setVideoCentering();
     };
 
     /**
@@ -604,6 +626,9 @@
       // iOS has issues seeking so if we queue a seek handle it here
       dequeueSeek();
 
+      // iPad safari has video centering issue. Unfortunately, HTML5 does not have bitrate change event.
+      setVideoCentering();
+
       forceEndOnTimeupdateIfRequired(event);
     };
 
@@ -682,6 +707,36 @@
     var getRandomString = function() {
       return Math.random().toString(36).substring(7);
     };
+
+     /**
+     * Fix issue with iPad safari browser not properly centering the video
+     * @private
+     * @method OoyalaVideoWrapper#setVideoCentering
+     */
+     var setVideoCentering = function() {
+       if (Platform.isIpad) {
+        var videoWidth = _video.videoWidth;
+        var videoHeight = _video.videoHeight;
+        var playerWidth = playerDimension.width;
+        var playerHeight = playerDimension.height;
+
+        // check if video stream dimension was changed, then re-apply video css
+        if (videoWidth != videoDimension.width || videoHeight != videoDimension.height) {
+          var css = IPAD_CSS_DEFAULT;
+          if (videoHeight/videoWidth > playerHeight/playerWidth) {
+            css.width = "";
+            css.height = "100%";
+          } else {
+            css.width = "100%";
+            css.height = "";
+          }
+          $(_video).css(css);
+
+          videoDimension.width = videoWidth;
+          videoDimension.height = videoHeight;
+        }
+      }
+     };
 
     /**
      * If any plays are queued up, execute them.
