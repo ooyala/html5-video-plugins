@@ -70,7 +70,7 @@
         height: parentContainer.height()
       };
 
-      element = new OoyalaVideoWrapper(domId, video[0], dimension);
+      var element = new OoyalaVideoWrapper(domId, video[0], dimension);
       currentInstances++;
       element.controller = controller;
 
