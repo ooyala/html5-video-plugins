@@ -27,5 +27,5 @@
 Unit tests live in the folder "test".  Unit tests are based on the "jest" framework.
 Run tests with the command:
 ```bash
-$ npm test
+$ gulp test
 ```

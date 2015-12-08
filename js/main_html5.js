@@ -133,9 +133,6 @@
     var TRACK_CLASS = "track_cc";
     var firstPlay = true;
 
-    // TODO: These are unused currently
-    var _readyToPlay = false; // should be set to true on canplay event
-
     /************************************************************************************/
     // External Methods that Video Controller or Factory call
     /************************************************************************************/
@@ -176,10 +173,10 @@
     /**
      * Unsubscribes all events from the video element.
      * This is called by the destroy function.
-     * @public
+     * @private
      * @method OoyalaVideoWrapper#unsubscribeAllEvents
      */
-    this.unsubscribeAllEvents = function() {
+    var unsubscribeAllEvents = function() {
       _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
     };
 
@@ -204,7 +201,6 @@
         }
 
         isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
-        _readyToPlay = false;
         urlChanged = true;
         resetStreamData();
         _video.src = _currentUrl;
@@ -228,15 +224,17 @@
      */
     this.load = function(rewind) {
       if (loaded && !rewind) return;
-      if (!!rewind) {
+      if (!!rewind) {  // consider adding loaded &&
         try {
           if (Platform.isIos && Platform.iosMajorVersion == 8) {
             // On iOS, wait for durationChange before setting currenttime
             $(_video).on("durationchange", _.bind(function() {
                                                                _video.currentTime = 0;
+                                                               currentTime = 0;
                                                              }, this));
           } else {
             _video.currentTime = 0;
+            currentTime = 0;
           }
           _video.pause();
         } catch (ex) {
@@ -308,8 +306,15 @@
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+      var resolvedVolume = volume;
+      if (resolvedVolume < 0) {
+        resolvedVolume = 0;
+      } else if (resolvedVolume > 1) {
+        resolvedVolume = 1;
+      }
+
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
-      _video.volume = volume;
+      _video.volume = resolvedVolume;
     };
 
     /**
@@ -340,7 +345,7 @@
     this.destroy = function() {
       _video.pause();
       _video.src = '';
-      this.unsubscribeAllEvents();
+      unsubscribeAllEvents();
       $(_video).remove();
       currentInstances--;
     };
@@ -454,8 +459,8 @@
                              { "currentTime": event.target.currentTime,
                                "duration": resolveDuration(event.target.duration),
                                "buffer": buffer,
-                               "seekRange": getSafeSeekRange(event.target.seekable),
-                               "url": event.target.src });
+                               "seekRange": getSafeSeekRange(event.target.seekable)
+                             });
     };
 
     /**
@@ -758,6 +763,10 @@
      * @returns {?number} The seek-to position, or null if seeking is not possible
      */
     var getSafeSeekTimeIfPossible = function(_video, time) {
+      if (typeof time !== "number") {
+        return null;
+      }
+
       var range = getSafeSeekRange(_video.seekable);
       if (range.start === 0 && range.end === 0) {
         return null;
@@ -801,8 +810,15 @@
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
+
+      // durationchange event raises the currentTime as a string
+      var resolvedTime = (event && event.target) ? event.target.currentTime : null;
+      if (resolvedTime && (typeof resolvedTime !== "number")) {
+        resolvedTime = Number(resolvedTime);
+      }
+
       this.controller.notify(eventname,
-                             { "currentTime": event.target.currentTime,
+                             { "currentTime": resolvedTime,
                                "duration": resolveDuration(event.target.duration),
                                "buffer": buffer,
                                "seekRange": getSafeSeekRange(event.target.seekable) });
@@ -811,7 +827,7 @@
     /**
      * Resolves the duration of the video to a valid value.
      * @private
-     * @method OoyalaVideoWrapper#raisePlayhead
+     * @method OoyalaVideoWrapper#resolveDuration
      * @param {number} duration The reported duration of the video in seconds
      * @returns {number} The resolved duration of the video in seconds
      */

@@ -69,6 +69,8 @@ var getFileNameFromPath = function(path)
   return path.substring(start);
 }
 
+gulp.task('test', shell.task(['jest --verbose']));
+
 // Initiate a watch
 gulp.task('watch', function() {
   gulp.watch(path.scripts, ['browserify']);
