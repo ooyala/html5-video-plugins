@@ -6,7 +6,22 @@
   var pluginName = "bitdash";
   var currentInstances = 0;
   var bitdashLibLoaded = false;
+  var bitdashLibURL;
+  var filename = "bit_wrapper.js";
 
+  var scripts = document.getElementsByTagName('script');
+  for (var index in scripts) {
+    if (scripts[index].src.indexOf(filename) >= 0) {
+      bitdashLibURL = scripts[index].src.match(/.*\//)[0] + "bitdash/latest/";
+      break;
+    }
+  }
+  if (!bitdashLibURL) {
+    console.error("Can't get path to script", filename);
+    return;
+  }
+  bitdashLibURL += "bitdash.min.js";
+  
   /**
    * @class BitdashVideoFactory
    * @classdesc Factory for creating bitdash player objects that use HTML5 video tags.
@@ -120,11 +135,9 @@
     }
 
     var loadLibrary = function(callback) {
-      var bitdashLibPath = document.location.href.match(/.*\//)[0] + "bitdash/latest/";
-
       var playerJs = document.createElement("script");
       playerJs.type = "text/javascript";
-      playerJs.src = bitdashLibPath + "bitdash.min.js";
+      playerJs.src = bitdashLibURL;
 
       playerJs.onload = (function(callback) {
         bitdashLibLoaded = true;
