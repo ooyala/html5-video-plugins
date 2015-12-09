@@ -113,20 +113,25 @@
       }
     };
 
-    var loadLibrary = function() {
-      var scripts = document.getElementsByTagName('script');
-      var thisScript = scripts[scripts.length - 1];
-      var path = thisScript.src.replace(/\/script\.js$/, '/');
-      var bitdashLibPath = path.match(/.*\//)[0] + "bitdash/latest/";
+    var setupPlayer = function() {
+      conf.key = ''; // provide bitdash library key here
+      _player.setup(conf);
+      OO.log("Bitdash player has been set up!");
+    }
+
+    var loadLibrary = function(callback) {
+      var bitdashLibPath = document.location.href.match(/.*\//)[0] + "bitdash/latest/";
 
       var playerJs = document.createElement("script");
       playerJs.type = "text/javascript";
-      playerJs.src = bitdashLibPath + "bitdash.min.js",
-      playerJs.onload = (function(data) {
+      playerJs.src = bitdashLibPath + "bitdash.min.js";
+
+      playerJs.onload = (function(callback) {
         bitdashLibLoaded = true;
         _player = bitdash(_domId);
         OO.log("Bit wrapper loaded bitdash library!");
-      }).bind(this);
+        typeof callback === 'function' && callback();
+      }).bind(this, callback);
       document.head.appendChild(playerJs);
     }
 
@@ -173,18 +178,10 @@
 
         if (_hasPlayed) {
           this.load(false);
+        } else if (bitdashLibLoaded) {
+          setupPlayer();
         } else {
-          (function waitForLibrary() {
-            setTimeout(function() {
-              if (bitdashLibLoaded) {
-                conf.key = ''; // provide bitdash library key here
-                _player.setup(conf);
-              } else {
-                loadLibrary();
-                waitForLibrary();
-              } 
-            }, 500);
-          })();
+          loadLibrary(setupPlayer);
         }
       }
 
