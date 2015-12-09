@@ -17,7 +17,7 @@ var path = {
 };
 
 // Build All
-gulp.task('build', ['browserify']);
+gulp.task('build', ['browserify', 'bitdash']);
 
 gulp.task('browserify', function() {
 
@@ -43,7 +43,7 @@ gulp.task('browserify', function() {
     }
   };
 
-  listFiles(path.originalJs, function(error, files) {
+  listFiles(path.originalJs, { maxDepth: 1}, function(error, files) {
     if (error) {
         console.log(error);
     } else {
@@ -51,6 +51,12 @@ gulp.task('browserify', function() {
       bundleThis(filteredList);
     }});
 
+});
+
+//bitdash
+gulp.task('bitdash', function () {
+  gulp.src(['./js/bitdash/latest/*'])
+    .pipe(gulp.dest('./build/bitdash/latest'));
 });
 
 var checkFileExtension = function(extension, fileName)
@@ -78,3 +84,4 @@ gulp.task('watch', function() {
 
 // The default task (called when you run `gulp` from cli)
 gulp.task('default', ['build']);
+

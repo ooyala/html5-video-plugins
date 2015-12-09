@@ -5,6 +5,7 @@
 (function(_, $) {
   var pluginName = "bitdash";
   var currentInstances = 0;
+  var bitdashLibLoaded = false;
 
   /**
    * @class BitdashVideoFactory
@@ -112,8 +113,22 @@
       }
     };
 
-    _player = bitdash(domId);
-    console.log("bitdash library loaded successfully");
+    var loadLibrary = function() {
+      var scripts = document.getElementsByTagName('script');
+      var thisScript = scripts[scripts.length - 1];
+      var path = thisScript.src.replace(/\/script\.js$/, '/');
+      var bitdashLibPath = path.match(/.*\//)[0] + "bitdash/latest/";
+
+      var playerJs = document.createElement("script");
+      playerJs.type = "text/javascript";
+      playerJs.src = bitdashLibPath + "bitdash.min.js",
+      playerJs.onload = (function(data) {
+        bitdashLibLoaded = true;
+        _player = bitdash(_domId);
+        OO.log("Bit wrapper loaded bitdash library!");
+      }).bind(this);
+      document.head.appendChild(playerJs);
+    }
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -159,8 +174,17 @@
         if (_hasPlayed) {
           this.load(false);
         } else {
-          conf.key = ''; // provide bitdash library key here
-          _player.setup(conf);
+          (function waitForLibrary() {
+            setTimeout(function() {
+              if (bitdashLibLoaded) {
+                conf.key = ''; // provide bitdash library key here
+                _player.setup(conf);
+              } else {
+                loadLibrary();
+                waitForLibrary();
+              } 
+            }, 500);
+          })();
         }
       }
 
