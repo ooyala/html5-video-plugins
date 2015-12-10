@@ -7,12 +7,13 @@
   var currentInstances = 0;
   var bitdashLibLoaded = false;
   var bitdashLibURL;
-  var filename = "bit_wrapper.js";
+  var filename = "bit_wrapper.*\.js";
 
   var scripts = document.getElementsByTagName('script');
   for (var index in scripts) {
-    if (scripts[index].src.indexOf(filename) >= 0) {
-      bitdashLibURL = scripts[index].src.match(/.*\//)[0] + "bitdash/latest/";
+    var match = scripts[index].src.match(filename);
+    if (match && match.length > 0) {
+      bitdashLibURL = match.input.match(/.*\//)[0] + "bitdash/latest/";
       break;
     }
   }
