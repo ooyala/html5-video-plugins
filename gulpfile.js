@@ -6,7 +6,6 @@ var gulp = require('gulp'),
     browserify = require('browserify'),
     source = require('vinyl-source-stream'),
     buffer = require('vinyl-buffer'),
-    gutil = require('gulp-util'),
     uglify = require('gulp-uglify'),
     shell = require('gulp-shell'),
     rename = require('gulp-rename');
@@ -59,11 +58,7 @@ var uglify_fn = function(srcPath) {
 }
 
 var checkFileExtension = function(extension, fileName) {
-    if (!fileName || fileName.length < extension.length) {
-      return false;
-    }
-
-    return (fileName.lastIndexOf(extension) == fileName.length - extension.length);
+  return (fileName.lastIndexOf(extension) == fileName.length - extension.length);
 }
 
 var getFileNameFromPath = function(path) {
@@ -79,7 +74,7 @@ gulp.task('test', shell.task(['jest --verbose']));
 
 // Initiate a watch
 gulp.task('watch', function() {
-  gulp.watch(path.scripts, ['browserify']);
+  gulp.watch("src/**/*", ['build']);
 });
 
 // The default task (called when you run `gulp` from cli)
