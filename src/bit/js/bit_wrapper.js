@@ -13,7 +13,7 @@
   for (var index in scripts) {
     var match = scripts[index].src.match(filename);
     if (match && match.length > 0) {
-      bitdashLibURL = match.input.match(/.*\//)[0] + "bitdash/latest/";
+      bitdashLibURL = match.input.match(/.*\//)[0];
       break;
     }
   }
@@ -22,7 +22,7 @@
     return;
   }
   bitdashLibURL += "bitdash.min.js";
-  
+
   /**
    * @class BitdashVideoFactory
    * @classdesc Factory for creating bitdash player objects that use HTML5 video tags.

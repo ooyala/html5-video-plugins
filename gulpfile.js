@@ -13,18 +13,23 @@ var gulp = require('gulp'),
     listFiles = require('file-lister');
 
 var path = {
-  originalJs: ['./js/']
+  mainJs: ['./src/main/js/'],
+  bitJs: ['./src/bit/js/']
 };
 
-// Build All
-gulp.task('build', ['browserify', 'bitdash']);
+var main_html5_fn = function() {
+  uglify_fn(path.mainJs);
+}
 
-gulp.task('browserify', function() {
+var bit_fn = function() {
+  uglify_fn(path.bitJs);
+  gulp.src(['./src/bit/lib/*'])
+    .pipe(gulp.dest('./build'));
+}
 
-  var bundleThis = function(srcArray)
-  {
-    for (index in srcArray)
-    {
+var uglify_fn = function(srcPath) {
+  var bundleThis = function(srcArray) {
+    for (index in srcArray) {
       var sourceFile = srcArray[index];
       var b = browserify({
         entries: sourceFile,
@@ -43,38 +48,33 @@ gulp.task('browserify', function() {
     }
   };
 
-  listFiles(path.originalJs, { maxDepth: 1}, function(error, files) {
+  listFiles(srcPath, function(error, files) {
     if (error) {
-        console.log(error);
+      console.log(error);
     } else {
       var filteredList = files.filter(checkFileExtension.bind(this,".js"));
       bundleThis(filteredList);
-    }});
+    }
+  });
+}
 
-});
-
-//bitdash
-gulp.task('bitdash', function () {
-  gulp.src(['./js/bitdash/latest/*'])
-    .pipe(gulp.dest('./build/bitdash/latest'));
-});
-
-var checkFileExtension = function(extension, fileName)
-{
-    if (!fileName || fileName.length < extension.length)
-    {
+var checkFileExtension = function(extension, fileName) {
+    if (!fileName || fileName.length < extension.length) {
       return false;
     }
 
     return (fileName.lastIndexOf(extension) == fileName.length - extension.length);
 }
 
-var getFileNameFromPath = function(path)
-{
+var getFileNameFromPath = function(path) {
   var start = path.lastIndexOf('/') + 1;
   return path.substring(start);
 }
 
+// Build All, TODO: add task build_osmf
+gulp.task('build', ['build_main_html5', 'build_bit']);
+gulp.task('build_main_html5', main_html5_fn);
+gulp.task('build_bit', bit_fn);
 gulp.task('test', shell.task(['jest --verbose']));
 
 // Initiate a watch
