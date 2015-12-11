@@ -5,6 +5,23 @@
 (function(_, $) {
   var pluginName = "bitdash";
   var currentInstances = 0;
+  var bitdashLibLoaded = false;
+  var bitdashLibURL;
+  var filename = "bit_wrapper.*\.js";
+
+  var scripts = document.getElementsByTagName('script');
+  for (var index in scripts) {
+    var match = scripts[index].src.match(filename);
+    if (match && match.length > 0) {
+      bitdashLibURL = match.input.match(/.*\//)[0];
+      break;
+    }
+  }
+  if (!bitdashLibURL) {
+    console.error("Can't get path to script", filename);
+    return;
+  }
+  bitdashLibURL += "bitdash.min.js";
 
   /**
    * @class BitdashVideoFactory
@@ -112,8 +129,25 @@
       }
     };
 
-    _player = bitdash(domId);
-    console.log("bitdash library loaded successfully");
+    var setupPlayer = function() {
+      conf.key = ''; // provide bitdash library key here
+      _player.setup(conf);
+      OO.log("Bitdash player has been set up!");
+    }
+
+    var loadLibrary = function(callback) {
+      var playerJs = document.createElement("script");
+      playerJs.type = "text/javascript";
+      playerJs.src = bitdashLibURL;
+
+      playerJs.onload = (function(callback) {
+        bitdashLibLoaded = true;
+        _player = bitdash(_domId);
+        OO.log("Bit wrapper loaded bitdash library!");
+        typeof callback === 'function' && callback();
+      }).bind(this, callback);
+      document.head.appendChild(playerJs);
+    }
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -158,9 +192,10 @@
 
         if (_hasPlayed) {
           this.load(false);
+        } else if (bitdashLibLoaded) {
+          setupPlayer();
         } else {
-          conf.key = ''; // provide bitdash library key here
-          _player.setup(conf);
+          loadLibrary(setupPlayer);
         }
       }
 
