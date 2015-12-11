@@ -17,7 +17,7 @@ gulp.task('test', shell.task(['jest --verbose']));
 
 // Initiate a watch
 gulp.task('watch', function() {
-  gulp.watch(path.scripts, ['build']);
+  gulp.watch("src/**/*", ['build']);
 });
 
 // The default task (called when you run `gulp` from cli)
