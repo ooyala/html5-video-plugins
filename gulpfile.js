@@ -9,11 +9,10 @@ var gulp = require('gulp'),
     uglify = require('gulp-uglify'),
     shell = require('gulp-shell'),
     rename = require('gulp-rename');
-    listFiles = require('file-lister');
 
 var path = {
-  mainJs: ['./src/main/js/'],
-  bitJs: ['./src/bit/js/']
+  mainJs: './src/main/js/main_html5.js',
+  bitJs: './src/bit/js/bit_wrapper.js'
 };
 
 var main_html5_fn = function() {
@@ -26,39 +25,21 @@ var bit_fn = function() {
     .pipe(gulp.dest('./build'));
 }
 
-var uglify_fn = function(srcPath) {
-  var bundleThis = function(srcArray) {
-    for (index in srcArray) {
-      var sourceFile = srcArray[index];
-      var b = browserify({
-        entries: sourceFile,
-        debug: false,
-      });
-
-      b.bundle()
-        .pipe(source(getFileNameFromPath(sourceFile)))
-        .pipe(buffer())
-        .pipe(gulp.dest('./build/'))
-        .pipe(uglify())
-        .pipe(rename({
-          extname: '.min.js'
-        }))
-        .pipe(gulp.dest('./build/'))
-    }
-  };
-
-  listFiles(srcPath, function(error, files) {
-    if (error) {
-      console.log(error);
-    } else {
-      var filteredList = files.filter(checkFileExtension.bind(this,".js"));
-      bundleThis(filteredList);
-    }
+var uglify_fn = function(srcFile) {
+  var b = browserify({
+    entries: srcFile,
+    debug: false,
   });
-}
 
-var checkFileExtension = function(extension, fileName) {
-  return (fileName.lastIndexOf(extension) == fileName.length - extension.length);
+  b.bundle()
+    .pipe(source(getFileNameFromPath(srcFile)))
+    .pipe(buffer())
+    .pipe(gulp.dest('./build/'))
+    .pipe(uglify())
+    .pipe(rename({
+      extname: '.min.js'
+    }))
+    .pipe(gulp.dest('./build/'));
 }
 
 var getFileNameFromPath = function(path) {
