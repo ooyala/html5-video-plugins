@@ -2,24 +2,17 @@
  * https://github.com/Automattic/expect.js
  */
 
-jest.dontMock('../../../src/main/js/main_html5');
-jest.dontMock('jquery');
-jest.dontMock('../../helpers/mock_vtc.js');
-
-var pluginFactory;
-OO = { Video: { plugin: function(plugin) { pluginFactory = plugin; } } };
-
-// These mocks can be removed when the common repo is added as a submodule
-OO.CONSTANTS = { SEEK_TO_END_LIMIT: 1 };
-OO.VIDEO = { ENCODING : { MP4 : "mp4", HlS: "hls", WEBM: "webm" }};
-
-require('expect.js');
-require('../../helpers/mock_vtc.js');
-var $ = OO.$ = require('jquery');
-OO._ = require('underscore');
-require('../../../src/main/js/main_html5');
-
 describe('main_html5 wrapper tests', function () {
+  require('../../test_lib.js');
+  jest.dontMock('../../helpers/mock_vtc.js');
+  require('../../helpers/mock_vtc.js');
+
+  var pluginFactory;
+  OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
+
+  jest.dontMock('../../../src/main/js/main_html5');
+  require('../../../src/main/js/main_html5');
+
   var parentElement, wrapper, element, vtc;
   var originalTimeout;
 

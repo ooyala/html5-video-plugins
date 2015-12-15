@@ -3,6 +3,8 @@
  * version: 0.1
  */
 
+require("../../../html5-common/js/utils/constants.js");
+
 (function(_, $) {
   var pluginName = "ooyalaHtml5VideoTech";
   var currentInstances = 0;

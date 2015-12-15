@@ -2,22 +2,15 @@
  * https://github.com/Automattic/expect.js
  */
 
-require('expect.js');
-jest.dontMock('../../../src/main/js/main_html5');
-jest.dontMock('jquery');
-
-var pluginFactory;
-OO = { Video: { plugin: function(plugin) { pluginFactory = plugin; } } };
-
-// These mocks can be removed when the common repo is added as a submodule
-OO.CONSTANTS = { SEEK_TO_END_LIMIT: 1 };
-OO.VIDEO = { ENCODING : { MP4 : "mp4", HlS: "hls", WEBM: "webm" }};
-
-var $ = OO.$ = require('jquery');
-OO._ = require('underscore');
-require('../../../src/main/js/main_html5');
-
 describe('main_html5 factory tests', function () {
+  require('../../test_lib.js');
+
+  var pluginFactory;
+  OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
+
+  jest.dontMock('../../../src/main/js/main_html5');
+  require('../../../src/main/js/main_html5');
+
   it('should contain parameter \'name\'', function () {
     expect(pluginFactory.name).to.be.ok();
   });
