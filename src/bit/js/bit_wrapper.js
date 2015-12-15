@@ -58,6 +58,7 @@
       var wrapper = new BitdashVideoWrapper(domId, videoWrapper[0]);
       currentInstances++;
       wrapper.controller = ooyalaVideoController;
+      wrapper.loadLibrary(_.bind(wrapper.setupPlayer, wrapper));
 
       return wrapper;
     };
@@ -129,13 +130,13 @@
       }
     };
 
-    var setupPlayer = function() {
+    this.setupPlayer = function() {
       conf.key = ''; // provide bitdash library key here
       _player.setup(conf);
       OO.log("Bitdash player has been set up!");
     }
 
-    var loadLibrary = function(callback) {
+    this.loadLibrary = function(callback) {
       var playerJs = document.createElement("script");
       playerJs.type = "text/javascript";
       playerJs.src = bitdashLibURL;
@@ -190,12 +191,12 @@
         conf.source.hls = (_isM3u8 ? _currentUrl : "");
         conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
 
-        if (_hasPlayed) {
+        if (_hasPlayed || bitdashLibLoaded) {
           this.load(false);
         } else if (bitdashLibLoaded) {
-          setupPlayer();
+          this.setupPlayer();
         } else {
-          loadLibrary(setupPlayer);
+          // this is the case of autoplay: bitdash library hasn't yet been loaded, it will be loaded later
         }
       }
 
@@ -319,6 +320,7 @@
     /**************************************************/
 
     var _onReady = conf.events["onReady"] = _.bind(function() {
+      this.controller.notify(this.controller.EVENTS.CAN_PLAY);
       printevent(arguments);
     }, this);
 
