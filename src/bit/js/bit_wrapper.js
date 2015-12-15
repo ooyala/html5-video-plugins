@@ -38,7 +38,7 @@
    */
   var BitdashVideoFactory = function() {
     this.name = pluginName;
-    this.encodings = ["remote_asset", "dash", "hls", "mp4"];
+    this.encodings = ["dash", "hls", "mp4"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
