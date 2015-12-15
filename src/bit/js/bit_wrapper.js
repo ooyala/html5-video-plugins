@@ -191,10 +191,12 @@
         conf.source.hls = (_isM3u8 ? _currentUrl : "");
         conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
 
-        if (_hasPlayed || bitdashLibLoaded) {
-          this.load(false);
-        } else if (bitdashLibLoaded) {
-          this.setupPlayer();
+        if (bitdashLibLoaded) {
+          if (_hasPlayed) {
+            this.load(false);
+          } else {
+            this.setupPlayer();
+          }
         } else {
           // this is the case of autoplay: bitdash library hasn't yet been loaded, it will be loaded later
         }
