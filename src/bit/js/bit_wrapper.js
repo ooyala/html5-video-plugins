@@ -7,8 +7,14 @@
   var currentInstances = 0;
   var bitdashLibLoaded = false;
   var bitdashLibURL;
+  var licenseKeyURL = "//dev.corp.ooyala.com:8000/bitdash_settings.js";
   var filename = "bit_wrapper.*\.js";
 
+  var licenseKeyJs = document.createElement("script");
+  licenseKeyJs.type = "text/javascript";
+  licenseKeyJs.src = licenseKeyURL;
+  document.head.appendChild(licenseKeyJs);
+  
   var scripts = document.getElementsByTagName('script');
   for (var index in scripts) {
     var match = scripts[index].src.match(filename);
@@ -32,7 +38,7 @@
    */
   var BitdashVideoFactory = function() {
     this.name = pluginName;
-    this.encodings = ["dash", "hls", "mp4"];
+    this.encodings = ["remote_asset", "dash", "hls", "mp4"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
@@ -131,7 +137,7 @@
     };
 
     this.setupPlayer = function() {
-      conf.key = ''; // provide bitdash library key here
+      conf.key = window.bitdashSettings.credentials.key;
       _player.setup(conf);
       OO.log("Bitdash player has been set up!");
     }
