@@ -430,7 +430,7 @@ package
 
     /**
      * As the video plays, this method updates the duration,current time and 
-       also the buffer length of the video.
+     * also the buffer length of the video.
      * @public
      * @method HDSPlayer#onPlayheadUpdate
      * @param {Event} event The event passed from the external interface.
