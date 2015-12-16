@@ -147,9 +147,7 @@
 
     if (bitdashLibLoaded) {
       _player = bitdash(domId);
-    } else {
-      console.error("Failed to load Bitdash SDK!");
-    }
+    } 
 
 
     /************************************************************************************/
@@ -193,11 +191,33 @@
         conf.source.hls = (_isM3u8 ? _currentUrl : "");
         conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
 
-        if (_hasPlayed) {
-          this.load(false);
+        if (bitdashLibLoaded) {
+          if (_hasPlayed) {
+            this.load(false);
+          } else {
+            _player.setup(conf);
+            OO.log("Bitdash player has been set up!");
+          } 
         } else {
-          _player.setup(conf);
-          OO.log("Bitdash player has been set up!");
+          var cnt = 0;
+          while (!bitdashLibLoaded) {
+            _.delay(function() {
+              OO.log("Waiting to load library...");
+              cnt++;
+            }, 100);
+            if (cnt > 100) {
+              break;
+            }
+          }
+          if (bitdashLibLoaded) {
+            if (!_player) {
+              _player = bitdash(_domId);
+            }
+            _player.setup(conf);
+            OO.log("Bitdash player has been set up!");
+          } else {
+            console.error("Failed to load bitdash library!");
+          }
         }
       }
 
