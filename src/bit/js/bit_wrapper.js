@@ -7,6 +7,7 @@
   var currentInstances = 0;
   var bitdashLibLoaded = false;
   var bitdashLibURL;
+  var BITDASH_LIB_TIMEOUT = 30000;
   var licenseKeyURL = "//dev.corp.ooyala.com:8000/bitdash_settings.js";
   var filename = "bit_wrapper.*\.js";
 
@@ -199,7 +200,12 @@
             OO.log("Bitdash player has been set up!");
           } 
         } else {
+          var start = Date.now();
           (function waitForLibrary() {
+            if (Date.now() - start >= BITDASH_LIB_TIMEOUT) {
+              console.error("Timed out loading library");
+              return false;
+            }
             setTimeout(function() {
               if (bitdashLibLoaded) {
                 if (!_player) {
