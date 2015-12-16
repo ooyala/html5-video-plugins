@@ -4,8 +4,14 @@
 
 (function(_, $) {
   var pluginName = "ooyalaFlashVideoTech";
-  var swfPath = "VTC-BIN/";
   var flashMinimumVersion = "11.1.0";
+
+  /**
+   * Config variables for paths to flash resources.
+   */
+  var swfPath = "../build";
+  var pluginPath = swfPath+"HDSPlayer.swf";
+  var flexPath = swfPath+"playerProductInstall.swf";
 
   /**
    * @class OoyalaFlashVideoFactory
@@ -122,9 +128,6 @@
     attributes.style = 'z-index:0';
     attributes.name = playerId;
     attributes.align = "middle";
-
-    var pluginPath = swfPath+"HDSPlayer.swf";
-    var flexPath = swfPath+"playerProductInstall.swf";
 
     swfobject.embedSWF(
       pluginPath, "container",
