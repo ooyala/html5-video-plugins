@@ -79,6 +79,7 @@ require("../../../html5-common/js/utils/environment.js");
       var element = new OoyalaVideoWrapper(domId, video[0], dimension);
       currentInstances++;
       element.controller = controller;
+      controller.notify(controller.EVENTS.CAN_PLAY);
 
       // TODO: Wait for loadstart before calling this?
       element.subscribeAllEvents();
