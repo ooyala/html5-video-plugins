@@ -29,6 +29,15 @@
   }
   bitdashLibURL += "bitdash.min.js";
 
+  var playerJs = document.createElement("script");
+  playerJs.type = "text/javascript";
+  playerJs.src = bitdashLibURL;
+
+  playerJs.onload = (function(callback) {
+    bitdashLibLoaded = true;
+  });
+  document.head.appendChild(playerJs);
+  
   /**
    * @class BitdashVideoFactory
    * @classdesc Factory for creating bitdash player objects that use HTML5 video tags.
@@ -64,7 +73,6 @@
       var wrapper = new BitdashVideoWrapper(domId, videoWrapper[0]);
       currentInstances++;
       wrapper.controller = ooyalaVideoController;
-      wrapper.loadLibrary(_.bind(wrapper.setupPlayer, wrapper));
 
       return wrapper;
     };
@@ -115,6 +123,7 @@
     var _videoElement = null;
 
     var conf = {
+      key: window.bitdashSettings.credentials.key,
       style: {
         width: '100%',
         height: '100%',
@@ -136,25 +145,12 @@
       }
     };
 
-    this.setupPlayer = function() {
-      conf.key = window.bitdashSettings.credentials.key;
-      _player.setup(conf);
-      OO.log("Bitdash player has been set up!");
+    if (bitdashLibLoaded) {
+      _player = bitdash(domId);
+    } else {
+      console.error("Failed to load Bitdash SDK!");
     }
 
-    this.loadLibrary = function(callback) {
-      var playerJs = document.createElement("script");
-      playerJs.type = "text/javascript";
-      playerJs.src = bitdashLibURL;
-
-      playerJs.onload = (function(callback) {
-        bitdashLibLoaded = true;
-        _player = bitdash(_domId);
-        OO.log("Bit wrapper loaded bitdash library!");
-        typeof callback === 'function' && callback();
-      }).bind(this, callback);
-      document.head.appendChild(playerJs);
-    }
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -197,14 +193,11 @@
         conf.source.hls = (_isM3u8 ? _currentUrl : "");
         conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
 
-        if (bitdashLibLoaded) {
-          if (_hasPlayed) {
-            this.load(false);
-          } else {
-            this.setupPlayer();
-          }
+        if (_hasPlayed) {
+          this.load(false);
         } else {
-          // this is the case of autoplay: bitdash library hasn't yet been loaded, it will be loaded later
+          _player.setup(conf);
+          OO.log("Bitdash player has been set up!");
         }
       }
 
