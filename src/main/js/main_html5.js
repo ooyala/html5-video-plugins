@@ -3,7 +3,11 @@
  * version: 0.1
  */
 
+require("../../../html5-common/js/utils/InitModules/InitOO.js");
+require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
+require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
+require("../../../html5-common/js/utils/environment.js");
 
 (function(_, $) {
   var pluginName = "ooyalaHtml5VideoTech";
@@ -26,7 +30,7 @@ require("../../../html5-common/js/utils/constants.js");
     var getSupportedEncodings = function() {
       var videoElement = document.createElement("video");
       var list = [OO.VIDEO.ENCODING.MP4];
-      if (!Platform.isSafari) {
+      if (!OO.isSafari) {
         list.push(OO.VIDEO.ENCODING.WEBM);
       }
       if (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
@@ -62,7 +66,7 @@ require("../../../html5-common/js/utils/constants.js");
 
       // enable airplay for iOS
       // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
-      if (Platform.isIos) {
+      if (OO.isIos) {
         video.attr("x-webkit-airplay", "allow");
       }
 
@@ -82,7 +86,7 @@ require("../../../html5-common/js/utils/constants.js");
       parentContainer.append(video);
 
       // On Android, we need to "activate" the video on a click so we can control it with JS later on mobile
-      if (Platform.isAndroid) {
+      if (OO.isAndroid) {
         element.play();
         element.pause();
       }
@@ -107,9 +111,9 @@ require("../../../html5-common/js/utils/constants.js");
      * @property OoyalaVideoFactory#maxSupportedElements
      */
     this.maxSupportedElements = (function() {
-      var iosRequireSingleElement = Platform.isIos;
-      var androidRequireSingleElement = Platform.isAndroid &&
-                                        (!Platform.isAndroid4Plus || Platform.chromeMajorVersion < 40);
+      var iosRequireSingleElement = OO.isIos;
+      var androidRequireSingleElement = OO.isAndroid &&
+                                        (!Platform.isAndroid4Plus || OO.chromeMajorVersion < 40);
       return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : -1;
     })();
   };
@@ -217,7 +221,7 @@ require("../../../html5-common/js/utils/constants.js");
         _currentUrl = url || "";
 
         // bust the chrome caching bug
-        if (_currentUrl.length > 0 && Platform.isChrome) {
+        if (_currentUrl.length > 0 && OO.isChrome) {
           _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
@@ -248,7 +252,7 @@ require("../../../html5-common/js/utils/constants.js");
       if (loaded && !rewind) return;
       if (!!rewind) {  // consider adding loaded &&
         try {
-          if (Platform.isIos && Platform.iosMajorVersion == 8) {
+          if (OO.isIos && OO.iosMajorVersion == 8) {
             // On iOS, wait for durationChange before setting currenttime
             $(_video).on("durationchange", _.bind(function() {
                                                                _video.currentTime = 0;
@@ -388,7 +392,7 @@ require("../../../html5-common/js/utils/constants.js");
       // The textTrack added by QuickTime will not be removed by removing track element
       // But the textTrack that we added by adding track element will be removed by removing track element.
       // This first check is to check for live CC
-      if (Platform.isSafari && _video.textTracks.length !== 0) {
+      if (OO.isSafari && _video.textTracks.length !== 0) {
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].language === language ||
               (language == "CC" && _video.textTracks[i].kind === "captions")) {
@@ -410,7 +414,7 @@ require("../../../html5-common/js/utils/constants.js");
 
           _.delay(function() {
             _video.textTracks[0].mode = mode;
-            if (Platform.isFirefox) {
+            if (OO.isFirefox) {
               for (var i=0; i < _video.textTracks[0].cues.length; i++) {
                 _video.textTracks[0].cues[i].line = 15;
               }
@@ -505,7 +509,7 @@ require("../../../html5-common/js/utils/constants.js");
      */
     var raiseStalledEvent = function(event) {
       // Fix multiple video tag error in iPad
-      if (Platform.isIpad && event.target.currentTime === 0) {
+      if (OO.isIpad && event.target.currentTime === 0) {
         _video.pause();
       }
 
@@ -590,7 +594,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
     var raiseEndedEvent = _.bind(function(event) {
-      if (!_video.ended && Platform.isIos) {
+      if (!_video.ended && OO.isIos) {
         // iOS raises ended events sometimes when a new stream is played in the same video element
         // Prevent this faulty event from making it to the player message bus
         // Desktop Safari, however, will raise this event while ended == false and we shouldn't block it.
@@ -716,7 +720,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaVideoWrapper#setVideoCentering
      */
      var setVideoCentering = function() {
-       if (Platform.isIpad) {
+       if (OO.isIpad) {
         var videoWidth = _video.videoWidth;
         var videoHeight = _video.videoHeight;
         var playerWidth = playerDimension.width;
@@ -805,7 +809,7 @@ require("../../../html5-common/js/utils/constants.js");
       var safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
 
       // iPad with 6.1 has an interesting bug that causes the video to break if seeking exactly to zero
-      if (Platform.isIpad && safeTime < 0.1) {
+      if (OO.isIpad && safeTime < 0.1) {
         safeTime = 0.1;
       }
       return safeTime;
@@ -903,7 +907,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaVideoWrapper#forceEndOnPausedIfRequired
      */
     var forceEndOnPausedIfRequired = _.bind(function() {
-      if (Platform.isSafari && !Platform.isIos) {
+      if (OO.isSafari && !OO.isIos) {
         if (_video.ended) {
           console.log("VTC_OO: Force through the end of stream for Safari", _video.currentSrc,
                       _video.duration, _video.currentTime);
@@ -939,86 +943,6 @@ require("../../../html5-common/js/utils/constants.js");
    */
   var Platform = {
     /**
-     * Checks if the system is running on iOS.
-     * @private
-     * @method Platform#isIos
-     * @returns {boolean} True if the system is running on iOS
-     */
-    isIos: (function() {
-      var platform = window.navigator.platform;
-      return !!(platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/));
-    })(),
-
-    /**
-     * Checks if the system is an iPad
-     * @private
-     * @method Platform#isIpad
-     * @returns {boolean} True if the system is an Ipad
-     */
-    isIpad: (function() {
-      return !!window.navigator.platform.match(/iPad/);
-    })(),
-
-    /**
-     * Checks if the player is running in Chrome.
-     * @private
-     * @method Platform#isChrome
-     * @returns {boolean} True if the player is running in chrome
-     */
-    isChrome: (function() {
-      return !!window.navigator.userAgent.match(/Chrome/);
-    })(),
-
-    /**
-     * Checks if the player is running in Firefox.
-     * @private
-     * @method Platform#isFirefox
-     * @returns {boolean} True if the player is running in firefox
-     */
-    isFirefox: (function() {
-      return !!window.navigator.userAgent.match(/Firefox/);
-    })(),
-
-    /**
-     * Checks if the player is running in Safari.
-     * @private
-     * @method Platform#isSafari
-     * @returns {boolean} True if the player is running in Safari
-     */
-    isSafari: (function() {
-      return (!!window.navigator.userAgent.match(/AppleWebKit/) &&
-              !window.navigator.userAgent.match(/Chrome/));
-    })(),
-
-    /**
-     * Gets the iOS major version.
-     * @private
-     * @method Platform#iosMajorVersion
-     * @returns {?number} The iOS major version; null if the system is not running iOS
-     */
-    iosMajorVersion: (function(){
-      try {
-        if (window.navigator.userAgent.match(/(iPad|iPhone|iPod)/)) {
-          return parseInt(window.navigator.userAgent.match(/OS (\d+)/)[1], 10);
-        } else {
-          return null;
-        }
-      } catch (err) {
-        return null;
-      }
-    })(),
-
-    /**
-     * Checks if the player is running on an Android device.
-     * @private
-     * @method Platform#isAndroid
-     * @returns {boolean} True if the player is running on an Android device
-     */
-    isAndroid: (function(){
-      return !!window.navigator.appVersion.match(/Android/);
-    })(),
-
-    /**
      * Checks if the player is running on an Android device of version 4 or later.
      * @private
      * @method Platform#isAndroid4Plus
@@ -1028,20 +952,6 @@ require("../../../html5-common/js/utils/constants.js");
       if (!window.navigator.appVersion.match(/Android/)) return false;
       var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
       return (_.first(device) || "").slice(-1) >= "4";
-    })(),
-
-    /**
-     * Checks if the player is running in Safari.
-     * @private
-     * @method Platform#isSafari
-     * @returns {boolean} True if the player is running in safari
-     */
-    chromeMajorVersion: (function(){
-      try {
-        return parseInt(window.navigator.userAgent.match(/Chrome.([0-9]*)/)[1], 10);
-      } catch(err) {
-        return null;
-      }
     })(),
   };
 
