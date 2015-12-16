@@ -199,25 +199,20 @@
             OO.log("Bitdash player has been set up!");
           } 
         } else {
-          var cnt = 0;
-          while (!bitdashLibLoaded) {
-            _.delay(function() {
-              OO.log("Waiting to load library...");
-              cnt++;
-            }, 100);
-            if (cnt > 100) {
-              break;
-            }
-          }
-          if (bitdashLibLoaded) {
-            if (!_player) {
-              _player = bitdash(_domId);
-            }
-            _player.setup(conf);
-            OO.log("Bitdash player has been set up!");
-          } else {
-            console.error("Failed to load bitdash library!");
-          }
+          (function waitForLibrary() {
+            setTimeout(function() {
+              if (bitdashLibLoaded) {
+                if (!_player) {
+                  _player = bitdash(_domId);
+                }
+                _player.setup(conf);
+                OO.log("Bitdash player has been set up!");
+              } else {
+                OO.log("Loading library...");
+                waitForLibrary();
+              } 
+            }, 200);
+          })();
         }
       }
 
