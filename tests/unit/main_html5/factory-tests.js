@@ -3,7 +3,7 @@
  */
 
 describe('main_html5 factory tests', function () {
-  require('../../test_lib.js');
+  require('../../utils/test_lib.js');
 
   var pluginFactory;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };

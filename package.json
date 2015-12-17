@@ -40,6 +40,7 @@
   "jest": {
     "modulePathIgnorePatterns": [
       "/build/",
+      "/tests/utils/",
       "/node_modules/"
     ],
     "persistModuleRegistryBetweenSpecs": true,

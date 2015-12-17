@@ -3,9 +3,9 @@
  */
 
 describe('main_html5 wrapper tests', function () {
-  require('../../test_lib.js');
-  jest.dontMock('../../helpers/mock_vtc.js');
-  require('../../helpers/mock_vtc.js');
+  require('../../utils/test_lib.js');
+  jest.dontMock('../../utils/mock_vtc.js');
+  require('../../utils/mock_vtc.js');
 
   var pluginFactory;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };

@@ -12,7 +12,7 @@ global.expect = require('expect.js');
 // a wrapper domparser simulating Mozilla DOMParser in the browser:
 window.DOMParser = function() {};
 
-require.requireActual("../html5-common/js/utils/InitModules/InitOOUnderscore.js");
+require.requireActual("../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 
 OO._.extend(window.DOMParser.prototype, {
   parseFromString: function(data, type) {
@@ -24,5 +24,5 @@ OO._.extend(window.DOMParser.prototype, {
 OO._.extend(global, window);
 
 // This needs to come after the extend(global, window) line above otherwise $ gets set to undefined.
-require.requireActual("../html5-common/js/utils/InitModules/InitOOJQuery.js");
-require.requireActual("../html5-common/js/utils/InitModules/InitOOHazmat.js");
+require.requireActual("../../html5-common/js/utils/InitModules/InitOOJQuery.js");
+require.requireActual("../../html5-common/js/utils/InitModules/InitOOHazmat.js");
