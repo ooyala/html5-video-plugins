@@ -163,6 +163,7 @@
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url) {
+      return false;
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
       var urlChanged = false;
@@ -204,6 +205,8 @@
           (function waitForLibrary() {
             if (Date.now() - start >= BITDASH_LIB_TIMEOUT) {
               console.error("Timed out loading library");
+              this.controller.notify(this.controller.EVENTS.CAN_PLAY);
+              this.controller.notify(this.controller.EVENTS.ERROR, {errorcode:-1});
               return false;
             }
             setTimeout(function() {
