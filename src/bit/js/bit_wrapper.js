@@ -7,8 +7,15 @@
   var currentInstances = 0;
   var bitdashLibLoaded = false;
   var bitdashLibURL;
+  var BITDASH_LIB_TIMEOUT = 30000;
+  var licenseKeyURL = "//dev.corp.ooyala.com:8000/bitdash_settings.js";
   var filename = "bit_wrapper.*\.js";
 
+  var licenseKeyJs = document.createElement("script");
+  licenseKeyJs.type = "text/javascript";
+  licenseKeyJs.src = licenseKeyURL;
+  document.head.appendChild(licenseKeyJs);
+  
   var scripts = document.getElementsByTagName('script');
   for (var index in scripts) {
     var match = scripts[index].src.match(filename);
@@ -23,6 +30,15 @@
   }
   bitdashLibURL += "bitdash.min.js";
 
+  var playerJs = document.createElement("script");
+  playerJs.type = "text/javascript";
+  playerJs.src = bitdashLibURL;
+
+  playerJs.onload = (function(callback) {
+    bitdashLibLoaded = true;
+  });
+  document.head.appendChild(playerJs);
+  
   /**
    * @class BitdashVideoFactory
    * @classdesc Factory for creating bitdash player objects that use HTML5 video tags.
@@ -108,6 +124,7 @@
     var _videoElement = null;
 
     var conf = {
+      key: window.bitdashSettings.credentials.key,
       style: {
         width: '100%',
         height: '100%',
@@ -129,25 +146,10 @@
       }
     };
 
-    var setupPlayer = function() {
-      conf.key = ''; // provide bitdash library key here
-      _player.setup(conf);
-      OO.log("Bitdash player has been set up!");
-    }
+    if (bitdashLibLoaded) {
+      _player = bitdash(domId);
+    } 
 
-    var loadLibrary = function(callback) {
-      var playerJs = document.createElement("script");
-      playerJs.type = "text/javascript";
-      playerJs.src = bitdashLibURL;
-
-      playerJs.onload = (function(callback) {
-        bitdashLibLoaded = true;
-        _player = bitdash(_domId);
-        OO.log("Bit wrapper loaded bitdash library!");
-        typeof callback === 'function' && callback();
-      }).bind(this, callback);
-      document.head.appendChild(playerJs);
-    }
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -190,12 +192,35 @@
         conf.source.hls = (_isM3u8 ? _currentUrl : "");
         conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
 
-        if (_hasPlayed) {
-          this.load(false);
-        } else if (bitdashLibLoaded) {
-          setupPlayer();
+        if (bitdashLibLoaded) {
+          if (_hasPlayed) {
+            this.load(false);
+          } else {
+            _player.setup(conf);
+            OO.log("Bitdash player has been set up!");
+          } 
         } else {
-          loadLibrary(setupPlayer);
+          var start = Date.now();
+          (function waitForLibrary() {
+            if (Date.now() - start >= BITDASH_LIB_TIMEOUT) {
+              console.error("Timed out loading library");
+              this.controller.notify(this.controller.EVENTS.CAN_PLAY);
+              this.controller.notify(this.controller.EVENTS.ERROR, {errorcode:-1});
+              return false;
+            }
+            setTimeout(function() {
+              if (bitdashLibLoaded) {
+                if (!_player) {
+                  _player = bitdash(_domId);
+                }
+                _player.setup(conf);
+                OO.log("Bitdash player has been set up!");
+              } else {
+                OO.log("Loading library...");
+                waitForLibrary();
+              } 
+            }, 200);
+          })();
         }
       }
 
@@ -319,6 +344,7 @@
     /**************************************************/
 
     var _onReady = conf.events["onReady"] = _.bind(function() {
+      this.controller.notify(this.controller.EVENTS.CAN_PLAY);
       printevent(arguments);
     }, this);
 
