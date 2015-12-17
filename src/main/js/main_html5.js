@@ -19,12 +19,18 @@ require("../../../html5-common/js/utils/environment.js");
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
+   * @property {object} features An array of supported features (ex. OO.VIDEO.FEATURE.CLOSED_CAPTIONS)
+   * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
    */
   var OoyalaVideoFactory = function() {
     this.name = pluginName;
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
+
+    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
+                      OO.VIDEO.FEATURE.VIDEO_OBJECT_OPEN ];
+    this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     // Determine supported encodings
     var getSupportedEncodings = function() {
