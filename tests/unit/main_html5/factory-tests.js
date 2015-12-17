@@ -19,7 +19,16 @@ describe('main_html5 factory tests', function () {
   });
 
   it('should provide a list of supported encodings', function(){
-    expect(pluginFactory.encodings).to.eql(["mp4", "webm"]);
+    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.MP4, OO.VIDEO.ENCODING.WEBM]);
+  });
+
+  it('should provide a list of supported features', function(){
+    expect(pluginFactory.features).to.eql([OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
+                                           OO.VIDEO.FEATURE.VIDEO_OBJECT_OPEN]);
+  });
+
+  it('should report the core technology of the video element', function(){
+    expect(pluginFactory.technology).to.eql(OO.VIDEO.TECHNOLOGY.HTML5);
   });
 
   it('should report max supported elements', function(){
