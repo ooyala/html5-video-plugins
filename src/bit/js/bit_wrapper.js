@@ -2,6 +2,10 @@
  * Plugin for bitdash player by Bitmovin GMBH
  */
 
+require("../../../html5-common/js/utils/InitModules/InitOO.js");
+require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
+require("../../../html5-common/js/utils/constants.js");
+
 (function(_, $) {
   var pluginName = "bitdash";
   var currentInstances = 0;
@@ -15,7 +19,7 @@
   licenseKeyJs.type = "text/javascript";
   licenseKeyJs.src = licenseKeyURL;
   document.head.appendChild(licenseKeyJs);
-  
+
   var scripts = document.getElementsByTagName('script');
   for (var index in scripts) {
     var match = scripts[index].src.match(filename);
@@ -38,17 +42,21 @@
     bitdashLibLoaded = true;
   });
   document.head.appendChild(playerJs);
-  
+
   /**
    * @class BitdashVideoFactory
    * @classdesc Factory for creating bitdash player objects that use HTML5 video tags.
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
-   * @property {object} encodings An array of supported encoding types (ex. dash, mp4)
+   * @property {object} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.DASH)
+   * @property {object} features An array of supported features (ex. OO.VIDEO.FEATURE.CLOSED_CAPTIONS)
+   * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
    */
   var BitdashVideoFactory = function() {
     this.name = pluginName;
-    this.encodings = ["dash", "hls", "mp4"];
+    this.encodings = [ OO.VIDEO.ENCODING.DASH, OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4 ];
+    this.features = [];
+    this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;

@@ -4,6 +4,10 @@
  * version: 0.1
  */
 
+require("../html5-common/js/utils/InitModules/InitOO.js");
+require("../html5-common/js/utils/InitModules/InitOOUnderscore.js");
+require("../html5-common/js/utils/constants.js");
+
 (function(_, $) {
   /**
    * @class TemplateVideoFactory
