@@ -130,6 +130,7 @@ require("../../../html5-common/js/utils/constants.js");
     var _isM3u8 = false;
     var _isDash = false;
     var _videoElement = null;
+    var _isReady = false;
 
     var conf = {
       key: window.bitdashSettings.credentials.key,
@@ -205,6 +206,9 @@ require("../../../html5-common/js/utils/constants.js");
             this.load(false);
           } else {
             _player.setup(conf);
+            if (_isM3u8) {
+              this.controller.notify(this.controller.EVENTS.CAN_PLAY);
+            }
             OO.log("Bitdash player has been set up!");
           } 
         } else {
@@ -233,6 +237,39 @@ require("../../../html5-common/js/utils/constants.js");
       }
 
       return urlChanged;
+    };
+
+    /**
+     * Sets the closed captions on the video element.
+     * @public
+     * @method BitdashVideoWrapper#setClosedCaptions
+     * @param {string} language The language of the closed captions. If null, the current closed captions will be removed.
+     * @param {object} closedCaptions The closedCaptions object
+     * @param {object} params The params to set with closed captions
+     */
+    this.setClosedCaptions = function(language, closedCaptions, params) {
+      if (!!language && params.mode === "showing") {
+        var captions =  _player.getAvailableSubtitles() || [];
+        var trackId = "1";
+        if (captions.length > 0) {
+          if (captions[captions.length - 1].lang === language &&
+              captions[captions.length - 1].label === closedCaptions.closed_captions_vtt[language].name) {
+            console.warning("Closed captions track '", trackId, "' has already been installed");
+            // this track has already been installed
+            return;
+          }
+          trackId = (parseInt(captions[captions.length - 1].id) + 1).toString();
+        }
+        _player.addSubtitle(
+          closedCaptions.closed_captions_vtt[language].url,
+          trackId,
+          "subtitle",
+          language,
+          closedCaptions.closed_captions_vtt[language].name);
+        _player.setSubtitle(trackId);
+      } else {
+        _player.setSubtitle(null);
+      }
     };
 
     var resetStreamData = _.bind(function() {
@@ -352,8 +389,13 @@ require("../../../html5-common/js/utils/constants.js");
     /**************************************************/
 
     var _onReady = conf.events["onReady"] = _.bind(function() {
-      this.controller.notify(this.controller.EVENTS.CAN_PLAY);
+      _isReady = true;
       printevent(arguments);
+      if (_isM3u8) {
+        _player.play();
+      } else {
+        this.controller.notify(this.controller.EVENTS.CAN_PLAY);
+      }
     }, this);
 
     var _onPlay = conf.events["onPlay"] = _.bind(function() {
@@ -422,17 +464,6 @@ require("../../../html5-common/js/utils/constants.js");
     }, this);
 
     var _onSubtitleChange = conf.events["onSubtitleChange"] = _.bind(function() {
-      // TO BE IMPLEMENTED
-      var sub = _player.getSubtitle();
-      if (sub && sub["id"]) {
-        //this.mb.publish("ccLanguage", sub.id);
-      }
-      var ccLanguages = _player.getAvailableSubtitles();
-      var ids = [];
-      for (var i in ccLanguages) {
-        ids.push(ccLanguages[i].id || "off");
-      }
-      //this.mb.publish("subtitles", ids);
       printevent(arguments);
     }, this);
 
@@ -490,7 +521,9 @@ require("../../../html5-common/js/utils/constants.js");
 
     var printevent = function(arr) {
       // XXX this is debugging code, should be removed before release
-      console.log("bitplayer:", arr[0].type, JSON.stringify(arr[0]));
+      if (arr[0].type !== "onTimeChanged") {
+        console.log("bitplayer:", arr[0].type, JSON.stringify(arr[0]));
+      }
     };
   };
 
