@@ -8,7 +8,8 @@ var gulp = require('gulp'),
     buffer = require('vinyl-buffer'),
     uglify = require('gulp-uglify'),
     shell = require('gulp-shell'),
-    rename = require('gulp-rename');
+    rename = require('gulp-rename'),
+    exec = require('child_process').exec;
 
 var path = {
   mainJs: './src/main/js/main_html5.js',
@@ -47,10 +48,20 @@ var getFileNameFromPath = function(path) {
   return path.substring(start);
 }
 
+// Dependency task
+gulp.task('init_module', function(callback) {
+  exec("git submodule update --init && cd html5-common && npm install && cd ..", function(err) {
+    if (err) return callback(err);
+    callback();
+  });
+});
+
 // Build All, TODO: add task build_osmf
-gulp.task('build', ['build_main_html5', 'build_bit']);
-gulp.task('build_main_html5', main_html5_fn);
-gulp.task('build_bit', bit_fn);
+gulp.task('build', ['init_module'], function() {
+  main_html5_fn();
+  bit_fn();
+});
+
 gulp.task('test', shell.task(['jest --verbose']));
 
 // Initiate a watch
