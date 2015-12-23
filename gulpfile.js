@@ -8,12 +8,21 @@ var gulp = require('gulp'),
     buffer = require('vinyl-buffer'),
     uglify = require('gulp-uglify'),
     shell = require('gulp-shell'),
-    rename = require('gulp-rename');
+    rename = require('gulp-rename'),
+    sys = require('sys'),
+    exec = require('child_process').exec;
+
+function puts(error, stdout, stderr) { sys.puts(stdout); }
 
 var path = {
   mainJs: './src/main/js/main_html5.js',
   bitJs: './src/bit/js/bit_wrapper.js'
 };
+
+var init_module_fn = function() {
+  exec("npm install && git submodule update --init", puts);
+  exec("cd html5-common && npm install && cd ..", puts);
+}
 
 var main_html5_fn = function() {
   uglify_fn(path.mainJs);
@@ -48,7 +57,8 @@ var getFileNameFromPath = function(path) {
 }
 
 // Build All, TODO: add task build_osmf
-gulp.task('build', ['build_main_html5', 'build_bit']);
+gulp.task('build', ['init_module', 'build_main_html5', 'build_bit']);
+gulp.task('init_module', init_module_fn);
 gulp.task('build_main_html5', main_html5_fn);
 gulp.task('build_bit', bit_fn);
 gulp.task('test', shell.task(['jest --verbose']));
