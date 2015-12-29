@@ -20,6 +20,9 @@ describe('main_html5 wrapper tests', function () {
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
+  });
+
+  afterEach(function() {
     OO.isSafari = false;
   });
 
