@@ -2,6 +2,12 @@
  * OSMF flash video plugin
  */
 
+require("../../../html5-common/js/utils/InitModules/InitOO.js");
+require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
+require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
+require("../../../html5-common/js/utils/constants.js");
+require("../../../html5-common/js/utils/environment.js");
+
 (function(_, $) {
   var pluginName = "ooyalaFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
@@ -9,10 +15,10 @@
   /**
    * Config variables for paths to flash resources.
    */
-  var swfPath = "VTC-BIN/";
+  var swfPath = "/html5-video-plugins/build/";
   var pluginPath = swfPath+"HDSPlayer.swf";
   var flexPath = swfPath+"playerProductInstall.swf";
-
+  this.ready=false;
   /**
    * @class OoyalaFlashVideoFactory
    * @classdesc Factory for creating video player objects that use Flash in an HTML5 wrapper.
@@ -20,19 +26,14 @@
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
    */
+
   var OoyalaFlashVideoFactory = function() {
     this.name = pluginName;
-    //this.streams = ["hds", "dash"];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
-
-   /* var videoElement = document.createElement("object");
-    videoElement.setAttribute("type", "application/x-shockwave-flash");
-    videoElement.setAttribute("data", "VTC-BIN/HDSPlayer.swf");*/
-
     this.encodings = ["hds"];
-   // videoElement = null;
+    //this.encodings = OO.VIDEO.ENCODING.HDS;
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
      * @public
@@ -44,18 +45,15 @@
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, id, controller, css) {
-      var video = $("<object>");
-
+      var video = $("<video>");
+      video.attr("id", id);
+      parentContainer.append(video);
 
       element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer);
       element.controller = controller;
-
       // TODO: Wait for loadstart before calling this?
       element.subscribeAllEvents();
-
-      parentContainer.append(video);
       return element;
-
     };
 
     /**
@@ -76,15 +74,6 @@
      * @property OoyalaFlashVideoFactory#maxSupportedElements
      */
     this.maxSupportedElements = -1;
-
-    /**
-     * Returns the number of video elements currently instantiated.
-     * @public
-     * @method OoyalaFlashVideoFactory#getCurrentNumberOfInstances
-     * @returns {int} The number of video elements created by this factory that have not been destroyed
-     */
-    /*this.getCurrentNumberOfInstances = function() {
-    };*/
   };
 
   /**
@@ -92,12 +81,13 @@
    * @classdesc Player object that wraps the video element.
    * @param {string} playerId The id of the video player element
    * @param {object} video The core video object to wrap
-   * @param {string} parentContainer Id of the Div element in which the swf will be embedded  
+   * @param {string} parentContainer Id of the Div element in which the swf will be embedded
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
   var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer) {
+    var readyEvent = new Event('JSREADY');
 
     parentContainer = "container";
     var _video = video;
@@ -106,10 +96,7 @@
     var videoEnded = false;
     var loaded = false;
     var hasPlayed = false;
-    //var queuedSeekTime = null;
-    //var isSeeking = false;
-    //var currentTime = 0;
-    //var isM3u8 = false;
+    var newController;
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -129,19 +116,15 @@
     attributes.style = 'z-index:0';
     attributes.name = playerId;
     attributes.align = "middle";
-
     swfobject.embedSWF(
-      pluginPath, "container",
+      pluginPath, playerId,
       "100%", "100%",
       flashMinimumVersion, flexPath,
       flashvars, params, attributes, this.subscribeAllEvents);
-    alert("swfobject loaded"); // debugging delay.
 
     JFlashBridge.bind(playerId, this);
 
     var _flashVideoObject = JFlashBridge.getSWF(playerId);
-
-
     var _readyToPlay = false; // should be set to true on canplay event
 
     /************************************************************************************/
@@ -176,7 +159,7 @@
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
                     "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
                   };
-      _.each(listeners, function(v, i) { 
+      _.each(listeners, function(v, i) {
         $(_video).on(i, v); }, this);
     };
 
@@ -197,35 +180,33 @@
      * @param {string} url The new url to insert into the video element's src attribute
      * @returns {boolean} True or false indicating success
      */
+
     this.setVideoUrl = function(url) {
-      console.log("[OSMF]:" + url + " for: " + _video);
 
       var urlChanged = false;
+           newController=this.controller;
+
       if (_currentUrl.replace(/[\?&]_=[^&]+$/,'') != url) {
         _currentUrl = url || "";
 
         // bust the chrome caching bug
-       // if (_currentUrl.length > 0 && FlashPlatform.isChrome) {
-            if (_currentUrl.length > 0) {
+        if (_currentUrl.length > 0) {
           _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
-
-       //isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
         _readyToPlay = false;
         urlChanged = true;
         hasPlayed = false;
         loaded = false;
         url = "setVideoUrl("+_currentUrl+")";
       }
-
       if (_.isEmpty(url)) {
+      //if (!_currentUrl) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
       }
       else{
         this.callToFlash(url);
       }
       return urlChanged;
-
     };
 
     /**
@@ -238,24 +219,15 @@
       if (loaded && !rewind) return;
       if (!!rewind) {
         try {
-         /* if (FlashPlatform.isIos && FlashPlatform.iosMajorVersion == 8) {
-            // On iOS, wait for durationChange before setting currenttime
-            $(_video).on("durationchange", _.bind(function() {
-                                                               _video.currentTime = 0;
-                                                             }, this));
-          } else {
-            this.setInitialTime(0);
-            //_video.currentTime = 0;
-          }*/
+          this.callToFlash("load("+rewind+")");
+          loaded = true;
           this.setInitialTime(0);
-          this.pause();
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
           console.log('[OSMF]:VTC_OO: Failed to rewind video, probably ok; continuing');
         }
       }
-      this.callToFlash("load("+rewind+")");
-      loaded = true;
+
     };
 
     /**
@@ -351,20 +323,148 @@
     // Calls a Flash method
     this.callToFlash = function (data) {
       // Note: SWF must be ready
-      return this.swf().sendToActionScript(data);
+      return _flashVideoObject.sendToActionScript(data);
     };
 
+
+    // Receives a callback from Flash - Not used.
+    this.sendToJavaScript = function(data) {
+      console.log('[OSMF]:sendToJavaScript: Call: ', data);
+      return true;
+    };
+
+    // **********************************************************************************/
+    // Example callback methods
+    // **********************************************************************************/
+
+    // **********************************************************************************/
+    // Event callback methods
+    // **********************************************************************************/
+
+    /**
+     * Stores the url of the video when load is started.
+     * @private
+     * @method OoyalaFlashVideoWrapper#onLoadStart
+     */
+    var onLoadStart = function() {
+      _currentUrl = this.callToFlash("getUrl");
+      console.log("[OSMF]:" + _currentUrl);
+    };
+
+    var onLoadedMetadata = function() {
+      dequeueSeek();
+    };
+
+    var raisePlayEvent = function(event) {
+      newController.notify(newController.EVENTS.PLAY, { url: event.target.src });
+    };
+
+    var raisePlayingEvent = function() {
+      newController.notify(newController.EVENTS.PLAYING);
+    };
+
+    var raiseEndedEvent = function() {
+      if (videoEnded) { return; } // no double firing ended event.
+      videoEnded = true;
+      newController.controller.notify(newController.EVENTS.ENDED);
+    };
+
+    var raiseErrorEvent = function(event) {
+      var code = event.target.error ? event.target.error.code : -1;
+      newController.notify(newController.EVENTS.ERROR, { "errorcode" : code });
+    };
+
+    var raiseSeekingEvent = function() {
+      newController.notify(newController.EVENTS.SEEKING);
+    };
+
+    var raiseSeekedEvent = function() {
+      newController.notify(newController.EVENTS.SEEKED);
+    };
+
+    var raisePauseEvent = function() {
+      newController.notify(newController.EVENTS.PAUSED);
+    };
+
+    var raiseRatechangeEvent = function() {
+      newController.notify(newController.EVENTS.RATE_CHANGE);
+    };
+
+    var raiseStalledEvent = function() {
+      newController.notify(newController.EVENTS.STALLED);
+    };
+
+    var raiseVolumeEvent = function(event) {
+      newController.notify(newController.EVENTS.VOLUME_CHANGE, { "volume" : event.target.volume });
+    };
+
+    var raiseWaitingEvent = function() {
+      videoEnded = false;
+    newController.notify(newController.EVENTS.WAITING);
+    };
+
+    var raiseTimeUpdate = function(event) {
+      raisePlayhead(newController.EVENTS.TIME_UPDATE, event);
+    };
+
+    var raiseDurationChange = function(event) {
+      raisePlayhead(newController.EVENTS.DURATION_CHANGE, event);
+    };
+
+    var raisePlayhead = _.bind(function(eventname, event) {
+      var buffer = 0;
+      if (event.target.buffered && event.target.buffered.length > 0) {
+        buffer = event.target.buffered.end(0); // in sec;
+      }
+      newController.notify(eventname,
+                             { "currentTime" : event.target.currentTime,
+                               "duration" : event.target.duration,
+                               "buffer" : buffer,
+                               "seekRange" : { "begin" : 0, "end" : event.target.duration } });
+    }, this);
+
+    var raiseProgress = function(event) {
+      var buffer = 0;
+      if (event.target.buffered && event.target.buffered.length > 0) {
+        buffer = event.target.buffered.end(0); // in sec;
+      }
+      newController.notify(newController.EVENTS.PROGRESS,
+                             { "currentTime": event.target.currentTime,
+                               "duration": event.target.duration,
+                               "buffer": buffer,
+                               "seekRange": { "begin": 0, "end": event.target.duration } });
+    };
+
+    var raiseCanPlayThrough = function() {
+      newController.notify(newController.EVENTS.BUFFERED);
+    };
+
+    var raiseFullScreenBegin = function(event) {
+      newController.notify(newController.EVENTS.FULLSCREEN_CHANGED,
+                             { "isFullScreen" : true, "paused" : event.target.paused });
+    };
+
+    var raiseFullScreenEnd = function(event) {
+      newController.notify(newControllerr.EVENTS.FULLSCREEN_CHANGED,
+                             { "isFullScreen" : false, "paused" : event.target.paused });
+    };
+
+
     // Receives a callback from Flash
-    this.onCallback = function(data) {
+    onCallback = function(data) {
       console.log("[OSMF]:onCallback: ", data);
 
       switch (data)
       {
+       case "JSREADY":
+        dispatchEvent(readyEvent);
+        break;
        case "PAUSED":
         raisePauseEvent();
         break;
        case "BUFFERING":
-        this.controller.notify(this.controller.EVENTS.BUFFERING);
+        //this.controller.notify(this.controller.EVENTS.BUFFERING);
+        newController.notify(newController.EVENTS.BUFFERING);
         break;
        case "PLAY":
         raisePlayEvent(data);
@@ -420,121 +520,7 @@
       }
       return true;
     };
-
-    // Receives a callback from Flash - Not used.
-    this.sendToJavaScript = function(data) {
-      console.log('[OSMF]:sendToJavaScript: Call: ', data);
-      return true;
-    };
-
-    // **********************************************************************************/
-    // Example callback methods
-    // **********************************************************************************/
-
-    // **********************************************************************************/
-    // Event callback methods
-    // **********************************************************************************/
-
-    /**
-     * Stores the url of the video when load is started.
-     * @private
-     * @method OoyalaFlashVideoWrapper#onLoadStart
-     */
-    var onLoadStart = function() {
-      _currentUrl = this.callToFlash("getUrl");
-      console.log("[OSMF]:" + _currentUrl);
-    };
-
-    var onLoadedMetadata = function() {
-      dequeueSeek();
-    };
-
-    var raisePlayEvent = function(event) {
-      this.controller.notify(this.controller.EVENTS.PLAY, { url: event.target.src });
-    };
-
-    var raisePlayingEvent = function() {
-      this.controller.notify(this.controller.EVENTS.PLAYING);
-    };
-
-    var raiseEndedEvent = function() {
-      if (videoEnded) { return; } // no double firing ended event.
-      videoEnded = true;
-      this.controller.notify(this.controller.EVENTS.ENDED);
-    };
-
-    var raiseErrorEvent = function(event) {
-      var code = event.target.error ? event.target.error.code : -1;
-      this.controller.notify(this.controller.EVENTS.ERROR, { "errorcode" : code });
-    };
-
-    var raiseSeekingEvent = function() {
-      this.controller.notify(this.controller.EVENTS.SEEKING);
-    };
-
-    var raiseSeekedEvent = function() {
-      this.controller.notify(this.controller.EVENTS.SEEKED);
-    };
-
-    var raisePauseEvent = function() {
-      this.controller.notify(this.controller.EVENTS.PAUSED);
-    };
-
-    var raiseRatechangeEvent = function() {
-      this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
-    };
-
-    var raiseStalledEvent = function() {
-      this.controller.notify(this.controller.EVENTS.STALLED);
-    };
-
-    var raiseVolumeEvent = function(event) {
-      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.target.volume });
-    };
-
-    var raiseWaitingEvent = function() {
-      videoEnded = false;
-      this.controller.notify(this.controller.EVENTS.WAITING);
-    };
-
-    var raiseTimeUpdate = function(event) {
-      raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
-    };
-
-    var raiseDurationChange = function(event) {
-      raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
-    };
-
-    var raisePlayhead = _.bind(function(eventname, event) {
-      this.controller.notify(eventname,
-                             { "currentTime" : event.target.currentTime,
-                               "duration" : event.target.duration,
-                               "buffer" : 10,
-                               "seekRange" : { "begin" : 0, "end" : 10 } });
-    }, this);
-
-    var raiseProgress = function(event) {
-      this.controller.notify(this.controller.EVENTS.PROGRESS,
-                             { "currentTime": event.target.currentTime,
-                               "duration": event.target.duration,
-                               "buffer": 10,
-                               "seekRange": { "begin": 0, "end": 10 } });
-    };
-
-    var raiseCanPlayThrough = function() {
-      this.controller.notify(this.controller.EVENTS.BUFFERED);
-    };
-
-    var raiseFullScreenBegin = function(event) {
-      this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen" : true, "paused" : event.target.paused });
-    };
-
-    var raiseFullScreenEnd = function(event) {
-      this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen" : false, "paused" : event.target.paused });
-    };
-  };
+};
   /************************************************************************************/
   // Helper methods
   /************************************************************************************/
@@ -548,119 +534,48 @@
   var getRandomString = function() {
     return Math.random().toString(36).substring(7);
   };
-
-  /**
-   * @class FlashPlatform
-   * @classdesc Functions that provide platform information
-   */
-  /*var FlashPlatform = {
-    /**
-     * Checks if the system is running on iOS.
-     * @private
-     * @method FlashPlatform#isIos
-     * @returns {boolean} True if the system is running on iOS
-     */
-    /*isIos: (function() {
-      var platform = window.navigator.platform;
-      return !!(platform.match(/iPhone/) || platform.match(/iPad/) || platform.match(/iPod/));
-    })(),*/
-
-    /**
-     * Checks if the system is an iPad
-     * @private
-     * @method FlashPlatform#isIpad
-     * @returns {boolean} True if the system is an Ipad
-     */
-   /* isIpad: (function() {
-      return !!window.navigator.platform.match(/iPad/);
-    })(),
-
-    /**
-     * Checks if the player is running in chrome.
-     * @private
-     * @method FlashPlatform#isChrome
-     * @returns {boolean} True if the player is running in chrome
-     */
-    /*  isChrome: (function() {
-      return !!window.navigator.userAgent.match(/Chrome/);
-    })(),
-
-    /**
-     * Gets the iOS major version.
-     * @private
-     * @method FlashPlatform#iosMajorVersion
-     * @returns {?number} The iOS major version; null if the system is not running iOS
-     */
-    /*iosMajorVersion: (function(){
-      try {
-        if (window.navigator.userAgent.match(/(iPad|iPhone|iPod)/)) {
-          return parseInt(window.navigator.userAgent.match(/OS (\d+)/)[1], 10);
-        } else {
-          return null;
-        }
-      } catch (err) {
-        return null;
-      }
-    })(),*/
-
-    /*isAndroid: (function(){
-      return !!window.navigator.appVersion.match(/Android/);
-    })(),
-
-    isAndroid4Plus: (function(){
-      return !!window.navigator.appVersion.match(/Android/) &&
-             !window.navigator.appVersion.match(/Android [23]/);
-    })(),
-
-    chromeMajorVersion: (function(){
-      try {
-        return parseInt(window.navigator.userAgent.match(/Chrome.([0-9]*)/)[1], 10);
-      } catch(err) {
-        return null;
-      }
-    })(),
-  };*/
-
   OO.Video.plugin(new OoyalaFlashVideoFactory());
 }(OO._, OO.$));
 
-  var JFlashBridge = {
-    items: {},
+var JFlashBridge = {
+  items: {},
 
-    bind: function(id, klass) {
-        console.log('[OSMF]:JFlashBridge: Bind: ', id, klass);
-        this.items[id] = klass;
-    },
+  bind: function(id, klass) {
+      console.log('[OSMF]:JFlashBridge: Bind: ', id, klass);
+      this.items[id] = klass;
+  },
 
-    unbind: function(id) {
-       console.log('[OSMF]:JFlashBridge: Unbind: ', id);
-       delete this.items[id]
-    },
+  unbind: function(id) {
+     console.log('[OSMF]:JFlashBridge: Unbind: ', id);
+     delete this.items[id]
+  },
 
-    call: function() {
-        console.log('[OSMF]:JFlashBridge: Call: ', arguments);
-        var klass = this.items[arguments[0]];
-        if (klass) {
-            var method = klass[arguments[1]];
-            if (method)
-            {
-              method.apply(klass, Array.prototype.slice.call(arguments, 2));
-            }
-            else
-                console.log('[OSMF]:JFlashBridge: No method: ', arguments[1]);
-        }
-        else
-            console.log('[OSMF]:JFlashBridge: No binding: ', arguments);
-    },
-
-    getSWF: function(movieName) {
-        if (navigator.appName.indexOf("Microsoft") != -1)
-          return document.getElementsByName(movieName)[0];
-        else
-          return document.getElementsByName(movieName)[0];
-
-        //return swfobject.getObjectById(movieName);
+  call: function() {
+    console.log('[OSMF]:JFlashBridge: Call: ', arguments);
+    var klass = this.items[arguments[0]];
+    if (klass) {
+      var method = klass[arguments[1]];
+      if (method)
+      {
+        method.apply(klass, Array.prototype.slice.call(arguments, 2));
+      }
+      else
+        console.log('[OSMF]:JFlashBridge: No method: ', arguments[1]);
     }
+    else
+      console.log('[OSMF]:JFlashBridge: No binding: ', arguments);
+  },
+
+  getSWF: function(movieName) {
+    if (navigator.appName.indexOf("Microsoft") != -1){
+      console.log("get swf returns some value",document.getElementsByName(movieName)[0]);
+      return document.getElementsByName(movieName)[0];
+    }
+    else{
+      console.log("get swf returns some other value",document.getElementsByName(movieName)[0]);
+      return document.getElementsByName(movieName)[0];
+    }
+  }
 };
 
 /*! SWFObject v2.2 <http://code.google.com/p/swfobject/>
@@ -806,6 +721,8 @@ var swfobject = function() {
   }
 
   function addDomLoadEvent(fn) {
+    console.log("dom Load event");
+
     if (isDomLoaded) {
       fn();
     }

@@ -1,7 +1,7 @@
 package
 {
   import flash.events.Event;
-  
+
  /**
   * This class is created to handle all the events dispatched from the player to the controller.
   */
@@ -14,6 +14,7 @@ package
     public static const SEEKED:String = "SEEKED";
     public static const PAUSED:String = "PAUSED";
     public static const BUFFERING:String = "BUFFERING";
+    public static const BUFFERED:String = "BUFFERED";
     public static const TIME_UPDATE:String = "TIME_UPDATE";
     public static const VOLUME_CHANGED:String = "VOLUME_CHANGED";
     public static const FULLSCREEN_CHANGED:String = "FULLSCREEN_CHANGED";
@@ -37,9 +38,9 @@ package
     * @method DynamicEvent#eventObject
     * @returns {Object} returns the data member_eventObject.
     */
-    public function get eventObject():Object 
-    { 
-      return _eventObject; 
+    public function get eventObject():Object
+    {
+      return _eventObject;
     }
 
    /**

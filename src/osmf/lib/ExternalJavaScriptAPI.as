@@ -2,7 +2,7 @@ package
 {
   import DynamicEvent;
   import HDSPlayer;
-  
+
   import flash.events.Event;
   import flash.events.TimerEvent;
   import flash.utils.getQualifiedClassName;
@@ -12,11 +12,11 @@ package
   import mx.core.UIComponent;
 
   public class ExternalJavaScriptAPI extends UIComponent
-  { 
+  {
     private var _hdsPlayer:HDSPlayer = null;
-    public var jsBridge:JFlashBridge; 
+    public var jsBridge:JFlashBridge;
     private var _dynamicEvent:DynamicEvent = null;
-    
+
     /**
      * Constructor
      * @public
@@ -35,22 +35,18 @@ package
             registerListeners();
             jsBridge = new JFlashBridge();
             jsBridge.addMethod("someMethod", someMethod);
-            
+
             super();
-            
-            jsBridge.initialize();  
+
+            jsBridge.initialize();
           }
-          else 
+          else
           {
             var readyTimer:Timer = new Timer(100, 0);
             readyTimer.addEventListener(TimerEvent.TIMER, timerHandler);
             readyTimer.start();
           }
           ExternalInterface.addCallback("sendToJavaScript", sendToJavaScript);
-        }
-        catch (error:SecurityError)
-        {
-          // Security Error catcher
         }
         catch (error:Error)
         {
@@ -62,7 +58,7 @@ package
         // Response for no ExternalInterface.
       }
     }
-    
+
     /**
      * Registers the event listners
      * @private
@@ -99,13 +95,14 @@ package
       _hdsPlayer.addEventListener(DynamicEvent.SEEKED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.PAUSED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.BUFFERING, onFlashEvent);
+      _hdsPlayer.addEventListener(DynamicEvent.BUFFERED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.FULLSCREEN_CHANGED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
       SendToDebugger("events added", "registerListeners");
     }
-  
+
     /**
      * Unregisters the event listners
      * @public
@@ -147,7 +144,7 @@ package
       _hdsPlayer.removeEventListener(DynamicEvent.FULLSCREEN_CHANGED, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
     }
-  
+
     /**
      * Sends the events from the player to the controller.
      * @private
@@ -160,7 +157,7 @@ package
       if (event.eventObject != null)
       {
         var eventObject:Object = event.eventObject;
-        for (var key:String in eventObject) 
+        for (var key:String in eventObject)
         {
           if (getQualifiedClassName(eventObject[key]) == "Object")
           {
@@ -188,7 +185,7 @@ package
     {
       _hdsPlayer.onVideoPlay(event);
     }
-    
+
    /**
     * Initiates video pause functionality through the player
     * @private
@@ -199,7 +196,7 @@ package
     {
       _hdsPlayer.onVideoPause(event);
     }
-    
+
    /**
     * Initiates video seek functionality through the player
     * @private
@@ -210,7 +207,7 @@ package
     {
       _hdsPlayer.onVideoSeek(event);
     }
-    
+
    /**
     * Initiates volume change functionality through the player
     * @private
@@ -221,7 +218,7 @@ package
     {
       _hdsPlayer.onChangeVolume(event);
     }
-    
+
    /**
     * Initiates playheadTimeChange functionality through the player
     * @private
@@ -232,7 +229,7 @@ package
     {
       _hdsPlayer.onPlayheadTimeChanged(event);
     }
-    
+
    /**
     * Passes the manifest url to the player.
     * @private
@@ -287,7 +284,7 @@ package
     {
       _hdsPlayer.onSetInitialTime(event);
     }
-  
+
    /**
     * Fetches the current time from the player.
     * @private
@@ -298,16 +295,16 @@ package
     {
       _hdsPlayer.onGetCurrentTime(event);
     }
-    
+
     // This is an internal callback that passes data to
     // the JavaScript application
-    private function onCallback(data:String):void 
-    { 
+    private function onCallback(data:String):void
+    {
       SendToDebugger(data, "swf onCallback", "info");
       jsBridge.call("onCallback", data);
     }
-    
-    // This method is bound to the ExternalInterface to 
+
+    // This method is bound to the ExternalInterface to
     // receive data from the JavaScript application
     private function someMethod(data:String):Object
     {
@@ -315,7 +312,7 @@ package
       onCallback(data);
       return data;
     }
- 
+
    /**
     * Send data or events to java script page.
     * @private
@@ -323,23 +320,22 @@ package
     * @param {string} value The value to be send to the java script page.
     * @returns {boolean} True or false indicating success
     */
-    private function sendToJavaScript(value:String):Boolean 
+    private function sendToJavaScript(value:String):Boolean
     {
-//      var messageSent:Boolean = ExternalInterface.call("sendToJavaScript", value);
       var messageSent:Boolean = jsBridge.call("onCallback", value);
-      return messageSent;  
+      return messageSent;
     }
-     
+
    /**
     * It is the callback function that receives data or events from the java script page.
     * @private
     * @method ExternalJavaScriptAPI#receivedFromJavaScript
     * @param {string} value The value to be send to the java script page.
     */
-    private function receivedFromJavaScript(value:String):void 
+    private function receivedFromJavaScript(value:String):void
     {
       var eventArgs:String = "";
-      
+
       if (value.indexOf("(") != -1)
       {
         var start:int = value.indexOf("(");
@@ -349,14 +345,14 @@ package
         SendToDebugger(eventArgs, "receivedFromJavaScript args", "info");
       }
       var jsEvent:DynamicEvent = new DynamicEvent(value);
-      if (eventArgs != "") 
+      if (eventArgs != "")
       {
         jsEvent.args = eventArgs;
       }
       dispatchEvent(jsEvent);
       SendToDebugger(jsEvent.toString(), "receivedFromJavaScript event", "info");
     }
-    
+
    /**
     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
     * @private
@@ -366,8 +362,8 @@ package
     * @param {string} channelBranch It can be info, debug, warn, error or log.
     * @returns {boolean} True or false indicating success
     */
-    private function SendToDebugger(value:String, referrer:String = null, 
-                                    channelBranch:String = "info"):Boolean 
+    private function SendToDebugger(value:String, referrer:String = null,
+                                    channelBranch:String = "info"):Boolean
     {
       // channelBranch = info, debug, warn, error, log
       var channel:String = "console." + channelBranch;
@@ -385,7 +381,7 @@ package
      */
     private function destroy():void
     {
-      unregisterListeners(); 
+      unregisterListeners();
       _hdsPlayer = null;
       _dynamicEvent = null;
     }
@@ -470,6 +466,6 @@ package
       // Call to 'isReady' in the Javascript. Prevents a race condition between config of ActionScript and JavaScript.
       var isReady:Boolean = ExternalInterface.call("isReady");
       return isReady;
-    }  
+    }
   }
 }
