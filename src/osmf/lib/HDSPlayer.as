@@ -490,22 +490,23 @@ package
       var eventObject:Object = new Object();
       var seekRange:Object = new Object();
       var duration:Number = _mediaPlayerSprite.mediaPlayer.duration;
-      seekRange.seekRange_start = 0;
+      var totalTime :Number = 0;
 
       if (_mediaPlayerSprite.mediaPlayer.canSeek &&
         (_mediaPlayerSprite.mediaPlayer.canSeekTo(duration)))
       {
-        seekRange.seekRange_end = duration;
+        totalTime = duration;
       }
       else
       {
-        seekRange.seekRange_end  = 0;
+        totalTime = 0;
       }
 
       eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime;
       eventObject.duration = duration
       eventObject.buffer = _mediaPlayerSprite.mediaPlayer.bufferLength;
-      eventObject.seekRange = seekRange;
+      eventObject.seekRange_start = 0;
+      eventObject.seekRange_end = totalTime;
       dispatchEvent(new DynamicEvent(DynamicEvent.TIME_UPDATE,(eventObject)));
     }
 

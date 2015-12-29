@@ -153,6 +153,7 @@ package
      */
     private function onFlashEvent(event:DynamicEvent):void
     {
+      /*
       sendToJavaScript(event.type);
       if (event.eventObject != null)
       {
@@ -173,6 +174,12 @@ package
           }
         }
       }
+      */
+      var eventData : Object = new Object();
+      eventData.eventtype = event.type;
+      eventData.eventObject = event.eventObject;
+      SendToDebugger(eventData.eventtype, "onFlashEvent", "log");
+      sendToJavaScript(eventData);
     }
 
     /**
@@ -320,7 +327,7 @@ package
     * @param {string} value The value to be send to the java script page.
     * @returns {boolean} True or false indicating success
     */
-    private function sendToJavaScript(value:String):Boolean
+    private function sendToJavaScript(value:Object):Boolean
     {
       var messageSent:Boolean = jsBridge.call("onCallback", value);
       return messageSent;

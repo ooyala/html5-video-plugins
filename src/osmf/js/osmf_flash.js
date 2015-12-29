@@ -97,6 +97,11 @@ require("../../../html5-common/js/utils/environment.js");
     var loaded = false;
     var hasPlayed = false;
     var newController;
+    var currentTime;
+    var totalTime;
+    var seekRange_end;
+    var buffer;
+    var seekRange_start;
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -413,26 +418,30 @@ require("../../../html5-common/js/utils/environment.js");
 
     var raisePlayhead = _.bind(function(eventname, event) {
       var buffer = 0;
+    /*
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
+     */
       newController.notify(eventname,
-                             { "currentTime" : event.target.currentTime,
-                               "duration" : event.target.duration,
+                             { "currentTime" : currentTime,
+                               "duration" : totalTime,
                                "buffer" : buffer,
-                               "seekRange" : { "begin" : 0, "end" : event.target.duration } });
+                               "seekRange" : { "begin" : seekRange_start, "end" : seekRange_end } });
     }, this);
 
     var raiseProgress = function(event) {
+    /*
       var buffer = 0;
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
+     */
       newController.notify(newController.EVENTS.PROGRESS,
-                             { "currentTime": event.target.currentTime,
-                               "duration": event.target.duration,
+                             { "currentTime": currentTime,
+                               "duration": totalTime,
                                "buffer": buffer,
-                               "seekRange": { "begin": 0, "end": event.target.duration } });
+                               "seekRange": { "begin": seekRange_start, "end": seekRange_end } });
     };
 
     var raiseCanPlayThrough = function() {
@@ -453,8 +462,39 @@ require("../../../html5-common/js/utils/environment.js");
     // Receives a callback from Flash
     onCallback = function(data) {
       console.log("[OSMF]:onCallback: ", data);
+      var eventtitle =" ";
 
-      switch (data)
+      for(var key in data) {
+        
+        if (key == "eventtype") {
+             eventtitle = data[key];
+        }
+        else if (key =="eventObject") {
+              eventData = data[key];
+        }
+      }
+      if (eventData != null) {
+        for (var item in eventData)
+        {
+          if (item == "currentTime") {
+                currentTime = eventData[item];    
+          }
+          else if (item == "buffer") {
+                buffer = eventData[item];       
+          }
+          else if (item == "duration") {
+                totalTime =eventData[item];        
+          }
+          else if (item == "seekRange_start") {
+                seekRange_start = eventData[item];     
+          }
+          else if (item == "seekRange_end") {
+                seekRange_end = eventData[item];      
+          }
+        }
+      }
+
+      switch (eventtitle)
       {
        case "JSREADY":
         dispatchEvent(readyEvent);
