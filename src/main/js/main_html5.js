@@ -179,7 +179,7 @@ require("../../../html5-common/js/utils/environment.js");
     /**
      * TODO
      */
-    this.sharedElementGetBack = function() {
+    this.sharedElementTake = function() {
       this.subscribeAllEvents();
     };
 
