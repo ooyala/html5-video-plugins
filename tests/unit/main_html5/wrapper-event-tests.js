@@ -20,6 +20,7 @@ describe('main_html5 wrapper tests', function () {
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
+    OO.isSafari = false;
   });
 
   // tests
@@ -246,7 +247,6 @@ describe('main_html5 wrapper tests', function () {
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 10}
       }]);
-    OO.isSafari = false;
   });
 
   it('should notify DURATION_CHANGE on video \'durationchange\' event', function(){
