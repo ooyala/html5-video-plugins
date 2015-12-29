@@ -29,7 +29,8 @@ require("../../../html5-common/js/utils/environment.js");
     this.ready = true;
 
     this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-                      OO.VIDEO.FEATURE.VIDEO_OBJECT_OPEN ];
+                      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
+                      //OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_TAKE ]; // TODO
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     // Determine supported encodings
@@ -168,6 +169,21 @@ require("../../../html5-common/js/utils/environment.js");
     /************************************************************************************/
     // External Methods that Video Controller or Factory call
     /************************************************************************************/
+    /**
+     * TODO
+     */
+    this.sharedElementGive = function() {
+      unsubscribeAllEvents();
+    };
+
+    /**
+     * TODO
+     */
+    this.sharedElementGetBack = function() {
+      this.subscribeAllEvents();
+    };
+
+
     /**
      * Subscribes to all events raised by the video element.
      * This is called by the Factory during creation.
