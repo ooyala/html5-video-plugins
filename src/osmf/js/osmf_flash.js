@@ -32,8 +32,7 @@ require("../../../html5-common/js/utils/environment.js");
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
-    this.encodings = ["hds"];
-    //this.encodings = OO.VIDEO.ENCODING.HDS;
+    this.encodings = OO.VIDEO.ENCODING.HDS;
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
      * @public
