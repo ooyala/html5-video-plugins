@@ -617,6 +617,15 @@ var JFlashBridge = {
   }
 };
 
+// Return if the Dom and JavaScript are ready.
+// We cannot predict the presence of jQuery, so use a core javascript technique here.
+function isReady()
+{
+  if(document.readyState === "complete") {
+    return true;
+  }
+}
+
 /*! SWFObject v2.2 <http://code.google.com/p/swfobject/>
   is released under the MIT License <http://www.opensource.org/licenses/mit-license.php>
 */
