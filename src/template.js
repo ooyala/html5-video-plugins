@@ -47,6 +47,25 @@ require("../html5-common/js/utils/constants.js");
       return wrapper;
     };
 
+   /**
+    * Creates a video player instance using TemplateVideoWrapper which wraps and existing video element.
+    * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_TAKE is supported.
+    * @public
+    * @method TemplateVideoFactory#createFromExisting
+    * @param {string} domId The dom id of the video DOM object to use
+    * @param {object} ooyalaVideoController A reference to the video controller in the Ooyala player
+    * @param {string} playerId The unique player identifier of the player creating this instance
+    * @returns {object} A reference to the wrapper for the video element
+    */
+    this.createFromExisting = function(domId, ooyalaVideoController, playerId)
+    {
+      var sharedVideoElement = $("#" + domId)[0];
+      var wrapper = new TemplateIMAVideoWrapper(domId, sharedVideoElement);
+      wrapper.controller = ooyalaVideoController;
+      wrapper.subscribeAllEvents();
+      return wrapper;
+    };
+
     /**
      * Destroys the video technology factory.
      * @public
@@ -89,6 +108,30 @@ require("../html5-common/js/utils/constants.js");
     /************************************************************************************/
 
     /**
+     * Hands control of the video element off to another plugin.
+     * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_GIVE or
+     * OO.VIDEO.FEATURE.VIDEO_OBJECT_TAKE is supported.
+     * @public
+     * @method TemplateVideoWrapper#sharedElementGive
+     */
+    this.sharedElementGive = function() {
+      // after losing control, the wrapper should not raise notify events
+      unsubscribeAllEvents();
+    };
+
+    /**
+     * Takes control of the video element from another plugin.
+     * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_GIVE or
+     * OO.VIDEO.FEATURE.VIDEO_OBJECT_TAKE is supported.
+     * @public
+     * @method TemplateVideoWrapper#sharedElementTake
+     */
+    this.sharedElementTake = function() {
+      // after taking control, the wrapper should raise notify events
+      this.subscribeAllEvents();
+    };
+
+    /**
      * Subscribes to all events raised by the video element.
      * This is called by the Factory during creation.
      * @public
@@ -119,13 +162,13 @@ require("../html5-common/js/utils/constants.js");
 
     /**
      * Unsubscribes all events from the video element.
-     * This should be called by the destroy function.
-     * @public
+     * This function is not required but can be called by the destroy function.
+     * @private
      * @method TemplateVideoWrapper#unsubscribeAllEvents
      */
-    this.unsubscribeAllEvents = function() {
+    var unsubscribeAllEvents = _.bind(function() {
       _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
-    };
+    }, this);
 
     /**
      * Sets the url of the video.
@@ -217,14 +260,14 @@ require("../html5-common/js/utils/constants.js");
       // Pause the video
       // Reset the source
       // Unsubscribe all events
-      this.unsubscribeAllEvents();
+      unsubscribeAllEvents();
       // Remove the element
     };
 
     /**
      * Sets the closed captions on the video element.
      * @public
-     * @method OoyalaVideoWrapper#setClosedCaptions
+     * @method TemplateVideoWrapper#setClosedCaptions
      * @param {string} language The language of the closed captions. Set to null to remove captions.
      * @param {object} closedCaptions The closedCaptions object
      * @param {object} params The params to set with closed captions
@@ -235,7 +278,7 @@ require("../html5-common/js/utils/constants.js");
     /**
      * Sets the closed captions mode on the video element.
      * @public
-     * @method OoyalaVideoWrapper#setClosedCaptionsMode
+     * @method TemplateVideoWrapper#setClosedCaptionsMode
      * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
      */
     this.setClosedCaptionsMode = function(mode) {

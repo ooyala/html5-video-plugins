@@ -56,7 +56,7 @@ require("../../../html5-common/js/utils/constants.js");
     this.name = pluginName;
     this.encodings = [ OO.VIDEO.ENCODING.DASH, OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4 ];
     this.features = [];
-    this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
+    this.technology = OO.VIDEO.TECHNOLOGY.MIXED;
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
