@@ -308,7 +308,10 @@ package
     private function onCallback(data:String):void
     {
       SendToDebugger(data, "swf onCallback", "info");
-      jsBridge.call("onCallback", data);
+      var eventData : Object = new Object();
+      eventData.eventtype = data;
+      eventData.eventObject = null;
+      jsBridge.call("onCallback", eventData);
     }
 
     // This method is bound to the ExternalInterface to

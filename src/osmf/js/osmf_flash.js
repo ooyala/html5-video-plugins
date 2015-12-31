@@ -62,7 +62,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.destroy = function() {
       this.ready = false;
-      this.streams = [];
+      this.encodings = [];
       this.create = function() {};
     };
 
@@ -203,7 +203,7 @@ require("../../../html5-common/js/utils/environment.js");
         loaded = false;
         url = "setVideoUrl("+_currentUrl+")";
       }
-      if (_.isEmpty(url)) {
+      if (_.isEmpty(_currentUrl)) {
       //if (!_currentUrl) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
       }
@@ -228,7 +228,7 @@ require("../../../html5-common/js/utils/environment.js");
           this.setInitialTime(0);
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
-          console.log('[OSMF]:VTC_OO: Failed to rewind video, probably ok; continuing');
+          console.log('[OSMF]: Failed to rewind video, probably ok; continuing');
         }
       }
 
@@ -313,10 +313,13 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.destroy = function() {
       // Pause the video
+      this.pause();
       // Reset the source
       // Unsubscribe all events
       this.unsubscribeAllEvents();
       // Remove the element
+      return JFlashBridge.unbind(playerId);
+      _flashVideoObject=null;
     };
 
     // Returns the SWF instance
@@ -415,13 +418,12 @@ require("../../../html5-common/js/utils/environment.js");
       raisePlayhead(newController.EVENTS.DURATION_CHANGE, event);
     };
 
-    var raisePlayhead = _.bind(function(eventname, event) {
-      var buffer = 0;
-    /*
-      if (event.target.buffered && event.target.buffered.length > 0) {
-        buffer = event.target.buffered.end(0); // in sec;
-      }
+    /**
+     * Notifies the controller of events that provide playhead information.
+     * @private
+     * @method OoyalaVideoWrapper#raisePlayhead
      */
+    var raisePlayhead = _.bind(function(eventname, event) {
       newController.notify(eventname,
                              { "currentTime" : currentTime,
                                "duration" : totalTime,
@@ -429,13 +431,13 @@ require("../../../html5-common/js/utils/environment.js");
                                "seekRange" : { "begin" : seekRange_start, "end" : seekRange_end } });
     }, this);
 
-    var raiseProgress = function(event) {
-    /*
-      var buffer = 0;
-      if (event.target.buffered && event.target.buffered.length > 0) {
-        buffer = event.target.buffered.end(0); // in sec;
-      }
+    /**
+     * Notifies the controller that a progress event was raised.
+     * @private
+     * @method OoyalaVideoWrapper#raiseProgress
+     * @param {object} event The event from the video
      */
+    var raiseProgress = function(event) {
       newController.notify(newController.EVENTS.PROGRESS,
                              { "currentTime": currentTime,
                                "duration": totalTime,
@@ -457,14 +459,12 @@ require("../../../html5-common/js/utils/environment.js");
                              { "isFullScreen" : false, "paused" : event.target.paused });
     };
 
-
     // Receives a callback from Flash
     onCallback = function(data) {
       console.log("[OSMF]:onCallback: ", data);
       var eventtitle =" ";
 
       for(var key in data) {
-        
         if (key == "eventtype") {
              eventtitle = data[key];
         }
@@ -476,19 +476,19 @@ require("../../../html5-common/js/utils/environment.js");
         for (var item in eventData)
         {
           if (item == "currentTime") {
-                currentTime = eventData[item];    
+                currentTime = eventData[item];
           }
           else if (item == "buffer") {
-                buffer = eventData[item];       
+                buffer = eventData[item];
           }
           else if (item == "duration") {
-                totalTime =eventData[item];        
+                totalTime =eventData[item];
           }
           else if (item == "seekRange_start") {
-                seekRange_start = eventData[item];     
+                seekRange_start = eventData[item];
           }
           else if (item == "seekRange_end") {
-                seekRange_end = eventData[item];      
+                seekRange_end = eventData[item];
           }
         }
       }

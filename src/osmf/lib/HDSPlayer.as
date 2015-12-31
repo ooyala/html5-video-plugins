@@ -37,6 +37,8 @@ package
     private var _seekTrait:SeekTrait = null;
     private var _playerState:String = "";
     private var playQueue:Boolean=false;
+    private var _initialPlay:Boolean = true;
+
     /**
      * Constructor
      * @public
@@ -154,6 +156,11 @@ package
       switch(event.state)
       {
         case MediaPlayerState.PLAYING:
+          if (_initialPlay)
+          {
+            _initialPlay = false;
+          }
+        
           if(_playheadTimer.running==false && _initialTime==0)
           {
              _playheadTimer.start();
@@ -181,11 +188,13 @@ package
           dispatchEvent(new DynamicEvent(DynamicEvent.ERROR,eventObject));
           break;
         case MediaPlayerState.LOADING:
+          break;
         case MediaPlayerState.READY:
           if (playQueue)
           {
             onVideoPlay(event);
           }
+          break;
         case MediaPlayerState.UNINITIALIZED:
           break;
       }
@@ -330,6 +339,11 @@ package
       //Seeks the video to the specified position. Also check for the ability to seek to avoid error situations.
       var time:Number = (Number)(event.args);
       _initialTimeReference = -1;
+      if (_initialPlay) 
+      {
+        _initialTime = time;
+        return;
+      }
       _seekTrait = _mediaPlayerSprite.mediaPlayer.media.getTrait(MediaTraitType.SEEK) as SeekTrait;
       if (_mediaPlayerSprite.mediaPlayer.canSeek &&
         (_mediaPlayerSprite.mediaPlayer.canSeekTo(time)))
