@@ -29,10 +29,57 @@ require("../../../html5-common/js/utils/environment.js");
 
   var OoyalaFlashVideoFactory = function() {
     this.name = pluginName;
-
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
-    this.encodings = OO.VIDEO.ENCODING.HDS;
+    /**
+     * Checks whether flash player is available
+     * @public
+     * @method getFlashVersion
+     * @returns encoding as hds if flash version is available
+     */
+    function getFlashVersion() {
+      // ie
+      try
+      {
+        try
+        {
+          var axo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash.6');
+          try
+          {
+            axo.AllowScriptAccess = 'always';
+          }
+          catch(e)
+          {
+           return '6,0,0';
+          }
+        }
+        catch(e) {}
+        return new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version').replace(/\D+/g, ',').match(/^,?(.+),?$/)[1];
+        // other browsers
+      }
+      catch(e) {
+        try
+        {
+          if (navigator.mimeTypes["application/x-shockwave-flash"].enabledPlugin) {
+            return (navigator.plugins["Shockwave Flash 2.0"] || navigator.plugins["Shockwave Flash"]).description.replace(/\D+/g, ",").match(/^,?(.+),?$/)[1];
+          }
+        }
+        catch(e) {}
+      }
+      return '0,0,0';
+    }
+
+    function testForFlash() {
+      var version = getFlashVersion().split(',').shift();
+      if (version < 11) {
+        return [];
+      }
+      else {
+        return [OO.VIDEO.ENCODING.HDS];
+      }
+    }
+    this.encodings = testForFlash();
+
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
      * @public
@@ -606,7 +653,7 @@ var JFlashBridge = {
   },
 
   getSWF: function(movieName) {
-    if (navigator.appName.indexOf("Microsoft") != -1){
+    if (navigator.appName.indexOf("Microsoft") != -1) {
       console.log("get swf returns some value",document.getElementsByName(movieName)[0]);
       return document.getElementsByName(movieName)[0];
     }
@@ -621,7 +668,7 @@ var JFlashBridge = {
 // We cannot predict the presence of jQuery, so use a core javascript technique here.
 function isReady()
 {
-  if(document.readyState === "complete") {
+  if (document.readyState === "complete") {
     return true;
   }
 }
@@ -727,7 +774,7 @@ var swfobject = function() {
           }
         });
         if (win == top) { // if not inside an iframe
-          (function(){
+          (function() {
             if (isDomLoaded) { return; }
             try {
               doc.documentElement.doScroll("left");
@@ -741,7 +788,7 @@ var swfobject = function() {
         }
       }
       if (ua.wk) {
-        (function(){
+        (function() {
           if (isDomLoaded) { return; }
           if (!/loaded|complete/.test(doc.readyState)) {
             setTimeout(arguments.callee, 0);
@@ -831,7 +878,7 @@ var swfobject = function() {
     var t = b.appendChild(o);
     if (t) {
       var counter = 0;
-      (function(){
+      (function() {
         if (typeof t.GetVariable != UNDEF) {
           var d = t.GetVariable("$version");
           if (d) {
@@ -977,7 +1024,7 @@ var swfobject = function() {
         newObj.setAttribute("id", replaceElemIdStr);
         obj.parentNode.insertBefore(newObj, obj); // insert placeholder div that will be replaced by the object element that loads expressinstall.swf
         obj.style.display = "none";
-        (function(){
+        (function() {
           if (obj.readyState == 4) {
             obj.parentNode.removeChild(obj);
           }
@@ -1000,7 +1047,7 @@ var swfobject = function() {
       obj.parentNode.insertBefore(el, obj); // insert placeholder div that will be replaced by the alternative content
       el.parentNode.replaceChild(abstractAltContent(obj), el);
       obj.style.display = "none";
-      (function(){
+      (function() {
         if (obj.readyState == 4) {
           obj.parentNode.removeChild(obj);
         }
@@ -1110,7 +1157,7 @@ var swfobject = function() {
     if (obj && obj.nodeName == "OBJECT") {
       if (ua.ie && ua.win) {
         obj.style.display = "none";
-        (function(){
+        (function() {
           if (obj.readyState == 4) {
             removeObjectInIE(id);
           }
