@@ -75,7 +75,7 @@ require("../../../html5-common/js/utils/environment.js");
         return [];
       }
       else {
-        return OO.VIDEO.ENCODING.HDS;
+        return [OO.VIDEO.ENCODING.HDS];
       }
     }
     this.encodings = testForFlash();
