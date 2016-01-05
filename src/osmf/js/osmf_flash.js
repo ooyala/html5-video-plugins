@@ -363,6 +363,7 @@ require("../../../html5-common/js/utils/environment.js");
       this.pause();
       // Reset the source
       // Unsubscribe all events
+      this.callToFlash("destroy");
       this.unsubscribeAllEvents();
       // Remove the element
       return JFlashBridge.unbind(playerId);

@@ -604,21 +604,14 @@ package
     }
 
     /**
-     * Unregisters events and resets all the private variables to defualt value.
-     * @private
-     * @method HDSPlayer#destroy
+     * Unregisters events and removes media player child.
+     * @public
+     * @method HDSPlayer#onDestroy
      */
-    private function destroy():void
+    public function onDestroy():void
     {
       unregisterListeners();
-      _mediaFactory = null;
-      _mediaPlayerSprite = null;
-      _videoUrl = "";
-      _initialTime = 0;
-      _initialTimeReference = -1;
-      _playheadTimer = null;
-      _seekTrait = null;
-      _playerState = "";
+      removeChild(_mediaPlayerSprite); 
     }
 
    /*public function onRateChanged(event:Event):void
