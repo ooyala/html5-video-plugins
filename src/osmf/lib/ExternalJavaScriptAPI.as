@@ -88,6 +88,7 @@ package
       addEventListener("replay", onReplay);
       addEventListener("setInitialTime", onSetInitialTime);
       addEventListener("getCurrentTime", onGetCurrentTime);
+      addEventListener("destroy", onDestroy);
       _hdsPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.PLAYING, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.ENDED, onFlashEvent);
@@ -132,6 +133,7 @@ package
       removeEventListener("replay", onReplay);
       removeEventListener("setInitialTime", onSetInitialTime);
       removeEventListener("getCurrentTime", onGetCurrentTime);
+      removeEventListener("destroy", onDestroy);
       _hdsPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.PLAYING, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.ENDED, onFlashEvent);
@@ -303,6 +305,18 @@ package
       _hdsPlayer.onGetCurrentTime(event);
     }
 
+   /**
+    * Cleanup player.
+    * @private
+    * @method ExternalJavaScriptAPI#onDestroy
+    * @param {Event} event
+    */
+    private function onDestroy(event:Event):void
+    {
+      _hdsPlayer.onDestroy();
+      destroy();
+    }
+
     // This is an internal callback that passes data to
     // the JavaScript application
     private function onCallback(data:String):void
@@ -392,8 +406,6 @@ package
     private function destroy():void
     {
       unregisterListeners();
-      _hdsPlayer = null;
-      _dynamicEvent = null;
     }
    /**
     * Sends the error code
