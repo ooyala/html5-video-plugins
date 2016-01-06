@@ -269,10 +269,73 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should unset the src on destroy', function(){
-    element.src = "url"
+    element.src = "url";
     expect(element.src).to.eql("url");
     wrapper.destroy();
     expect(element.src).to.eql("");
+  });
+
+  it('should set closed captions', function(){
+    var language = "en";
+    var closedCaptions = {
+      closed_captions_vtt: {
+        en: {
+          name: "English",
+          url: "http://ooyala.com"
+        }
+      }
+    };
+    var params = {
+      mode: "showing"
+    };
+
+    wrapper.setClosedCaptions(language, closedCaptions, params);
+    expect(element.children.length > 0).to.be(true);
+    expect(element.children[0].tagName).to.eql("TRACK");
+    expect(element.children[0].getAttribute("class")).to.eql("track_cc");
+    expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
+    expect(element.children[0].getAttribute("label")).to.eql("English");
+    expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
+    expect(element.children[0].getAttribute("srclang")).to.eql("en");
+  });
+
+  it('should remove closed captions if language is null', function(){
+    var language = "en";
+    var closedCaptions = {
+      closed_captions_vtt: {
+        en: {
+          name: "English",
+          url: "http://ooyala.com"
+        }
+      }
+    };
+    var params = {
+      mode: "showing"
+    };
+
+    wrapper.setClosedCaptions(language, closedCaptions, params);
+    expect(element.children.length > 0).to.be(true);
+    expect(element.children[0].tagName).to.eql("TRACK");
+    wrapper.setClosedCaptions(null, closedCaptions, params);
+    expect(element.children.length).to.eql(0);
+  });
+
+  it('should set the closed captions mode', function(){
+    //Mock textTracks
+    element.textTracks = [{ mode: "disabled" }];
+    expect(element.textTracks[0].mode).to.eql("disabled");
+    wrapper.setClosedCaptionsMode("showing");
+    expect(element.textTracks[0].mode).to.eql("showing");
+    wrapper.setClosedCaptionsMode("hidden");
+    expect(element.textTracks[0].mode).to.eql("hidden");
+  });
+
+  it('should set the crossorigin attribute', function(){
+    expect(element.getAttribute("crossorigin")).to.not.be.ok();
+    wrapper.setCrossorigin("anonymous");
+    expect(element.getAttribute("crossorigin")).to.eql("anonymous");
+    wrapper.setCrossorigin(null);
+    expect(element.getAttribute("crossorigin")).to.not.be.ok();
   });
 
   /*
