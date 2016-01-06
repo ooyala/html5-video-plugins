@@ -4,7 +4,9 @@
 
 require("../../../html5-common/js/utils/InitModules/InitOO.js");
 require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
+require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
+require("../../../html5-common/js/utils/environment.js");
 
 (function(_, $) {
   var pluginName = "bitdash";
@@ -12,13 +14,7 @@ require("../../../html5-common/js/utils/constants.js");
   var bitdashLibLoaded = false;
   var bitdashLibURL;
   var BITDASH_LIB_TIMEOUT = 30000;
-  var licenseKeyURL = "//dev.corp.ooyala.com:8000/bitdash_settings.js";
   var filename = "bit_wrapper.*\.js";
-
-  var licenseKeyJs = document.createElement("script");
-  licenseKeyJs.type = "text/javascript";
-  licenseKeyJs.src = licenseKeyURL;
-  document.head.appendChild(licenseKeyJs);
 
   var scripts = document.getElementsByTagName('script');
   for (var index in scripts) {
@@ -129,11 +125,10 @@ require("../../../html5-common/js/utils/constants.js");
     var _currentTime = 0;
     var _isM3u8 = false;
     var _isDash = false;
-    var _videoElement = null;
     var _isReady = false;
 
     var conf = {
-      key: window.bitdashSettings.credentials.key,
+      key: 'f7d2ad6cfa3a99181f35cbcfa42efa8a',
       style: {
         width: '100%',
         height: '100%',
@@ -179,7 +174,7 @@ require("../../../html5-common/js/utils/constants.js");
         _currentUrl = url || "";
 
         // bust the chrome caching bug
-        if (_currentUrl.length > 0 && Platform.isChrome) {
+        if (_currentUrl.length > 0 && OO.isChrome) {
           var rs = Math.random().toString(36).substring(7)
           _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + rs;
         }
@@ -207,8 +202,10 @@ require("../../../html5-common/js/utils/constants.js");
           } else {
             _player.setup(conf);
             if (_isM3u8) {
+              // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
+              // Should be removed once this bug is fixed
               this.controller.notify(this.controller.EVENTS.CAN_PLAY);
-            }
+            } 
             OO.log("Bitdash player has been set up!");
           } 
         } else {
@@ -325,6 +322,7 @@ require("../../../html5-common/js/utils/constants.js");
      */
     this.seek = function(time) {
       _player.seek(_hasPlayed ? time : _initialTime);
+      this.controller.notify(this.controller.EVENTS.SEEKING);
     };
 
     /**
@@ -369,7 +367,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Gets the range of video that can be safely seeked to.
      * @private
-     * @method OoyalaVideoWrapper#getSafeSeekRange
+     * @method BitdashVideoWrapper#getSafeSeekRange
      * @param {object} seekRange The seek range object from the video element.  It contains a length, a start
      *                           function, and an end function.
      * @returns {object} The safe seek range object containing { "start": number, "end": number}
@@ -391,11 +389,12 @@ require("../../../html5-common/js/utils/constants.js");
     var _onReady = conf.events["onReady"] = _.bind(function() {
       _isReady = true;
       printevent(arguments);
-      if (_isM3u8) {
+      if (_isM3u8 && !OO.isIos) {
+        // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
+        // Should be removed once this bug is fixed
         _player.play();
-      } else {
-        this.controller.notify(this.controller.EVENTS.CAN_PLAY);
-      }
+      } 
+      this.controller.notify(this.controller.EVENTS.CAN_PLAY);
     }, this);
 
     var _onPlay = conf.events["onPlay"] = _.bind(function() {
@@ -489,19 +488,14 @@ require("../../../html5-common/js/utils/constants.js");
 
     var _onTimeChanged = conf.events["onTimeChanged"] = _.bind(function(data) {
       printevent([data]);
-      _currentTime = data.time;
-      if (!_videoElement) {
-        _videoElement = $("#bitdash-video-" + _domId)[0];
-      }
-      var buffer = 0;
-      if (_videoElement.buffered && _videoElement.buffered.length > 0) {
-        buffer = _videoElement.buffered.end(0); // in sec;
-      }
+      _currentTime = _player.getCurrentTime();
+      var buffer = _player.getVideoBufferLength();
+      var duration = _player.getDuration();
       this.controller.notify(this.controller.EVENTS.TIME_UPDATE,
                              { currentTime: _currentTime,
-                               duration: _videoElement.duration,
+                               duration: duration,
                                buffer: buffer,
-                               seekRange: getSafeSeekRange(_videoElement.seekable)});
+                               seekRange: { "start" : 0, "end" : duration } });
     }, this);
 
     var _onCueEnter = conf.events["onCueEnter"] = _.bind(function() {
@@ -525,22 +519,6 @@ require("../../../html5-common/js/utils/constants.js");
         console.log("bitplayer:", arr[0].type, JSON.stringify(arr[0]));
       }
     };
-  };
-
-  /**
-   * @class Platform
-   * @classdesc Functions that provide platform information
-   */
-  var Platform = {
-    /**
-     * Checks if the player is running in Chrome.
-     * @private
-     * @method Platform#isChrome
-     * @returns {boolean} True if the player is running in chrome
-     */
-    isChrome: (function() {
-      return !!window.navigator.userAgent.match(/Chrome/);
-    })(),
   };
 
   OO.Video.plugin(new BitdashVideoFactory());
