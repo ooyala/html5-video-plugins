@@ -144,6 +144,7 @@ require("../../../html5-common/js/utils/environment.js");
     var videoEnded = false;
     var listeners = {};
     var loaded = false;
+    var canPlay = false;
     var hasPlayed = false;
     var queuedSeekTime = null;
     var playQueued = false;
@@ -180,6 +181,7 @@ require("../../../html5-common/js/utils/environment.js");
                     "progress": _.bind(raiseProgress, this),
                     "error": _.bind(raiseErrorEvent, this),
                     "stalled": _.bind(raiseStalledEvent, this),
+                    "canplay": _.bind(raiseCanPlay, this),
                     "canplaythrough": _.bind(raiseCanPlayThrough, this),
                     "playing": _.bind(raisePlayingEvent, this),
                     "waiting": _.bind(raiseWaitingEvent, this),
@@ -243,6 +245,7 @@ require("../../../html5-common/js/utils/environment.js");
 
     var resetStreamData = _.bind(function() {
       playQueued = false;
+      canPlay = false;
       hasPlayed = false;
       loaded = false;
       videoEnded = false;
@@ -521,6 +524,15 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       this.controller.notify(this.controller.EVENTS.STALLED);
+    };
+
+    /**
+     * HTML5 video browser can start playing the media. Sets canPlay flag to TRUE
+     * @private
+     * @method OoyalaVideoWrapper#raiseCanPlay
+     */
+    var raiseCanPlay = function() {
+      canPlay = true;
     };
 
     /**
@@ -885,11 +897,18 @@ require("../../../html5-common/js/utils/environment.js");
         resolvedTime = Number(resolvedTime);
       }
 
+      // Safety against accessing seekable before SAFARI browser canPlay media
+      if (OO.isSafari && !canPlay) {
+        var seekable = getSafeSeekRange(null);
+      } else {
+        var seekable = getSafeSeekRange(event.target.seekable);
+      }
+
       this.controller.notify(eventname,
                              { "currentTime": resolvedTime,
                                "duration": resolveDuration(event.target.duration),
                                "buffer": buffer,
-                               "seekRange": getSafeSeekRange(event.target.seekable) });
+                               "seekRange": seekable });
     }, this);
 
     /**
