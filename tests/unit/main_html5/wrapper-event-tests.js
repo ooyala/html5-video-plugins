@@ -131,6 +131,13 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAYING]);
   });
 
+  it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){
+    element.textTracks = [{ kind: "captions" }];
+    vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING]);
+  });
+
   it('should notify WAITING on video \'waiting\' event', function(){
     vtc.interface.EVENTS.WAITING = "waiting";
     element.currentSrc = "url";

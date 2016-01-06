@@ -551,7 +551,6 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var raisePlayingEvent = function() {
       this.controller.notify(this.controller.EVENTS.PLAYING);
-      firstPlay = false;
 
       //Check for live closed captions and notify controller
       if (firstPlay && _video.textTracks && _video.textTracks.length > 0) {
@@ -562,6 +561,7 @@ require("../../../html5-common/js/utils/environment.js");
           }
         }
       }
+      firstPlay = false;
       setVideoCentering();
     };
 
