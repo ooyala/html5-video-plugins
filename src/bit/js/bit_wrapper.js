@@ -128,7 +128,7 @@ require("../../../html5-common/js/utils/environment.js");
     var _isReady = false;
 
     var conf = {
-      key: 'f7d2ad6cfa3a99181f35cbcfa42efa8a',
+      key: OO.VIDEO.PLUGINS.BITMOVIN_KEY,
       style: {
         width: '100%',
         height: '100%',
