@@ -34,6 +34,11 @@
    ```
    This is automatically done during building.
 
+6. Install Flex SDK v4.6.0 from http://www.adobe.com/devnet/flex/flex-sdk-download.html and set path of 
+   FLEX_HOME in build_flash.xml
+
+7. Install Apache ant and set ANT_HOME environment variable
+
 ## Testing
 
 Unit tests live in the folder "test".  Unit tests are based on the "jest" framework.
