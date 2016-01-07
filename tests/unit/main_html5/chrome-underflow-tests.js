@@ -167,6 +167,24 @@ describe('main_html5 chrome underflow tests', function () {
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
+  it('should not raise waiting event if the player already has', function(){
+    vtc.interface.EVENTS.WAITING = "waiting";
+    vtc.interface.EVENTS.PLAYING = "playing";
+    element.currentSrc = "url";
+    element.currentTime = 10;
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    element.paused = false;
+
+    jasmine.Clock.tick(interval + 1);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
+    $(element).triggerHandler("waiting");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
+    vtc.reset();
+    jasmine.Clock.tick(interval);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
+  });
+
 
   //// Buffered event ////
 
