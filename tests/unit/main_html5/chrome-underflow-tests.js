@@ -271,7 +271,6 @@ describe('main_html5 chrome underflow tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
   });
 
-  // reraise waiting event after buffered
   it('should be able to raise waiting and buffered events again after buffered', function() {
     vtc.interface.EVENTS.WAITING = "waiting";
     vtc.interface.EVENTS.BUFFERED = "buffered";
@@ -282,6 +281,7 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
+    // first time
     jasmine.Clock.tick(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
     jasmine.Clock.tick(interval);
@@ -291,6 +291,37 @@ describe('main_html5 chrome underflow tests', function () {
     jasmine.Clock.tick(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
+
+    // secondtime
+    vtc.reset();
+    jasmine.Clock.tick(interval);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
+    element.currentTime = 14;
+    jasmine.Clock.tick(interval);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
+  });
+
+  it('should not raise buffered event if the player already has', function(){
+    vtc.interface.EVENTS.WAITING = "waiting";
+    vtc.interface.EVENTS.BUFFERED = "buffered";
+    vtc.interface.EVENTS.PLAYING = "playing";
+    element.currentSrc = "url";
+    element.currentTime = 10;
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    element.paused = false;
+
+    jasmine.Clock.tick(interval + 1);
+    jasmine.Clock.tick(interval);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
+    $(element).triggerHandler("canplaythrough");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
+    vtc.reset();
+    element.currentTime = 12;
+    jasmine.Clock.tick(interval);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
   });
 
   //// When to watch ////
