@@ -34,10 +34,39 @@
    ```
    This is automatically done during building.
 
-6. Install Flex SDK v4.6.0 from http://www.adobe.com/devnet/flex/flex-sdk-download.html and set path of 
-   FLEX_HOME in build_flash.xml
+## Install FLEX and ANT on Mac for building OSMF Flash Plugin
 
-7. Install Apache ant and set ANT_HOME environment variable
+1. Install Flex SDK v4.6.0 from http://download.macromedia.com/pub/flex/sdk/flex_sdk_4.6.zip
+
+2. Change path of FLEX_HOME in build_flash.xml to the path where Flex SDK is installed
+   ```bash
+   <property name="FLEX_HOME" value="/opt/flex_sdk_4.6.0"/>
+   ```
+ 
+3. Check if ANT is already installed or not by typing "ant -version". If ant is installed, you will get output. If not, you 
+   will get 'command not found'. If it is not already installed install using the steps below.
+
+a. Check if brew is installed or not by typing "brew help". If brew is installed, you will get output. If not, you will get 
+   'command not found'. If it is not already installed install using
+   ```bash
+   $ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+   ```
+
+b. Install ANT using
+   ```bash
+   $ brew install ant
+   ```  
+
+4. Set ANT_HOME environment variable. 
+
+a. In your home folder, open the .bash_profile file in the root directory.
+
+b. Add the following lines to the file, substituting the directory where you installed Ant:
+   ```bash
+   ANT_HOME=/apache-install-dir/apache-ant-version
+   PATH=$PATH:$HOME/bin:$ANT_HOME/bin
+   export ANT_HOME ANT_OPTS PATH
+   ```  
 
 ## Testing
 
