@@ -248,13 +248,19 @@ require("../../../html5-common/js/utils/environment.js");
         var captions =  _player.getAvailableSubtitles() || [];
         var trackId = "1";
         if (captions.length > 0) {
-          if (captions[captions.length - 1].lang === language &&
-              captions[captions.length - 1].label === closedCaptions.closed_captions_vtt[language].name) {
-            console.warning("Closed captions track '", trackId, "' has already been installed");
-            // this track has already been installed
-            return;
+          if (captions[captions.length - 1].lang === language) {
+            if (closedCaptions.closed_captions_vtt && closedCaptions.closed_captions_vtt[language]) {
+              if (captions[captions.length - 1].label === closedCaptions.closed_captions_vtt[language].name) {
+                console.warning("Closed captions track '", trackId, "' has already been installed");
+                // this track has already been installed
+                return;
+              }
+            } else {
+              // XXX add cases for DFXP or precaution if there is none of these
+              return;
+            }
+            trackId = (parseInt(captions[captions.length - 1].id) + 1).toString();
           }
-          trackId = (parseInt(captions[captions.length - 1].id) + 1).toString();
         }
         _player.addSubtitle(
           closedCaptions.closed_captions_vtt[language].url,
