@@ -202,7 +202,7 @@ require("../../../html5-common/js/utils/environment.js");
                     "volumechangeNew": _.bind(raiseVolumeEvent, this),
                         // ios webkit browser fullscreen events
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
-                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
+                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
                   };
       // events not used:
       // suspend, abort, emptied, loadeddata, canplay, resize, change, addtrack, removetrack
