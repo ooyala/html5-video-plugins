@@ -255,6 +255,7 @@ require("../../../html5-common/js/utils/environment.js");
       loaded = false;
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
+      stopUnderflowWatcher();
     }, this);
 
     /**
