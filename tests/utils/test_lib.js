@@ -5,6 +5,7 @@ global.OO = { publicApi: {}, platform: 'MacIntel', os: {}, browser: { version:1,
 
 // The function setTimeout from jsdom is not working, this overwrites the function with the function defined by node
 global.window.setTimeout = setTimeout;
+global.window.setInterval = setInterval;
 global.navigator = window.navigator;
 
 global.expect = require('expect.js');

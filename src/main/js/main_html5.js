@@ -563,10 +563,10 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raisePlayingEvent
      */
     var raisePlayingEvent = function() {
-      startUnderflowWatcher();
-
       this.controller.notify(this.controller.EVENTS.PLAYING);
       firstPlay = false;
+
+      startUnderflowWatcher();
 
       //Check for live closed captions and notify controller
       if (firstPlay && _video.textTracks && _video.textTracks.length > 0) {
@@ -1001,7 +1001,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#underflowWatcher
      */
     var underflowWatcher = _.bind(function() {
-      if (_video.paused || !hasPlayed) {
+      if (!hasPlayed) {
         return;
       }
 
@@ -1009,11 +1009,11 @@ require("../../../html5-common/js/utils/environment.js");
         return stopUnderflowWatcher();
       }
 
-      if (_video.currentTime == watcherTime) {
+      if (!_video.paused && _video.currentTime == watcherTime) {
         if (!waitingEventRaised) {
           raiseWaitingEvent();
         }
-      } else {
+      } else { // should be able to do this even when paused
         watcherTime = _video.currentTime;
         if (waitingEventRaised) {
           raiseCanPlayThrough();
@@ -1029,6 +1029,8 @@ require("../../../html5-common/js/utils/environment.js");
     var stopUnderflowWatcher = _.bind(function() {
       clearInterval(underflowWatcherTimer);
       underflowWatcherTimer = null;
+      waitingEventRaised = false;
+      watcherTime = -1;
     }, this);
   };
 
