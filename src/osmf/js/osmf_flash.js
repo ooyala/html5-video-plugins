@@ -15,8 +15,8 @@ require("../../../html5-common/js/utils/environment.js");
   /**
    * Config variables for paths to flash resources.
    */
-  var swfPath = "/html5-video-plugins/build/";
-  var pluginPath = swfPath+"HDSPlayer.swf";
+
+  var pluginPath = "osmf_flash.swf";
   var flexPath = swfPath+"playerProductInstall.swf";
   this.ready=false;
   /**

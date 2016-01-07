@@ -26,6 +26,17 @@ var bit_fn = function() {
     .pipe(gulp.dest('./build'));
 }
 
+var osmf_fn = function() {
+  gulp.src(['./src/osmf/js/osmf_flash.js'])
+      .pipe(buffer())
+      .pipe(gulp.dest('./build/'))
+   .pipe(uglify())
+    .pipe(rename({
+      extname: '.min.js'
+    }))
+    .pipe(gulp.dest('./build/'));
+}
+
 var uglify_fn = function(srcFile) {
   var b = browserify({
     entries: srcFile,
@@ -57,9 +68,10 @@ gulp.task('init_module', function(callback) {
 });
 
 // Build All, TODO: add task build_osmf
-gulp.task('build', ['init_module'], function() {
+gulp.task('build', ['init_module', 'build_flash'], function() {
   main_html5_fn();
   bit_fn();
+  osmf_fn();
 });
 
 gulp.task('test', shell.task(['jest --verbose']));
@@ -68,6 +80,8 @@ gulp.task('test', shell.task(['jest --verbose']));
 gulp.task('watch', function() {
   gulp.watch("src/**/*", ['build']);
 });
+
+gulp.task('build_flash', shell.task(['ant -file build_flash.xml']));
 
 // The default task (called when you run `gulp` from cli)
 gulp.task('default', ['build']);
