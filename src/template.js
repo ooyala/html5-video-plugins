@@ -60,7 +60,7 @@ require("../html5-common/js/utils/constants.js");
     this.createFromExisting = function(domId, ooyalaVideoController, playerId)
     {
       var sharedVideoElement = $("#" + domId)[0];
-      var wrapper = new TemplateIMAVideoWrapper(domId, sharedVideoElement);
+      var wrapper = new TemplateVideoWrapper(domId, sharedVideoElement);
       wrapper.controller = ooyalaVideoController;
       wrapper.subscribeAllEvents();
       return wrapper;
