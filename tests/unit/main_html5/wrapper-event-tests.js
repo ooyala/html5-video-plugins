@@ -221,10 +221,22 @@ describe('main_html5 wrapper tests', function () {
     vtc.interface.EVENTS.ENDED = "ended";
     $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
-    $(element).triggerHandler("ended");
     vtc.notifyParameters = null;
+    $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql(null);
     wrapper.play(false);
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
+  });
+
+  it('should unblock raising of ended event after a new stream begins loading', function(){
+    vtc.interface.EVENTS.ENDED = "ended";
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql(null);
+    $(element).triggerHandler("loadstart");
     $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
   });
@@ -398,10 +410,11 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
   });
 
-  it('should notify VOLUME_CHANGE on video \'volumechange\' event', function(){
+  it('should notify VOLUME_CHANGE on video \'volumechangeNew\' event', function(){
+    vtc.notifyParameters = null;
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
     element.volume = 0.3;
-    $(element).triggerHandler("volumechange");
+    $(element).triggerHandler("volumechangeNew");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
   });
 
@@ -447,6 +460,48 @@ describe('main_html5 wrapper tests', function () {
       { "isFullScreen": false,
          "paused": false
       }]);
+  });
+
+  it('should not notify on any events when the element is shared away', function(){
+    vtc.notifyParameters = null;
+    wrapper.sharedElementGive();
+    $(element).triggerHandler({ type: "webkitendfullscreen" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "play" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "playing" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "seeking" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "ended" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "timeupdate" });
+    expect(vtc.notifyParameters).to.be(null);
+  });
+
+  it('should notify on events when the shared element is returned', function(){
+    vtc.notifyParameters = null;
+    wrapper.sharedElementGive();
+    $(element).triggerHandler({ type: "play" });
+    expect(vtc.notifyParameters).to.be(null);
+    wrapper.sharedElementTake();
+    $(element).triggerHandler({ type: "webkitendfullscreen" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "play" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "playing" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "seeking" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "ended" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "timeupdate" });
+    expect(vtc.notifyParameters).to.not.be(null);
   });
 
   // TODO: Add tests for platform parsing when test framework supports

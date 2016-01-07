@@ -29,7 +29,7 @@ require("../../../html5-common/js/utils/environment.js");
     this.ready = true;
 
     this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-                      OO.VIDEO.FEATURE.VIDEO_OBJECT_OPEN ];
+                      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     // Determine supported encodings
@@ -169,6 +169,24 @@ require("../../../html5-common/js/utils/environment.js");
     /************************************************************************************/
     // External Methods that Video Controller or Factory call
     /************************************************************************************/
+    /**
+     * Hands control of the video element off to another plugin by unsubscribing from all events.
+     * @public
+     * @method OoyalaVideoWrapper#sharedElementGive
+     */
+    this.sharedElementGive = function() {
+      unsubscribeAllEvents();
+    };
+
+    /**
+     * Takes control of the video element from another plugin by subscribing to all events.
+     * @public
+     * @method OoyalaVideoWrapper#sharedElementTake
+     */
+    this.sharedElementTake = function() {
+      this.subscribeAllEvents();
+    };
+
     /**
      * Subscribes to all events raised by the video element.
      * This is called by the Factory during creation.
