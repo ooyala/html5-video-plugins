@@ -75,9 +75,8 @@ require("../../../html5-common/js/utils/environment.js");
       videoWrapper.css(css);
 
       parentContainer.append(videoWrapper);
-      var wrapper = new BitdashVideoWrapper(domId, videoWrapper[0]);
+      var wrapper = new BitdashVideoWrapper(domId, ooyalaVideoController, videoWrapper[0]);
       currentInstances++;
-      wrapper.controller = ooyalaVideoController;
 
       return wrapper;
     };
@@ -111,8 +110,8 @@ require("../../../html5-common/js/utils/environment.js");
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var BitdashVideoWrapper = function(domId, videoWrapper) {
-    this.controller = {};
+  var BitdashVideoWrapper = function(domId, videoController, videoWrapper) {
+    this.controller = videoController;
     this.disableNativeSeek = false;
 
     var _domId = domId;
@@ -128,7 +127,7 @@ require("../../../html5-common/js/utils/environment.js");
     var _isReady = false;
 
     var conf = {
-      key: OO.VIDEO.PLUGINS.BITMOVIN_KEY,
+      key: this.controller.PLUGIN_MAGIC,
       style: {
         width: '100%',
         height: '100%',
