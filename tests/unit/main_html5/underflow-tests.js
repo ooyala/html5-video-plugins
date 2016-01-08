@@ -9,7 +9,7 @@ describe('main_html5 chrome underflow tests', function () {
   require('../../utils/mock_vtc.js');
 
   var parentElement, wrapper, element, vtc, pluginFactory;
-  var interval = 500;
+  var interval = 300;
   var oldTimeout, oldInterval, oldClear;
 
   // Setup OO
@@ -31,6 +31,9 @@ describe('main_html5 chrome underflow tests', function () {
 
     // Setup the video element
     OO.isChrome = true;
+    OO.isFirefox = false;
+    OO.isIpad = false;
+    OO.isIE11Plus = false;
     vtc = new mock_vtc();
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
@@ -419,8 +422,45 @@ describe('main_html5 chrome underflow tests', function () {
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
-  it('should not raise waiting event when the currentTime hasn\'t progressed on non-chrome platform', function(){
+
+  //// Platforms ////
+
+  it('should raise waiting event when the currentTime hasn\'t progressed on iPad platform', function(){
+    OO.isIpad = false;
+    vtc.interface.EVENTS.PLAYING = "playing";
+    vtc.interface.EVENTS.WAITING = "waiting";
+    element.currentSrc = "url";
+    element.currentTime = 10;
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    element.paused = false;
+
+    jasmine.Clock.tick(interval + 1);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
+    jasmine.Clock.tick(interval);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
+  });
+
+  it('should raise waiting event when the currentTime hasn\'t progressed on IE11 platform', function(){
+    OO.isIE11Plus = false;
+    vtc.interface.EVENTS.PLAYING = "playing";
+    vtc.interface.EVENTS.WAITING = "waiting";
+    element.currentSrc = "url";
+    element.currentTime = 10;
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    element.paused = false;
+
+    jasmine.Clock.tick(interval + 1);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
+    jasmine.Clock.tick(interval);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
+  });
+
+  it('should not raise waiting event when the currentTime hasn\'t progressed on most platforms', function(){
     OO.isChrome = false;
+    OO.isIE11Plus = false;
+    OO.isIpad = false;
     vtc.interface.EVENTS.PLAYING = "playing";
     vtc.interface.EVENTS.WAITING = "waiting";
     element.currentSrc = "url";
@@ -433,5 +473,31 @@ describe('main_html5 chrome underflow tests', function () {
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     jasmine.Clock.tick(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
+  });
+
+  it('should raise buffered event when canplay is raised after waiting on ipad', function(){
+    vtc.interface.EVENTS.BUFFERED = "buffered";
+    vtc.interface.EVENTS.WAITING = "waiting";
+    OO.isIpad = true;
+    OO.isChrome = false;
+    $(element).triggerHandler("canplay");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
+    $(element).triggerHandler("waiting");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
+    $(element).triggerHandler("canplay");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
+  });
+
+  it('should raise buffered event when canplay is raised after waiting on firefox', function(){
+    vtc.interface.EVENTS.BUFFERED = "buffered";
+    vtc.interface.EVENTS.WAITING = "waiting";
+    OO.isFirefox = true;
+    OO.isChrome = false;
+    $(element).triggerHandler("canplay");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
+    $(element).triggerHandler("waiting");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
+    $(element).triggerHandler("canplay");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
   });
 });
