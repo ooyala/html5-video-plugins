@@ -224,7 +224,7 @@ require("../../../html5-common/js/utils/environment.js");
                     "webkitendfullscreen": raiseFullScreenEnd
                   };
       // events not used:
-      // suspend, abort, emptied, loadeddata, canplay, resize, change, addtrack, removetrack
+      // suspend, abort, emptied, loadeddata, resize, change, addtrack, removetrack
       _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
     };
 
@@ -564,6 +564,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseCanPlay
      */
     var raiseCanPlay = _.bind(function() {
+      // On firefox, instead of raising canplaythrough at the end of an underflow, it raises canplay
+      // If that happens, trigger canPlayThrough.
+      if (OO.isFirefox && waitingEventRaised) {
+        raiseCanPlayThrough();
+      }
       canPlay = true;
     }, this);
 
