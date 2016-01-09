@@ -176,6 +176,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.sharedElementGive = function() {
       unsubscribeAllEvents();
+      _currentUrl = "";
     };
 
     /**
