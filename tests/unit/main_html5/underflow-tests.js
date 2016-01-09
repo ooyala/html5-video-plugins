@@ -32,7 +32,7 @@ describe('main_html5 chrome underflow tests', function () {
     // Setup the video element
     OO.isChrome = true;
     OO.isFirefox = false;
-    OO.isIpad = false;
+    OO.isIos = false;
     OO.isIE11Plus = false;
     vtc = new mock_vtc();
     parentElement = $("<div>");
@@ -425,8 +425,8 @@ describe('main_html5 chrome underflow tests', function () {
 
   //// Platforms ////
 
-  it('should raise waiting event when the currentTime hasn\'t progressed on iPad platform', function(){
-    OO.isIpad = false;
+  it('should raise waiting event when the currentTime hasn\'t progressed on iOS platform', function(){
+    OO.isIos = false;
     vtc.interface.EVENTS.PLAYING = "playing";
     vtc.interface.EVENTS.WAITING = "waiting";
     element.currentSrc = "url";
@@ -460,7 +460,7 @@ describe('main_html5 chrome underflow tests', function () {
   it('should not raise waiting event when the currentTime hasn\'t progressed on most platforms', function(){
     OO.isChrome = false;
     OO.isIE11Plus = false;
-    OO.isIpad = false;
+    OO.isIos = false;
     vtc.interface.EVENTS.PLAYING = "playing";
     vtc.interface.EVENTS.WAITING = "waiting";
     element.currentSrc = "url";
@@ -475,10 +475,10 @@ describe('main_html5 chrome underflow tests', function () {
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
-  it('should raise buffered event when canplay is raised after waiting on ipad', function(){
+  it('should raise buffered event when canplay is raised after waiting on iOS', function(){
     vtc.interface.EVENTS.BUFFERED = "buffered";
     vtc.interface.EVENTS.WAITING = "waiting";
-    OO.isIpad = true;
+    OO.isIos = true;
     OO.isChrome = false;
     $(element).triggerHandler("canplay");
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);

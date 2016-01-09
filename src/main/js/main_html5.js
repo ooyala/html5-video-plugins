@@ -566,7 +566,7 @@ require("../../../html5-common/js/utils/environment.js");
     var raiseCanPlay = _.bind(function() {
       // On firefox, instead of raising canplaythrough at the end of an underflow, it raises canplay
       // If that happens, trigger canPlayThrough.
-      if ((OO.isFirefox || OO.isIpad) && waitingEventRaised) {
+      if ((OO.isFirefox || OO.isIos) && waitingEventRaised) {
         raiseCanPlayThrough();
       }
       canPlay = true;
@@ -1013,7 +1013,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#startUnderflowWatcher
      */
     var startUnderflowWatcher = _.bind(function() {
-      if ((OO.isChrome || OO.isIpad || OO.isIE11Plus) && !underflowWatcherTimer) {
+      if ((OO.isChrome || OO.isIos || OO.isIE11Plus) && !underflowWatcherTimer) {
         var watchInterval = 300;
         underflowWatcherTimer = setInterval(underflowWatcher, watchInterval)
       }
