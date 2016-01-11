@@ -328,6 +328,7 @@ require("../../../html5-common/js/utils/environment.js");
     this.seek = function(time) {
       _player.seek(_hasPlayed ? time : _initialTime);
       this.controller.notify(this.controller.EVENTS.SEEKING);
+      this.controller.notify(this.controller.EVENTS.SEEKED);
     };
 
     /**
