@@ -155,6 +155,7 @@ require("../../../html5-common/js/utils/environment.js");
     var firstPlay = true;
     var playerDimension = dimension;
     var videoDimension = {height: 0, width: 0};
+    var unprocessedInitialTime = 0;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -316,7 +317,17 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.setInitialTime = function(initialTime) {
       if (!hasPlayed && (initialTime !== 0)) {
-        this.seek(initialTime);
+        unprocessedInitialTime = initialTime;
+
+        // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
+        // never raised, even if the seekable property returns an endtime greater than the seek time.
+        // To avoid this, save seeking information for use later.
+        if (OO.isAndroid) {
+          queueSeek(initialTime);
+        }
+        else {
+          this.seek(initialTime);
+        }
       }
     };
 
@@ -626,6 +637,8 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
     var raiseSeekedEvent = _.bind(function() {
+      unprocessedInitialTime = 0;
+
       // After done seeking, see if any play events were received and execute them now
       // This fixes an issue on iPad where playing while seeking causes issues with end of stream eventing.
       dequeuePlay();
@@ -683,7 +696,16 @@ require("../../../html5-common/js/utils/environment.js");
       if (!isSeeking) {
         currentTime = _video.currentTime;
       }
-      raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
+
+      if (unprocessedInitialTime && (event.target.currentTime >= unprocessedInitialTime)) {
+        unprocessedInitialTime = 0;
+      }
+
+      // If the stream is seekable, supress playheads that come before the initialTime has been reached
+      if (!unprocessedInitialTime ||
+          !getSafeSeekTimeIfPossible(_video, unprocessedInitialTime)) {
+        raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
+      }
 
       // iOS has issues seeking so if we queue a seek handle it here
       dequeueSeek();
