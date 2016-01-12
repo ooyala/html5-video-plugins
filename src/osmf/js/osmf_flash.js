@@ -79,8 +79,8 @@
 
     function testForFlash() {
       var version = getFlashVersion().split(',').shift();
-      console.error("NO FLASH DETECTED");
       if (version < 11) {
+        console.error("NO FLASH DETECTED");
         return [];
       }
       else {
