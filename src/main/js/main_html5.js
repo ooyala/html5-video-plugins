@@ -224,7 +224,7 @@ require("../../../html5-common/js/utils/environment.js");
                     "webkitendfullscreen": raiseFullScreenEnd
                   };
       // events not used:
-      // suspend, abort, emptied, loadeddata, canplay, resize, change, addtrack, removetrack
+      // suspend, abort, emptied, loadeddata, resize, change, addtrack, removetrack
       _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
     };
 
@@ -564,6 +564,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseCanPlay
      */
     var raiseCanPlay = _.bind(function() {
+      // On firefox and iOS, at the end of an underflow the video raises 'canplay' instead of
+      // 'canplaythrough'.  If that happens, raise canPlayThrough.
+      if ((OO.isFirefox || OO.isIos) && waitingEventRaised) {
+        raiseCanPlayThrough();
+      }
       canPlay = true;
     }, this);
 
@@ -1008,8 +1013,8 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#startUnderflowWatcher
      */
     var startUnderflowWatcher = _.bind(function() {
-      if (OO.isChrome && !underflowWatcherTimer) {
-        var watchInterval = 500;
+      if ((OO.isChrome || OO.isIos || OO.isIE11Plus) && !underflowWatcherTimer) {
+        var watchInterval = 300;
         underflowWatcherTimer = setInterval(underflowWatcher, watchInterval)
       }
     }, this);
