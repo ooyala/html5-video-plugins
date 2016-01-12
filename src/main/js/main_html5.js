@@ -564,8 +564,8 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseCanPlay
      */
     var raiseCanPlay = _.bind(function() {
-      // On firefox, instead of raising canplaythrough at the end of an underflow, it raises canplay
-      // If that happens, trigger canPlayThrough.
+      // On firefox and iOS, at the end of an underflow the video raises 'canplay' instead of
+      // 'canplaythrough'.  If that happens, raise canPlayThrough.
       if ((OO.isFirefox || OO.isIos) && waitingEventRaised) {
         raiseCanPlayThrough();
       }
