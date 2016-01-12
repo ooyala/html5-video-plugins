@@ -278,6 +278,7 @@ require("../../../html5-common/js/utils/environment.js");
     var resetStreamData = _.bind(function() {
       _hasPlayed = false;
       _videoEnded = false;
+      _wasSeeking = false;
     }, this);
 
     /**
