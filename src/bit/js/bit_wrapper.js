@@ -327,6 +327,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      _wasSeeking = true;
       this.controller.notify(this.controller.EVENTS.SEEKING, time);
       _player.seek(_hasPlayed ? time : _initialTime);
     };
