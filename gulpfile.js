@@ -28,15 +28,14 @@ var bit_fn = function() {
 }
 
 var osmf_fn = function() {
-  uglify_fn(path.flashJs);
-  /*gulp.src(['./src/osmf/js/osmf_flash.js'])
-      .pipe(buffer())
-      .pipe(gulp.dest('./build/'))
-   .pipe(uglify())
+  gulp.src(['./src/osmf/js/osmf_flash.js'])
+    .pipe(buffer())
+    .pipe(gulp.dest('./build/'))
+    .pipe(uglify())
     .pipe(rename({
       extname: '.min.js'
     }))
-    .pipe(gulp.dest('./build/'));*/
+    .pipe(gulp.dest('./build/'));
 }
 
 var uglify_fn = function(srcFile) {
