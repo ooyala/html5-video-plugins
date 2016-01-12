@@ -125,6 +125,7 @@ require("../../../html5-common/js/utils/environment.js");
     var _isM3u8 = false;
     var _isDash = false;
     var _isReady = false;
+    var _wasSeeking = false;
 
     var conf = {
       key: this.controller.PLUGIN_MAGIC,
@@ -277,6 +278,7 @@ require("../../../html5-common/js/utils/environment.js");
     var resetStreamData = _.bind(function() {
       _hasPlayed = false;
       _videoEnded = false;
+      _wasSeeking = false;
     }, this);
 
     /**
@@ -326,8 +328,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      _wasSeeking = true;
+      this.controller.notify(this.controller.EVENTS.SEEKING, time);
       _player.seek(_hasPlayed ? time : _initialTime);
-      this.controller.notify(this.controller.EVENTS.SEEKING);
     };
 
     /**
@@ -415,7 +418,8 @@ require("../../../html5-common/js/utils/environment.js");
 
     var _onSeek = conf.events["onSeek"] = _.bind(function() {
       printevent(arguments);
-      this.controller.notify(this.controller.EVENTS.SEEKING);
+      _wasSeeking = true;
+      this.controller.notify(this.controller.EVENTS.SEEKING, arguments[0].seekTarget);
     }, this);
 
     var _onVolumeChange = conf.events["onVolumeChange"] = _.bind(function() {
@@ -455,6 +459,10 @@ require("../../../html5-common/js/utils/environment.js");
 
     var _onStartBuffering = conf.events["onStartBuffering"] = _.bind(function() {
       printevent(arguments);
+      if (_wasSeeking) {
+        _wasSeeking = false;
+        this.controller.notify(this.controller.EVENTS.SEEKED);
+      }
       this.controller.notify(this.controller.EVENTS.BUFFERING);
     }, this);
 
