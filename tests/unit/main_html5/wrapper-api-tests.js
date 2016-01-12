@@ -3,18 +3,19 @@
  */
 
 describe('main_html5 wrapper tests', function () {
+  // Load test helpers
   require('../../utils/test_lib.js');
   jest.dontMock('../../utils/mock_vtc.js');
   require('../../utils/mock_vtc.js');
 
-  var pluginFactory;
+  var pluginFactory, parentElement, wrapper, element, vtc, originalTimeout;
+
+  // Setup
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
+  // Load file under test
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
-
-  var parentElement, wrapper, element, vtc;
-  var originalTimeout;
 
   beforeEach(function() {
     vtc = new mock_vtc();
@@ -27,6 +28,7 @@ describe('main_html5 wrapper tests', function () {
 
   afterEach(function() {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
+    if (wrapper) { wrapper.destroy(); }
   });
 
   // helper functions

@@ -3,17 +3,19 @@
  */
 
 describe('main_html5 wrapper tests', function () {
+  // Load test helpers
   require('../../utils/test_lib.js');
   jest.dontMock('../../utils/mock_vtc.js');
   require('../../utils/mock_vtc.js');
 
-  var pluginFactory;
+  var pluginFactory, parentElement, wrapper, element, vtc;
+
+  // Setup
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
+  // Load file under test
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
-
-  var parentElement, wrapper, element, vtc;
 
   beforeEach(function() {
     vtc = new mock_vtc();
@@ -24,6 +26,7 @@ describe('main_html5 wrapper tests', function () {
 
   afterEach(function() {
     OO.isSafari = false;
+    if (wrapper) { wrapper.destroy(); }
   });
 
   // tests
@@ -112,8 +115,10 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify STALLED on video \'stalled\' event', function(){
     vtc.interface.EVENTS.STALLED = "stalled";
+    element.currentSrc = "url";
     $(element).triggerHandler({ type: "stalled", target: {currentTime : 0}});
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.STALLED]);
+    expect(vtc.notifyParameters.length).to.eql(2);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.STALLED, { url : "url"}]);
   });
 
   // TODO: Create test case for stalled on iPad once we have platform simulation
@@ -221,10 +226,22 @@ describe('main_html5 wrapper tests', function () {
     vtc.interface.EVENTS.ENDED = "ended";
     $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
-    $(element).triggerHandler("ended");
     vtc.notifyParameters = null;
+    $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql(null);
     wrapper.play(false);
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
+  });
+
+  it('should unblock raising of ended event after a new stream begins loading', function(){
+    vtc.interface.EVENTS.ENDED = "ended";
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql(null);
+    $(element).triggerHandler("loadstart");
     $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
   });
@@ -398,10 +415,11 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
   });
 
-  it('should notify VOLUME_CHANGE on video \'volumechange\' event', function(){
+  it('should notify VOLUME_CHANGE on video \'volumechangeNew\' event', function(){
+    vtc.notifyParameters = null;
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
     element.volume = 0.3;
-    $(element).triggerHandler("volumechange");
+    $(element).triggerHandler("volumechangeNew");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
   });
 
@@ -447,6 +465,48 @@ describe('main_html5 wrapper tests', function () {
       { "isFullScreen": false,
          "paused": false
       }]);
+  });
+
+  it('should not notify on any events when the element is shared away', function(){
+    vtc.notifyParameters = null;
+    wrapper.sharedElementGive();
+    $(element).triggerHandler({ type: "webkitendfullscreen" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "play" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "playing" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "seeking" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "ended" });
+    expect(vtc.notifyParameters).to.be(null);
+    $(element).triggerHandler({ type: "timeupdate" });
+    expect(vtc.notifyParameters).to.be(null);
+  });
+
+  it('should notify on events when the shared element is returned', function(){
+    vtc.notifyParameters = null;
+    wrapper.sharedElementGive();
+    $(element).triggerHandler({ type: "play" });
+    expect(vtc.notifyParameters).to.be(null);
+    wrapper.sharedElementTake();
+    $(element).triggerHandler({ type: "webkitendfullscreen" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "play" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "playing" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "seeking" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "ended" });
+    expect(vtc.notifyParameters).to.not.be(null);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({ type: "timeupdate" });
+    expect(vtc.notifyParameters).to.not.be(null);
   });
 
   // TODO: Add tests for platform parsing when test framework supports
