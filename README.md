@@ -53,3 +53,12 @@ To automatically build the plugins when a file is changed, run the command:
 ```bash
 $ gulp watch
 ```
+
+## JS Documentation
+
+To build the jsdocs style documentation, run the command:
+```bash
+$ gulp docs
+```
+This will put the documentation into the /docs folder.
+Open /docs/index.html to view the docs home page.
