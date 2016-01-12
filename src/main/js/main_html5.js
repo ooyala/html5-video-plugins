@@ -315,7 +315,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
-      if (!hasPlayed) {
+      if (!hasPlayed && (initialTime !== 0)) {
         this.seek(initialTime);
       }
     };
