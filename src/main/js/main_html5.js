@@ -156,6 +156,11 @@ require("../../../html5-common/js/utils/environment.js");
     var playerDimension = dimension;
     var videoDimension = {height: 0, width: 0};
 
+    // Watch for underflow on Chrome
+    var underflowWatcherTimer = null;
+    var waitingEventRaised = false;
+    var watcherTime = -1;
+
     // iPad CSS constants
     var IPAD_CSS_DEFAULT = {
       "width":"",
@@ -195,28 +200,28 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#subscribeAllEvents
      */
     this.subscribeAllEvents = function() {
-      listeners = { "loadstart": _.bind(onLoadStart, this),
-                    "loadedmetadata": _.bind(onLoadedMetadata, this),
-                    "progress": _.bind(raiseProgress, this),
-                    "error": _.bind(raiseErrorEvent, this),
-                    "stalled": _.bind(raiseStalledEvent, this),
-                    "canplay": _.bind(raiseCanPlay, this),
-                    "canplaythrough": _.bind(raiseCanPlayThrough, this),
-                    "playing": _.bind(raisePlayingEvent, this),
-                    "waiting": _.bind(raiseWaitingEvent, this),
-                    "seeking": _.bind(raiseSeekingEvent, this),
-                    "seeked": _.bind(raiseSeekedEvent, this),
-                    "ended": _.bind(raiseEndedEvent, this),
-                    "durationchange": _.bind(raiseDurationChange, this),
-                    "timeupdate": _.bind(raiseTimeUpdate, this),
-                    "play": _.bind(raisePlayEvent, this),
-                    "pause": _.bind(raisePauseEvent, this),
-                    "ratechange": _.bind(raiseRatechangeEvent, this),
-                    "volumechange": _.bind(raiseVolumeEvent, this),
-                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
+      listeners = { "loadstart": onLoadStart,
+                    "loadedmetadata": onLoadedMetadata,
+                    "progress": raiseProgress,
+                    "error": raiseErrorEvent,
+                    "stalled": raiseStalledEvent,
+                    "canplay": raiseCanPlay,
+                    "canplaythrough": raiseCanPlayThrough,
+                    "playing": raisePlayingEvent,
+                    "waiting": raiseWaitingEvent,
+                    "seeking": raiseSeekingEvent,
+                    "seeked": raiseSeekedEvent,
+                    "ended": raiseEndedEvent,
+                    "durationchange": raiseDurationChange,
+                    "timeupdate": raiseTimeUpdate,
+                    "play": raisePlayEvent,
+                    "pause": raisePauseEvent,
+                    "ratechange": raiseRatechangeEvent,
+                    "volumechange": raiseVolumeEvent,
+                    "volumechangeNew": raiseVolumeEvent,
                         // ios webkit browser fullscreen events
-                    "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
-                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
+                    "webkitbeginfullscreen": raiseFullScreenBegin,
+                    "webkitendfullscreen": raiseFullScreenEnd
                   };
       // events not used:
       // suspend, abort, emptied, loadeddata, canplay, resize, change, addtrack, removetrack
@@ -269,6 +274,7 @@ require("../../../html5-common/js/utils/environment.js");
       loaded = false;
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
+      stopUnderflowWatcher();
     }, this);
 
     /**
@@ -490,15 +496,21 @@ require("../../../html5-common/js/utils/environment.js");
      * @private
      * @method OoyalaVideoWrapper#onLoadStart
      */
-    var onLoadStart = function() {
+    var onLoadStart = _.bind(function() {
+      stopUnderflowWatcher();
       _currentUrl = _video.src;
       firstPlay = true;
       videoEnded = false;
-    };
+    }, this);
 
-    var onLoadedMetadata = function() {
+    /**
+     * When metadata is done loading, trigger any seeks that were queued up.
+     * @private
+     * @method OoyalaVideoWrapper#onLoadedMetadata
+     */
+    var onLoadedMetadata = _.bind(function() {
       dequeueSeek();
-    };
+    }, this)
 
     /**
      * Notifies the controller that a progress event was raised.
@@ -506,7 +518,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseProgress
      * @param {object} event The event from the video
      */
-    var raiseProgress = function(event) {
+    var raiseProgress = _.bind(function(event) {
       var buffer = 0;
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
@@ -517,7 +529,7 @@ require("../../../html5-common/js/utils/environment.js");
                                "buffer": buffer,
                                "seekRange": getSafeSeekRange(event.target.seekable)
                              });
-    };
+    }, this);
 
     /**
      * Notifies the controller that an error event was raised.
@@ -525,10 +537,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseErrorEvent
      * @param {object} event The event from the video
      */
-    var raiseErrorEvent = function(event) {
+    var raiseErrorEvent = _.bind(function(event) {
+      stopUnderflowWatcher();
       var code = event.target.error ? event.target.error.code : -1;
       this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
-    };
+    }, this);
 
     /**
      * Notifies the controller that a stalled event was raised.  Pauses the video on iPad if the currentTime is 0.
@@ -536,40 +549,43 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseStalledEvent
      * @param {object} event The event from the video
      */
-    var raiseStalledEvent = function(event) {
+    var raiseStalledEvent = _.bind(function(event) {
       // Fix multiple video tag error in iPad
       if (OO.isIpad && event.target.currentTime === 0) {
         _video.pause();
       }
 
-      this.controller.notify(this.controller.EVENTS.STALLED);
-    };
+      this.controller.notify(this.controller.EVENTS.STALLED, {"url":_video.currentSrc});
+    }, this);
 
     /**
      * HTML5 video browser can start playing the media. Sets canPlay flag to TRUE
      * @private
      * @method OoyalaVideoWrapper#raiseCanPlay
      */
-    var raiseCanPlay = function() {
+    var raiseCanPlay = _.bind(function() {
       canPlay = true;
-    };
+    }, this);
 
     /**
      * Notifies the controller that a buffered event was raised.
      * @private
      * @method OoyalaVideoWrapper#raiseCanPlayThrough
      */
-    var raiseCanPlayThrough = function() {
+    var raiseCanPlayThrough = _.bind(function() {
+      waitingEventRaised = false;
       this.controller.notify(this.controller.EVENTS.BUFFERED, {"url":_video.currentSrc});
-    };
+    }, this);
 
     /**
      * Notifies the controller that a playing event was raised.
      * @private
      * @method OoyalaVideoWrapper#raisePlayingEvent
      */
-    var raisePlayingEvent = function() {
+    var raisePlayingEvent = _.bind(function() {
       this.controller.notify(this.controller.EVENTS.PLAYING);
+
+      startUnderflowWatcher();
 
       //Check for live closed captions and notify controller
       if (firstPlay && _video.textTracks && _video.textTracks.length > 0) {
@@ -582,33 +598,34 @@ require("../../../html5-common/js/utils/environment.js");
       }
       firstPlay = false;
       setVideoCentering();
-    };
+    }, this);
 
     /**
      * Notifies the controller that a waiting event was raised.
      * @private
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
-    var raiseWaitingEvent = function() {
+    var raiseWaitingEvent = _.bind(function() {
+      waitingEventRaised = true;
       this.controller.notify(this.controller.EVENTS.WAITING, {"url":_video.currentSrc});
-    };
+    }, this);
 
     /**
      * Notifies the controller that a seeking event was raised.
      * @private
      * @method OoyalaVideoWrapper#raiseSeekingEvent
      */
-    var raiseSeekingEvent = function() {
+    var raiseSeekingEvent = _.bind(function() {
       isSeeking = true;
       this.controller.notify(this.controller.EVENTS.SEEKING);
-    };
+    }, this);
 
     /**
      * Notifies the controller that a seeked event was raised.
      * @private
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
-    var raiseSeekedEvent = function() {
+    var raiseSeekedEvent = _.bind(function() {
       // After done seeking, see if any play events were received and execute them now
       // This fixes an issue on iPad where playing while seeking causes issues with end of stream eventing.
       dequeuePlay();
@@ -624,7 +641,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
       this.controller.notify(this.controller.EVENTS.SEEKED);
       isSeeking = false;
-    };
+    }, this);
 
     /**
      * Notifies the controller that a ended event was raised.
@@ -632,6 +649,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
     var raiseEndedEvent = _.bind(function(event) {
+      stopUnderflowWatcher();
       if (!_video.ended && OO.isIos) {
         // iOS raises ended events sometimes when a new stream is played in the same video element
         // Prevent this faulty event from making it to the player message bus
@@ -650,9 +668,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseDurationChange
      * @param {object} event The event from the video
      */
-    var raiseDurationChange = function(event) {
+    var raiseDurationChange = _.bind(function(event) {
       raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
-    };
+    }, this);
 
     /**
      * Notifies the controller that the time position has changed.  Handles seeks if seeks were enqueued and
@@ -661,7 +679,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseTimeUpdate
      * @param {object} event The event from the video
      */
-    var raiseTimeUpdate = function(event) {
+    var raiseTimeUpdate = _.bind(function(event) {
       if (!isSeeking) {
         currentTime = _video.currentTime;
       }
@@ -674,7 +692,7 @@ require("../../../html5-common/js/utils/environment.js");
       setVideoCentering();
 
       forceEndOnTimeupdateIfRequired(event);
-    };
+    }, this);
 
     /**
      * Notifies the controller that the play event was raised.
@@ -682,28 +700,28 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raisePlayEvent
      * @param {object} event The event from the video
      */
-    var raisePlayEvent = function(event) {
+    var raisePlayEvent = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.PLAY, { url: event.target.src });
-    };
+    }, this);
 
     /**
      * Notifies the controller that the pause event was raised.
      * @private
      * @method OoyalaVideoWrapper#raisePauseEvent
      */
-    var raisePauseEvent = function() {
+    var raisePauseEvent = _.bind(function() {
       this.controller.notify(this.controller.EVENTS.PAUSED);
       forceEndOnPausedIfRequired();
-    };
+    }, this);
 
     /**
      * Notifies the controller that the ratechange event was raised.
      * @private
      * @method OoyalaVideoWrapper#raiseRatechangeEvent
      */
-    var raiseRatechangeEvent = function() {
+    var raiseRatechangeEvent = _.bind(function() {
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
-    };
+    }, this);
 
     /**
      * Notifies the controller that the volume event was raised.
@@ -711,9 +729,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseVolumeEvent
      * @param {object} event The event raised by the video.
      */
-    var raiseVolumeEvent = function(event) {
+    var raiseVolumeEvent = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: event.target.volume });
-    };
+    }, this);
 
     /**
      * Notifies the controller that the fullscreenBegin event was raised.
@@ -721,10 +739,10 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseFullScreenBegin
      * @param {object} event The event raised by the video.
      */
-    var raiseFullScreenBegin = function(event) {
+    var raiseFullScreenBegin = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { isFullScreen: true, paused: event.target.paused });
-    };
+    }, this);
 
     /**
      * Notifies the controller that the fullscreenEnd event was raised.
@@ -732,10 +750,10 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseFullScreenEnd
      * @param {object} event The event raised by the video.
      */
-    var raiseFullScreenEnd = function(event) {
+    var raiseFullScreenEnd = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { "isFullScreen": false, "paused": event.target.paused });
-    };
+    }, this);
 
 
     /************************************************************************************/
@@ -979,6 +997,60 @@ require("../../../html5-common/js/utils/environment.js");
           _.defer(raiseEndedEvent);
         }
       }
+    }, this);
+
+    /**
+     * Chrome does not raise a waiting event when the buffer experiences an underflow and the stream stops
+     * playing.  To compensate, start a watcher that periodically checks the currentTime.  If the stream is
+     * not advancing but is not paused, raise the waiting event once.
+     * If the watcher has already been started, do nothing.
+     * @private
+     * @method OoyalaVideoWrapper#startUnderflowWatcher
+     */
+    var startUnderflowWatcher = _.bind(function() {
+      if (OO.isChrome && !underflowWatcherTimer) {
+        var watchInterval = 500;
+        underflowWatcherTimer = setInterval(underflowWatcher, watchInterval)
+      }
+    }, this);
+
+    /**
+     * Periodically checks the currentTime.  If the stream is not advancing but is not paused, raise the
+     * waiting event once.
+     * @private
+     * @method OoyalaVideoWrapper#underflowWatcher
+     */
+    var underflowWatcher = _.bind(function() {
+      if (!hasPlayed) {
+        return;
+      }
+
+      if (_video.ended) {
+        return stopUnderflowWatcher();
+      }
+
+      if (!_video.paused && _video.currentTime == watcherTime) {
+        if (!waitingEventRaised) {
+          raiseWaitingEvent();
+        }
+      } else { // should be able to do this even when paused
+        watcherTime = _video.currentTime;
+        if (waitingEventRaised) {
+          raiseCanPlayThrough();
+        }
+      }
+    }, this);
+
+    /**
+     * Stops the interval the watches for underflow.
+     * @private
+     * @method OoyalaVideoWrapper#stopUnderflowWatcher
+     */
+    var stopUnderflowWatcher = _.bind(function() {
+      clearInterval(underflowWatcherTimer);
+      underflowWatcherTimer = null;
+      waitingEventRaised = false;
+      watcherTime = -1;
     }, this);
   };
 

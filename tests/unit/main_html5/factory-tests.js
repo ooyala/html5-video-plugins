@@ -3,11 +3,14 @@
  */
 
 describe('main_html5 factory tests', function () {
+  // Load test helpers
   require('../../utils/test_lib.js');
 
+  // Setup
   var pluginFactory;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
+  // Load file under test
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
 
