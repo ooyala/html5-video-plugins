@@ -17,7 +17,7 @@ require("../../../html5-common/js/utils/environment.js");
    */
 
   var pluginPath = "osmf_flash.swf";
-  var flexPath = swfPath+"playerProductInstall.swf";
+  var flexPath = "playerProductInstall.swf";
   this.ready=false;
   /**
    * @class OoyalaFlashVideoFactory
@@ -76,9 +76,12 @@ require("../../../html5-common/js/utils/environment.js");
       }
       else {
         return [OO.VIDEO.ENCODING.HDS];
+        //return ["hds"];
       }
     }
     this.encodings = testForFlash();
+    this.technology = OO.VIDEO.TECHNOLOGY.FLASH;//"flash";//
+    this.features = []; //when CC need to be enabled, it needs to be set to OO.VIDEO.FEATURE.CLOSED_CAPTIONS
 
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.

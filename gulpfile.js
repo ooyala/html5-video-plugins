@@ -13,7 +13,8 @@ var gulp = require('gulp'),
 
 var path = {
   mainJs: './src/main/js/main_html5.js',
-  bitJs: './src/bit/js/bit_wrapper.js'
+  bitJs: './src/bit/js/bit_wrapper.js',
+  flashJs: './src/osmf/js/osmf_flash.js'
 };
 
 var main_html5_fn = function() {
@@ -27,14 +28,15 @@ var bit_fn = function() {
 }
 
 var osmf_fn = function() {
-  gulp.src(['./src/osmf/js/osmf_flash.js'])
+  uglify_fn(path.flashJs);
+  /*gulp.src(['./src/osmf/js/osmf_flash.js'])
       .pipe(buffer())
       .pipe(gulp.dest('./build/'))
    .pipe(uglify())
     .pipe(rename({
       extname: '.min.js'
     }))
-    .pipe(gulp.dest('./build/'));
+    .pipe(gulp.dest('./build/'));*/
 }
 
 var uglify_fn = function(srcFile) {
