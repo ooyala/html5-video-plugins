@@ -7,10 +7,6 @@
     "includePattern": ".+\\.js(doc)?$",
     "excludePattern": "(^|\\/|\\\\)_"
   },
-  "plugins": ["../jsdoc-jsx/index"],
-  "jsx": {
-    "extensions": ["js", "jsx"]
-  },
   "templates": {
     "cleverLinks": false,
     "monospaceLinks": false,
