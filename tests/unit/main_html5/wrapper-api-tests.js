@@ -27,6 +27,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   afterEach(function() {
+    OO.isAndroid = false;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     if (wrapper) { wrapper.destroy(); }
   });
@@ -130,6 +131,21 @@ describe('main_html5 wrapper tests', function () {
   it('should act on initialTime if has not played', function(){
     spyOn(wrapper, "seek");
     wrapper.setInitialTime(10);
+    expect(wrapper.seek.wasCalled).to.be(true);
+  });
+
+  it('should not act on initialTime if initial time is 0', function(){
+    spyOn(wrapper, "seek");
+    wrapper.setInitialTime(0);
+    expect(wrapper.seek.wasCalled).to.be(false);
+  });
+
+  it('should delay initialTime on Android until timeupdate is called', function(){
+    OO.isAndroid = true;
+    spyOn(wrapper, "seek");
+    wrapper.setInitialTime(10);
+    expect(wrapper.seek.wasCalled).to.be(false);
+    $(element).triggerHandler("timeupdate");
     expect(wrapper.seek.wasCalled).to.be(true);
   });
 
@@ -338,6 +354,15 @@ describe('main_html5 wrapper tests', function () {
     expect(element.getAttribute("crossorigin")).to.eql("anonymous");
     wrapper.setCrossorigin(null);
     expect(element.getAttribute("crossorigin")).to.not.be.ok();
+  });
+
+  it('should return current time on getCurrentTime', function(){
+    element.currentTime = 10;
+    expect(wrapper.getCurrentTime()).to.eql(10);
+    element.currentTime = 0;
+    expect(wrapper.getCurrentTime()).to.eql(null);
+    element.currentTime = 1000000;
+    expect(wrapper.getCurrentTime()).to.eql(1000000);
   });
 
   /*
