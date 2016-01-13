@@ -507,7 +507,7 @@ require("../../../html5-common/js/utils/environment.js");
       this.controller.notify(this.controller.EVENTS.TIME_UPDATE,
                              { currentTime: _currentTime,
                                duration: duration,
-                               buffer: buffer,
+                               buffer: buffer + _currentTime,
                                seekRange: { "start" : 0, "end" : duration } });
     }, this);
 
