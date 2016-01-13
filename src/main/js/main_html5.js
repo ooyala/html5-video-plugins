@@ -155,7 +155,7 @@ require("../../../html5-common/js/utils/environment.js");
     var firstPlay = true;
     var playerDimension = dimension;
     var videoDimension = {height: 0, width: 0};
-    var unprocessedInitialTime = 0;
+    var queuedInitialTime = 0;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -317,7 +317,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.setInitialTime = function(initialTime) {
       if (!hasPlayed && (initialTime !== 0)) {
-        unprocessedInitialTime = initialTime;
+        queuedInitialTime = initialTime;
 
         // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
         // never raised, even if the seekable property returns an endtime greater than the seek time.
@@ -637,7 +637,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
     var raiseSeekedEvent = _.bind(function() {
-      unprocessedInitialTime = 0;
+      queuedInitialTime = 0;
 
       // After done seeking, see if any play events were received and execute them now
       // This fixes an issue on iPad where playing while seeking causes issues with end of stream eventing.
@@ -697,13 +697,13 @@ require("../../../html5-common/js/utils/environment.js");
         currentTime = _video.currentTime;
       }
 
-      if (unprocessedInitialTime && (event.target.currentTime >= unprocessedInitialTime)) {
-        unprocessedInitialTime = 0;
+      if (queuedInitialTime && (event.target.currentTime >= queuedInitialTime)) {
+        queuedInitialTime = 0;
       }
 
       // If the stream is seekable, supress playheads that come before the initialTime has been reached
-      if (!unprocessedInitialTime ||
-          !getSafeSeekTimeIfPossible(_video, unprocessedInitialTime)) {
+      if (!queuedInitialTime ||
+          !getSafeSeekTimeIfPossible(_video, queuedInitialTime)) {
         raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
       }
 
