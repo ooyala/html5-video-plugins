@@ -385,6 +385,33 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.seek.callCount).to.be(1);
   });
 
+  it('should not raise timeUpdate before initial time is used', function(){
+    vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
+    OO.isAndroid = true;
+    element.duration = 20;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.seekable.length = 1;
+    wrapper.setInitialTime(10);
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.TIME_UPDATE);
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
+  });
+
+  it('should raise timeUpdate before initial time is used if the initial time position is passed', function(){
+    vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
+    OO.isAndroid = true;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.duration = 20;
+    element.seekable.length = 1;
+    element.currentTime = 11;
+    wrapper.setInitialTime(10);
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
+  });
+
   // TODO: when async testing working, test for force end on timeupdate on m3u8
 
   it('should notify PLAY on video \'play\' event', function(){
