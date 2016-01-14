@@ -65,7 +65,7 @@ b. Add the following lines to the file, substituting the directory where you ins
    ```bash
    ANT_HOME=/apache-install-dir/apache-ant-version
    PATH=$PATH:$HOME/bin:$ANT_HOME/bin
-   export ANT_HOME ANT_OPTS PATH
+   export ANT_HOME PATH
    ```  
 
 ## Testing
