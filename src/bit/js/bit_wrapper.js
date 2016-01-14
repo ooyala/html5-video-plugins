@@ -16,28 +16,32 @@ require("../../../html5-common/js/utils/environment.js");
   var BITDASH_LIB_TIMEOUT = 30000;
   var filename = "bit_wrapper.*\.js";
 
-  var scripts = document.getElementsByTagName('script');
-  for (var index in scripts) {
-    var match = scripts[index].src.match(filename);
-    if (match && match.length > 0) {
-      bitdashLibURL = match.input.match(/.*\//)[0];
-      break;
+  if (window.runningUnitTests) {
+      bitdashLibLoaded = true;
+  } else {
+    var scripts = document.getElementsByTagName('script');
+    for (var index in scripts) {
+      var match = scripts[index].src.match(filename);
+      if (match && match.length > 0) {
+        bitdashLibURL = match.input.match(/.*\//)[0];
+        break;
+      }
     }
-  }
-  if (!bitdashLibURL) {
-    console.error("Can't get path to script", filename);
-    return;
-  }
-  bitdashLibURL += "bitdash.min.js";
+    if (!bitdashLibURL) {
+      console.error("Can't get path to script", filename);
+      return;
+    }
+    bitdashLibURL += "bitdash.min.js";
 
-  var playerJs = document.createElement("script");
-  playerJs.type = "text/javascript";
-  playerJs.src = bitdashLibURL;
+    var playerJs = document.createElement("script");
+    playerJs.type = "text/javascript";
+    playerJs.src = bitdashLibURL;
 
-  playerJs.onload = (function(callback) {
-    bitdashLibLoaded = true;
-  });
-  document.head.appendChild(playerJs);
+    playerJs.onload = (function(callback) {
+      bitdashLibLoaded = true;
+    });
+    document.head.appendChild(playerJs);
+  }
 
   /**
    * @class BitdashVideoFactory
@@ -51,8 +55,8 @@ require("../../../html5-common/js/utils/environment.js");
   var BitdashVideoFactory = function() {
     this.name = pluginName;
     this.encodings = [ OO.VIDEO.ENCODING.DASH, OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4 ];
-    this.features = [];
     this.technology = OO.VIDEO.TECHNOLOGY.MIXED;
+    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS ];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
@@ -71,6 +75,7 @@ require("../../../html5-common/js/utils/environment.js");
       var element = {};
 
       var videoWrapper = $("<div>");
+      videoWrapper.attr("class", "video");
       videoWrapper.attr("id", domId);
       videoWrapper.css(css);
 
