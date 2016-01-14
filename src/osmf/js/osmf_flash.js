@@ -2,12 +2,6 @@
  * OSMF flash video plugin
  */
 
-require("../../../html5-common/js/utils/InitModules/InitOO.js");
-require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
-require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
-require("../../../html5-common/js/utils/constants.js");
-require("../../../html5-common/js/utils/environment.js");
-
 (function(_, $) {
   var pluginName = "ooyalaFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
@@ -15,9 +9,23 @@ require("../../../html5-common/js/utils/environment.js");
   /**
    * Config variables for paths to flash resources.
    */
-  var swfPath = "/html5-video-plugins/build/";
-  var pluginPath = swfPath+"HDSPlayer.swf";
-  var flexPath = swfPath+"playerProductInstall.swf";
+
+  var pluginPath;
+  var filename = "osmf_flash.*\.js";
+  var scripts = document.getElementsByTagName('script');
+  for (var index in scripts) {
+    var match = scripts[index].src.match(filename);
+    if (match && match.length > 0) {
+      pluginPath = match.input.match(/.*\//)[0];
+      break;
+    }
+  }
+  if (!pluginPath) {
+    console.error("Can't get path to script", filename);
+    return;
+  }
+  pluginPath += "osmf_flash.swf";
+  var flexPath = "playerProductInstall.swf";
   this.ready=false;
   /**
    * @class OoyalaFlashVideoFactory
@@ -72,13 +80,16 @@ require("../../../html5-common/js/utils/environment.js");
     function testForFlash() {
       var version = getFlashVersion().split(',').shift();
       if (version < 11) {
+        console.error("NO FLASH DETECTED");
         return [];
       }
       else {
-        return [OO.VIDEO.ENCODING.HDS];
+        return ["hds"];
       }
     }
     this.encodings = testForFlash();
+    this.technology = "flash";
+    this.features = []; //when CC need to be enabled, it needs to be set to OO.VIDEO.FEATURE.CLOSED_CAPTIONS
 
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
@@ -177,6 +188,7 @@ require("../../../html5-common/js/utils/environment.js");
 
     var _flashVideoObject = JFlashBridge.getSWF(playerId);
     var _readyToPlay = false; // should be set to true on canplay event
+    var actionscriptCommandQueue = [];
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -233,7 +245,6 @@ require("../../../html5-common/js/utils/environment.js");
      */
 
     this.setVideoUrl = function(url) {
-
       var urlChanged = false;
            newController=this.controller;
 
@@ -377,8 +388,11 @@ require("../../../html5-common/js/utils/environment.js");
 
     // Calls a Flash method
     this.callToFlash = function (data) {
-      // Note: SWF must be ready
-      return _flashVideoObject.sendToActionScript(data);
+      if (_flashVideoObject.sendToActionScript) {
+        return _flashVideoObject.sendToActionScript(data);
+      } else {
+        actionscriptCommandQueue.push(data);
+      }
     };
 
 
@@ -508,7 +522,7 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     // Receives a callback from Flash
-    onCallback = function(data) {
+    onCallback = _.bind(function(data) {
       console.log("[OSMF]:onCallback: ", data);
       var eventtitle =" ";
 
@@ -545,6 +559,9 @@ require("../../../html5-common/js/utils/environment.js");
       {
        case "JSREADY":
         dispatchEvent(readyEvent);
+        while (actionscriptCommandQueue.length > 0) {
+          this.callToFlash(actionscriptCommandQueue.shift());
+        }
         break;
        case "PAUSED":
         raisePauseEvent();
@@ -606,8 +623,8 @@ require("../../../html5-common/js/utils/environment.js");
         break;
       }
       return true;
-    };
-};
+    }, this);
+  };
   /************************************************************************************/
   // Helper methods
   /************************************************************************************/
