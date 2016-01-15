@@ -178,7 +178,6 @@ require("../../../html5-common/js/utils/environment.js");
     if (OO.isAndroid && OO.isChrome) {
       var watchHidden = _.bind(function(evt) {
         if (document.hidden) {
-          console.log("On Android make seekable false");
           canSeek = false;
         }
       }, this)
