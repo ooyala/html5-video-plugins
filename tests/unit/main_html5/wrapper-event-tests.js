@@ -26,6 +26,7 @@ describe('main_html5 wrapper tests', function () {
 
   afterEach(function() {
     OO.isSafari = false;
+    OO.isAndroid = false;
     if (wrapper) { wrapper.destroy(); }
   });
 
@@ -310,6 +311,37 @@ describe('main_html5 wrapper tests', function () {
       }]);
   });
 
+  it('should not raise durationChange before initial time is used', function(){
+    vtc.interface.EVENTS.DURATION_CHANGE = "durationChange";
+    OO.isAndroid = true;
+    element.duration = 20;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.seekable.length = 1;
+    wrapper.setInitialTime(10);
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+    $(element).triggerHandler("seeked");
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+  });
+
+  it('should raise durationchange before initial time is used if the initial time position is passed', function(){
+    vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
+    OO.isAndroid = true;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.duration = 20;
+    element.seekable.length = 1;
+    element.currentTime = 11;
+    wrapper.setInitialTime(10);
+    $(element).triggerHandler("seeked");
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+  });
+
   it('should notify TIME_UPDATE on video \'timeupdate\' event', function(){
     vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
     element.currentTime = 3;
@@ -343,19 +375,13 @@ describe('main_html5 wrapper tests', function () {
       }]);
   });
 
-  it('should notify TIME_UPDATE on video \'timeupdate\' event if seeking', function(){
+  it('should not notify TIME_UPDATE on video \'timeupdate\' event if seeking', function(){
     vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
     element.currentTime = 3;
     element.duration = 10;
     $(element).triggerHandler("seeking");
     $(element).triggerHandler("timeupdate");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE,
-      {
-        "currentTime" : 3,
-        "duration" : 10,
-        "buffer" : 0,
-        "seekRange" : {"start": 0, "end" : 0}
-      }]);
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.TIME_UPDATE);
   });
 
   it('should dequeue seek and fail on video \'timeupdate\' event if not seekable', function(){
@@ -395,6 +421,9 @@ describe('main_html5 wrapper tests', function () {
     wrapper.setInitialTime(10);
     $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.TIME_UPDATE);
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.TIME_UPDATE);
+    $(element).triggerHandler("seeked");
     $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
   });
@@ -526,7 +555,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler({ type: "playing" });
     expect(vtc.notifyParameters).to.not.be(null);
     vtc.notifyParameters = null;
-    $(element).triggerHandler({ type: "seeking" });
+    $(element).triggerHandler({ type: "seeked" });
     expect(vtc.notifyParameters).to.not.be(null);
     vtc.notifyParameters = null;
     $(element).triggerHandler({ type: "ended" });
