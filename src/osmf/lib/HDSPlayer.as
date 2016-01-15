@@ -192,6 +192,7 @@ package
         case MediaPlayerState.READY:
           if (playQueue)
           {
+            playQueue = false;
             onVideoPlay(event);
           }
           break;

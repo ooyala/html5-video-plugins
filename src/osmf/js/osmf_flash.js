@@ -243,7 +243,6 @@
      * @param {string} url The new url to insert into the video element's src attribute
      * @returns {boolean} True or false indicating success
      */
-
     this.setVideoUrl = function(url) {
       var urlChanged = false;
            newController=this.controller;
@@ -283,7 +282,6 @@
         try {
           this.callToFlash("load("+rewind+")");
           loaded = true;
-          this.setInitialTime(0);
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
           console.log('[OSMF]: Failed to rewind video, probably ok; continuing');
@@ -311,7 +309,7 @@
      */
     this.play = function() {
       if (!loaded) {
-          this.load(true);
+        this.load(true);
       }
       this.callToFlash("videoPlay");
       loaded = true;
