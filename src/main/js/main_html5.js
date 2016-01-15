@@ -272,7 +272,11 @@ require("../../../html5-common/js/utils/environment.js");
       playQueued = false;
       canPlay = false;
       hasPlayed = false;
+      queuedSeekTime = null;
       loaded = false;
+      isSeeking = false;
+      firstPlay = true;
+      currentTime = 0;
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
       stopUnderflowWatcher();
@@ -365,6 +369,7 @@ require("../../../html5-common/js/utils/environment.js");
       var safeTime = getSafeSeekTimeIfPossible(_video, time);
       if (safeTime !== null) {
         _video.currentTime = safeTime;
+        isSeeking = true;
         return true;
       }
       queueSeek(time);
@@ -512,6 +517,7 @@ require("../../../html5-common/js/utils/environment.js");
       _currentUrl = _video.src;
       firstPlay = true;
       videoEnded = false;
+      isSeeking = false;
     }, this);
 
     /**
@@ -706,11 +712,7 @@ require("../../../html5-common/js/utils/environment.js");
         queuedInitialTime = 0;
       }
 
-      // If the stream is seekable, supress playheads that come before the initialTime has been reached
-      if (!queuedInitialTime ||
-          !getSafeSeekTimeIfPossible(_video, queuedInitialTime)) {
-        raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
-      }
+      raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
 
       // iOS has issues seeking so if we queue a seek handle it here
       dequeueSeek();
@@ -950,6 +952,13 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raisePlayhead
      */
     var raisePlayhead = _.bind(function(eventname, event) {
+      // If the stream is seekable, supress playheads that come before the initialTime has been reached
+      // or that come while seeking.
+      if (isSeeking || (!!queuedInitialTime &&
+          !!getSafeSeekTimeIfPossible(_video, queuedInitialTime))) {
+        return;
+      }
+
       var buffer = 0;
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
