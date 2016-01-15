@@ -265,10 +265,23 @@
       //if (!_currentUrl) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
       }
-      else{
+      else {
         this.callToFlash(url);
+        // canPreload parameter is set to false in chrome. So as a workaround the below code has been added
+        if (this.isChrome() && !loaded) {
+          this.load(true);
+        }
       }
       return urlChanged;
+    };
+
+    /**
+     * Checks if the browser is chrome.
+     * @public
+     * @method OoyalaFlashVideoWrapper#play
+     */
+    this.isChrome = function () {
+      return window.navigator.userAgent.match(/Chrome/);
     };
 
     /**
