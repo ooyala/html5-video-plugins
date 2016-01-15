@@ -267,21 +267,8 @@
       }
       else {
         this.callToFlash(url);
-        // canPreload parameter is set to false in chrome. So as a workaround the below code has been added
-        if (this.isChrome() && !loaded) {
-          this.load(true);
-        }
       }
       return urlChanged;
-    };
-
-    /**
-     * Checks if the browser is chrome.
-     * @public
-     * @method OoyalaFlashVideoWrapper#play
-     */
-    this.isChrome = function () {
-      return window.navigator.userAgent.match(/Chrome/);
     };
 
     /**
@@ -323,6 +310,9 @@
      * @method OoyalaFlashVideoWrapper#play
      */
     this.play = function() {
+      if (!loaded) {
+          this.load(true);
+      }
       this.callToFlash("videoPlay");
       loaded = true;
       hasPlayed = true;
