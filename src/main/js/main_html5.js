@@ -674,10 +674,9 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var raiseEndedEvent = _.bind(function(event) {
       stopUnderflowWatcher();
-      if (!_video.ended && OO.isIos) {
+      if (!_video.ended && OO.isSafari) {
         // iOS raises ended events sometimes when a new stream is played in the same video element
         // Prevent this faulty event from making it to the player message bus
-        // Desktop Safari, however, will raise this event while ended == false and we shouldn't block it.
         return;
       }
       if (videoEnded) { return; } // no double firing ended event.
@@ -1010,8 +1009,7 @@ require("../../../html5-common/js/utils/environment.js");
         if (_video.ended) {
           console.log("VTC_OO: Force through the end of stream for Safari", _video.currentSrc,
                       _video.duration, _video.currentTime);
-          _video.play();
-          _video.pause();
+          raiseEndedEvent();
         }
       }
     }, this);
