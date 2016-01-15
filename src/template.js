@@ -182,16 +182,20 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
-     * Loads the current stream url in the video element; the element should be left paused.
+     * Loads the current stream url in the video element; the element should be left paused.  This function
+     * is generally called when preloading a stream before triggering play.  Load may not be called before
+     * play.
      * @public
      * @method TemplateVideoWrapper#load
-     * @param {boolean} rewind True if the stream should be set to time 0
+     * @param {boolean} rewind True if the stream should be setup to play as if from the beginning.  When
+     *   true, if initial time has not been set, or if the stream has already been played, set the stream
+     *   position to 0.
      */
     this.load = function(rewind) {
     };
 
     /**
-     * Sets the initial time of the video playback.
+     * Sets the initial time of the video playback.  This value should not be used on replay.
      * @public
      * @method TemplateVideoWrapper#setInitialTime
      * @param {number} initialTime The initial time of the video (seconds)
@@ -200,7 +204,8 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
-     * Triggers playback on the video element.
+     * Triggers playback on the video element.  If the 'load' function was not already called and the stream
+     * is not loaded, trigger a load now.
      * @public
      * @method TemplateVideoWrapper#play
      */
