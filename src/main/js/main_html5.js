@@ -156,6 +156,7 @@ require("../../../html5-common/js/utils/environment.js");
     var playerDimension = dimension;
     var videoDimension = {height: 0, width: 0};
     var queuedInitialTime = 0;
+    var canSeek = true;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -171,6 +172,17 @@ require("../../../html5-common/js/utils/environment.js");
       "-webkit-transform":"translate(-50%,-50%)",
       "visibility":"visible"
     };
+
+    // [PBW-4000] On Android, if the chrome browser loses focus, then the stream cannot be seeked before it
+    // is played again.  Detect visibility changes and delay seeks when focus is lost.
+    if (OO.isAndroid && OO.isChrome) {
+      var watchHidden = _.bind(function(evt) {
+        if (document.hidden) {
+          canSeek = false;
+        }
+      }, this)
+      document.addEventListener("visibilitychange", watchHidden);
+    }
 
     /************************************************************************************/
     // External Methods that Video Controller or Factory call
@@ -279,6 +291,7 @@ require("../../../html5-common/js/utils/environment.js");
       currentTime = 0;
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
+      canSeek = true;
       stopUnderflowWatcher();
     }, this);
 
@@ -426,6 +439,9 @@ require("../../../html5-common/js/utils/environment.js");
       unsubscribeAllEvents();
       $(_video).remove();
       currentInstances--;
+      if (watchHidden) {
+        document.removeEventListener("visibilitychange", watchHidden);
+      }
     };
 
     /**
@@ -619,6 +635,7 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
       firstPlay = false;
+      canSeek = true;
       setVideoCentering();
     }, this);
 
@@ -908,7 +925,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @returns {?number} The seek-to position, or null if seeking is not possible
      */
     var getSafeSeekTimeIfPossible = function(_video, time) {
-      if (typeof time !== "number") {
+      if ((typeof time !== "number") || !canSeek) {
         return null;
       }
 
