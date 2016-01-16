@@ -9,6 +9,8 @@ describe('bit_wrapper factory tests', function () {
   // Setup
   var pluginFactory;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin;} };
+
+  // set up mock environment
   window.runningUnitTests = true;
   bitdash = function(domId) {
     return {}
