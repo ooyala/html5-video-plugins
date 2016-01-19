@@ -23,22 +23,16 @@ package
      */
     public function ExternalJavaScriptAPI(hdsPlayer:HDSPlayer)
     {
+      _hdsPlayer = hdsPlayer;
       if (ExternalInterface.available)
       {
+        super();
         try
         {
           ExternalInterface.addCallback("sendToActionScript", receivedFromJavaScript);
           if (checkJavaScriptReady())
           {
-            _hdsPlayer = hdsPlayer;
-            _hdsPlayer.initMediaPlayer();
-            registerListeners();
-            jsBridge = new JFlashBridge();
-            jsBridge.addMethod("someMethod", someMethod);
-
-            super();
-
-            jsBridge.initialize();
+            init();
           }
           else
           {
@@ -50,13 +44,27 @@ package
         }
         catch (error:Error)
         {
-          // catch general errors
+          SendToDebugger(error.message, "ExternalJavaScriptAPI","error");
         }
       }
       else
       {
-        // Response for no ExternalInterface.
+        trace("JavaScript external interface is not available.");
       }
+    }
+
+   /**
+    * Call the registerListeners function and initialize the jsBridge once JavaScript is ready
+    * @private
+    * @method ExternalJavaScriptAPI#init
+    */
+    private function init():void
+    {
+      _hdsPlayer.initMediaPlayer();
+      registerListeners();
+      jsBridge = new JFlashBridge();
+      jsBridge.addMethod("someMethod", someMethod);
+      jsBridge.initialize();
     }
 
     /**
@@ -479,8 +487,10 @@ package
     private function timerHandler(event:TimerEvent):void
     {
       var isReady:Boolean = checkJavaScriptReady();
-      if (isReady) {
+      if (isReady)
+      {
         Timer(event.target).stop();
+        init();
       }
     }
     private function checkJavaScriptReady():Boolean
