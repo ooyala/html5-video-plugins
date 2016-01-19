@@ -39,12 +39,11 @@ package
             var readyTimer:Timer = new Timer(100, 0);
             readyTimer.addEventListener(TimerEvent.TIMER, timerHandler);
             readyTimer.start();
-
           }
           ExternalInterface.addCallback("sendToJavaScript", sendToJavaScript);
         }
         catch (error:Error)
-        {			
+        {
           SendToDebugger(error.message, "ExternalJavaScriptAPI","error");
         }
       }
@@ -59,7 +58,7 @@ package
     * @private
     * @method ExternalJavaScriptAPI#init
     */
-    private function init():void 
+    private function init():void
     {
       _hdsPlayer.initMediaPlayer();
       registerListeners();
@@ -74,7 +73,7 @@ package
      * @method ExternalJavaScriptAPI#registerListeners
      */
     private function registerListeners():void
-    { 
+    {
       addEventListener("videoPlay", onVideoPlay);
       addEventListener("videoPause", onVideoPause);
       addEventListener("videoSeek", onVideoSeek);
@@ -488,7 +487,7 @@ package
     private function timerHandler(event:TimerEvent):void
     {
       var isReady:Boolean = checkJavaScriptReady();
-      if (isReady) 
+      if (isReady)
       {
         Timer(event.target).stop();
         init();
