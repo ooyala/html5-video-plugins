@@ -26,6 +26,8 @@ package
   import org.osmf.traits.MediaTraitType;
   import org.osmf.traits.SeekTrait;
   import org.osmf.events.BufferEvent;
+  import org.osmf.events.MediaErrorCodes;
+
   public class HDSPlayer extends Sprite
   {
     private var _mediaFactory:DefaultMediaFactory = null;
@@ -182,10 +184,7 @@ package
           dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING,null));
           break;
         case MediaPlayerState.PLAYBACK_ERROR:
-          unregisterListeners();
-          var eventObject:Object = new Object();
-           eventObject.errorCode = -1;
-          dispatchEvent(new DynamicEvent(DynamicEvent.ERROR,eventObject));
+          SendToDebugger("MediaPlayerState.PLAYBACK_ERROR", "onPlayerStateChange");
           break;
         case MediaPlayerState.LOADING:
           break;
@@ -224,41 +223,39 @@ package
       var eventObject:Object = new Object();
       switch(event.error["errorID"])
       {
-        case "HTTP_GET_FAILED":
-        case "NETCONNECTION_APPLICATION_INVALID":
-        case "NETCONNECTION_FAILED":
-        case "NETCONNECTION_REJECTED":
-        case "NETCONNECTION_TIMEOUT":
-        case "SECURITY_ERROR":
-          //eventObject.name = "MediaError.MEDIA_ERR_NETWORK";
+        case MediaErrorCodes.HTTP_GET_FAILED:
+        case MediaErrorCodes.NETCONNECTION_APPLICATION_INVALID:
+        case MediaErrorCodes.NETCONNECTION_FAILED:
+        case MediaErrorCodes.NETCONNECTION_REJECTED:
+        case MediaErrorCodes.NETCONNECTION_TIMEOUT:
+        case MediaErrorCodes.SECURITY_ERROR:
           eventObject.errorCode = 2;
           break;
-        case "NETSTREAM_STREAM_NOT_FOUND":
-        case "MEDIA_LOAD_FAILED":
-          //eventObject.name = "MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED";
+        case MediaErrorCodes.NETSTREAM_STREAM_NOT_FOUND:
+        case MediaErrorCodes.MEDIA_LOAD_FAILED:
           eventObject.errorCode = 4;
           break;
-        case "ARGUMENT_ERROR":
-        case "ASYNC_ERROR":
-        case "DRM_SYSTEM_UPDATE_ERROR":
-        case "DVRCAST_CONTENT_OFFLINE":
-        case "DVRCAST_STREAM_INFO_RETRIEVAL_FAILED":
-        case "DVRCAST_SUBSCRIBE_FAILED":
-        case "PLUGIN_IMPLEMENTATION_INVALID":
-        case "PLUGIN_VERSION_INVALID":
-          //eventObject.name = "Unknown";
+        case MediaErrorCodes.ARGUMENT_ERROR:
+        case MediaErrorCodes.ASYNC_ERROR:
+        case MediaErrorCodes.DRM_SYSTEM_UPDATE_ERROR:
+        case MediaErrorCodes.DVRCAST_CONTENT_OFFLINE:
+        case MediaErrorCodes.DVRCAST_STREAM_INFO_RETRIEVAL_FAILED:
+        case MediaErrorCodes.DVRCAST_SUBSCRIBE_FAILED:
+        case MediaErrorCodes.PLUGIN_IMPLEMENTATION_INVALID:
+        case MediaErrorCodes.PLUGIN_VERSION_INVALID:
           eventObject.errorCode = -1;
           break;
-        case "F4M_FILE_INVALID":
-        case "NETSTREAM_FILE_STRUCTURE_INVALID":
-        case "NETSTREAM_PLAY_FAILED":
-        case "SOUND_PLAY_FAILED":
-          //eventObject.name = "MediaError.MEDIA_ERR_DECODE";
+        case MediaErrorCodes.F4M_FILE_INVALID:
+        case MediaErrorCodes.NETSTREAM_FILE_STRUCTURE_INVALID:
+        case MediaErrorCodes.NETSTREAM_PLAY_FAILED:
+        case MediaErrorCodes.SOUND_PLAY_FAILED:
           eventObject.errorCode = 3;
           break;
-        case "NETSTREAM_NO_SUPPORTED_TRACK_FOUND":
-          //eventObject.name = "NO_STREAM";
+        case MediaErrorCodes.NETSTREAM_NO_SUPPORTED_TRACK_FOUND:
           eventObject.errorCode = 0;
+          break;
+        default:
+          eventObject.errorCode = -1;	
           break;
       }
       SendToDebugger("Error: " + event.error["errorID"], " "+event.error.detail);
@@ -340,7 +337,7 @@ package
       //Seeks the video to the specified position. Also check for the ability to seek to avoid error situations.
       var time:Number = (Number)(event.args);
       _initialTimeReference = -1;
-      if (_initialPlay) 
+      if (_initialPlay)
       {
         _initialTime = time;
         return;
@@ -612,7 +609,7 @@ package
     public function onDestroy():void
     {
       unregisterListeners();
-      removeChild(_mediaPlayerSprite); 
+      removeChild(_mediaPlayerSprite);
     }
 
    /*public function onRateChanged(event:Event):void
