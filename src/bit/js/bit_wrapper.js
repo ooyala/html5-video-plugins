@@ -10,7 +10,6 @@ require("../../../html5-common/js/utils/environment.js");
 
 (function(_, $) {
   var pluginName = "bitdash";
-  var currentInstances = 0;
   var bitdashLibLoaded = false;
   var bitdashLibURL;
   var BITDASH_LIB_TIMEOUT = 30000;
@@ -80,7 +79,6 @@ require("../../../html5-common/js/utils/environment.js");
 
       parentContainer.append(videoWrapper);
       var wrapper = new BitdashVideoWrapper(domId, ooyalaVideoController, videoWrapper[0]);
-      currentInstances++;
 
       return wrapper;
     };
@@ -318,6 +316,7 @@ require("../../../html5-common/js/utils/environment.js");
       this.isSeeking = false;
       _loaded = false;
       _currentTime = 0;
+      _trackId = '';
     }, this);
 
     /**
@@ -450,7 +449,6 @@ require("../../../html5-common/js/utils/environment.js");
       this.player.pause();
       _currentUrl = '';
       $(_videoWrapper).remove();
-      currentInstances--;
       this.player.destroy();
     };
 
