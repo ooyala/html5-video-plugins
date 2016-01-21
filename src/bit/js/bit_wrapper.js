@@ -75,7 +75,6 @@ require("../../../html5-common/js/utils/environment.js");
       var element = {};
 
       var videoWrapper = $("<div>");
-      videoWrapper.attr("class", "video");
       videoWrapper.attr("id", domId);
       videoWrapper.css(css);
 
@@ -653,6 +652,9 @@ require("../../../html5-common/js/utils/environment.js");
 
     var printevent = function(arr) {
       // XXX this is debugging code, should be removed before release
+      if (window.runningUnitTests) {
+        return;
+      }
       if (arr[0].type !== "onTimeChanged") {
         console.log("bitplayer:", arr[0].type, JSON.stringify(arr[0]));
       }

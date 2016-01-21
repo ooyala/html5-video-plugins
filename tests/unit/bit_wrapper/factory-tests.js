@@ -5,6 +5,8 @@
 describe('bit_wrapper factory tests', function () {
   // Load test helpers
   require('../../utils/test_lib.js');
+  jest.dontMock('../../utils/mock_bitplayer.js');
+  require('../../utils/mock_bitplayer.js');
 
   // Setup
   var pluginFactory;
@@ -13,10 +15,11 @@ describe('bit_wrapper factory tests', function () {
   // set up mock environment
   window.runningUnitTests = true;
   bitdash = function(domId) {
-    return {}
+    return new mock_bitplayer();
   }
 
   // Load file under test
+
   jest.dontMock('../../../src/bit/js/bit_wrapper');
   require('../../../src/bit/js/bit_wrapper');
 
@@ -62,11 +65,11 @@ describe('bit_wrapper factory tests', function () {
     expect(parentElement.children()).to.have.length(1);
   });
 
-  it('should create element of class "video"', function(){
+  it('should create element with id "test"', function(){
     var parentElement = $("<div>");
     pluginFactory.create(parentElement, "test", vtc, {});
     var element = parentElement.children()[0];
-    expect(element.getAttribute("class")).to.eql("video");
+    expect(element.getAttribute("id")).to.eql("test");
   });
 
   it('should create element with given domId', function(){

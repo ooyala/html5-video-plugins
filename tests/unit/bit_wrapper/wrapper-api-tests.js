@@ -6,99 +6,12 @@ describe('bit_wrapper wrapper tests', function () {
   // Load test helpers
   require('../../utils/test_lib.js');
   jest.dontMock('../../utils/mock_vtc.js');
+  jest.dontMock('../../utils/mock_bitplayer.js');
   require('../../utils/mock_vtc.js');
+  require('../../utils/mock_bitplayer.js');
 
   // set up mock environment
   window.runningUnitTests = true;
-
-  player = (function() {
-    this.duration = 0;
-    this.currentTime = 0;
-    this.volume = 0;
-    this.exists = true;
-    this.trackId = "";
-    this.cc_url = "";
-    this.cc_language = "";
-    this.cc_name = "";
-    this.cc_subtitle = "";
-    this.subtitles = {};
-    
-    this.isReady = function() {
-      return true;
-    };
-    
-    this.load = function(reload) {
-    };
-    
-    this.pause = function() {
-    };
-    
-    this.seek = function(time) {
-      this.currentTime = time;
-    };
-    
-    this.play = function() {
-    };
-
-    this.getDuration = function() {
-      return this.duration;
-    };
-
-    this.getCurrentTime = function() {
-      return this.currentTime;
-    };
-    
-    this.getVolume = function() {
-      return this.volume;
-    };
-    
-    this.setVolume = function(volume) {
-      this.volume = volume;
-    };
-
-    this.addSubtitle = function(url, trackId, subtitle, language, name) {
-      var obj = {
-        url: url,
-        label: name,
-        lang: language
-      }
-      var arr = this.subtitles.trackId || [];
-      arr.push(obj);
-      this.subtitles.trackId = arr;
-
-      this.cc_url = url;
-      this.cc_language = language;
-      this.cc_name = name;
-      this.cc_subtitle = subtitle;
-    };
-
-    this.removeSubtitle = function(trackId) {
-      delete subtitles.trackId;
-      this.trackId = null;
-    }
-
-    this.setSubtitle = function(trackId) {
-      this.trackId = trackId;
-    };
-
-    this.getSubtitle = function() {
-      if (!!trackId) {
-        return this.subtitles.trackId;
-      } else {
-        return null;
-      }
-    };
-
-    this.getAvailableSubtitles = function() {
-      return this.subtitles;
-    };
-
-    this.destroy = function() { 
-      this.exists = false; // to verify that destroy was called
-    };
-
-    return this;
-  })();
 
   bitdash = function(domId) {
     return player; // this will set wrapper's player to our mock object
@@ -114,6 +27,7 @@ describe('bit_wrapper wrapper tests', function () {
 
   beforeEach(function() {
     vtc = new mock_vtc();
+    player = new mock_bitplayer();
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
@@ -277,21 +191,21 @@ describe('bit_wrapper wrapper tests', function () {
     expect(player.currentTime).to.eql(0);
     var returns = wrapper.seek(11);
     expect(returns).to.be(true);
-    expect(player.currentTime).to.eql(duration - 0.01);
+    expect(player.currentTime).to.eql(player.duration - 0.01);
   });
 
   it('should force seeks within SEEK_TO_END_LIMIT to seek to duration - 0.01', function(){
     OO.CONSTANTS = { SEEK_TO_END_LIMIT: 3 };
     player.duration = 10;
-    var returns = wrapper.seek(duration - 3);
+    var returns = wrapper.seek(player.duration - 3);
     expect(returns).to.be(true);
-    expect(player.currentTime).to.eql(duration - 3);
-    var returns = wrapper.seek(duration - 2.99);
+    expect(player.currentTime).to.eql(player.duration - 3);
+    var returns = wrapper.seek(player.duration - 2.99);
     expect(returns).to.be(true);
-    expect(player.currentTime).to.eql(duration - 0.01);
-    var returns = wrapper.seek(duration - 1);
+    expect(player.currentTime).to.eql(player.duration - 0.01);
+    var returns = wrapper.seek(player.duration - 1);
     expect(returns).to.be(true);
-    expect(player.currentTime).to.eql(duration - 0.01);
+    expect(player.currentTime).to.eql(player.duration - 0.01);
   });
 
   it('should set volume if between 0 and 1', function(){

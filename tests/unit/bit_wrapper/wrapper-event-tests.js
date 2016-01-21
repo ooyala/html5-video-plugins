@@ -6,113 +6,15 @@ describe('bit_wrapper wrapper tests', function () {
   // Load test helpers
   require('../../utils/test_lib.js');
   jest.dontMock('../../utils/mock_vtc.js');
+  jest.dontMock('../../utils/mock_bitplayer.js');
   require('../../utils/mock_vtc.js');
+  require('../../utils/mock_bitplayer.js');
 
   var events = require('events');
   var eventEmitter = new events.EventEmitter();
 
   // set up mock environment
   window.runningUnitTests = true;
-
-  player = (function() {
-    this.duration = 0;
-    this.currentTime = 0;
-    this.volume = 0;
-    this.isPaused = false;
-    this.exists = true;
-    this.trackId = "";
-    this.cc_url = "";
-    this.cc_language = "";
-    this.cc_name = "";
-    this.cc_subtitle = "";
-    this.subtitles = {};
-    
-    this.isReady = function() {
-      return true;
-    };
-    
-    this.load = function(reload) {
-    };
-    
-    this.pause = function() {
-      this.paused = true;
-    };
-    
-    this.isPaused = function() {
-      return this.paused;
-    };
-
-    this.seek = function(time) {
-      this.currentTime = time;
-    };
-    
-    this.play = function() {
-      this.paused = false;
-    };
-
-    this.getDuration = function() {
-      return this.duration;
-    };
-
-    this.getVideoBufferLength = function() {
-      return 100;
-    }
-
-    this.getCurrentTime = function() {
-      return this.currentTime;
-    };
-    
-    this.getVolume = function() {
-      return this.volume;
-    };
-    
-    this.setVolume = function(volume) {
-      this.volume = volume * 100;
-    };
-
-    this.addSubtitle = function(url, trackId, subtitle, language, name) {
-      var obj = {
-        url: url,
-        label: name,
-        lang: language
-      }
-      var arr = this.subtitles.trackId || [];
-      arr.push(obj);
-      this.subtitles.trackId = arr;
-
-      this.cc_url = url;
-      this.cc_language = language;
-      this.cc_name = name;
-      this.cc_subtitle = subtitle;
-    };
-
-    this.removeSubtitle = function(trackId) {
-      delete subtitles.trackId;
-      this.trackId = null;
-    }
-
-    this.setSubtitle = function(trackId) {
-      this.trackId = trackId;
-    };
-
-    this.getSubtitle = function() {
-      if (!!trackId) {
-        return this.subtitles.trackId;
-      } else {
-        return null;
-      }
-    };
-
-    this.getAvailableSubtitles = function() {
-      return this.subtitles;
-    };
-
-    this.destroy = function() { 
-      this.exists = false; // to verify that destroy was called
-    };
-
-    return this;
-  })();
 
   bitdash = function(domId) {
     return player; // this will set wrapper's player to our mock object
@@ -128,6 +30,7 @@ describe('bit_wrapper wrapper tests', function () {
 
   beforeEach(function() {
     vtc = new mock_vtc();
+    player = new mock_bitplayer();
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
@@ -191,7 +94,7 @@ describe('bit_wrapper wrapper tests', function () {
 
   it('vtc should fire VOLUME_CHANGE event and volume value being set to previously set value on player\'s \'onUnmute\' event callback', function(){
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
-    player.setVolume(0.75);
+    player.setVolume(75);
     eventEmitter.on("onMute", function(args) { wrapper.onMute(args); });
     eventEmitter.on("onUnmute", function(args) { wrapper.onUnmute(args); });
 
