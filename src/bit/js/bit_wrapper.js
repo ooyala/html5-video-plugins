@@ -387,7 +387,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (typeof time !== "number") {
         return false;
       }
-      var duration = player.getDuration();
+      var duration = this.player.getDuration();
       if (duration > 0) {
         if (time < 0) {
           time = 0;
