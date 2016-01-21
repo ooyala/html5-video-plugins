@@ -2,16 +2,13 @@
  * https://github.com/Automattic/expect.js
  */
 
-describe('bit_wrapper wrapper tests', function () {
+describe('bit_wrapper player event callback tests', function () {
   // Load test helpers
   require('../../utils/test_lib.js');
   jest.dontMock('../../utils/mock_vtc.js');
   jest.dontMock('../../utils/mock_bitplayer.js');
   require('../../utils/mock_vtc.js');
   require('../../utils/mock_bitplayer.js');
-
-  var events = require('events');
-  var eventEmitter = new events.EventEmitter();
 
   // set up mock environment
   window.runningUnitTests = true;
@@ -23,6 +20,7 @@ describe('bit_wrapper wrapper tests', function () {
   // Setup
   var pluginFactory, parentElement, wrapper, element, vtc;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
+  OO.log = function() {}
 
   // Load file under test
   jest.dontMock('../../../src/bit/js/bit_wrapper');
@@ -38,7 +36,6 @@ describe('bit_wrapper wrapper tests', function () {
   });
 
   afterEach(function() {
-    OO.isSafari = false;
     if (wrapper) { wrapper.destroy(); }
   });
 
@@ -46,48 +43,48 @@ describe('bit_wrapper wrapper tests', function () {
 
   it('vtc should fire CAN_PLAY event on player\'s \'onReady\' event callback', function(){
     vtc.interface.EVENTS.CAN_PLAY = "canPlay";
-    eventEmitter.on("onReady", function(args) { wrapper.onReady(args); });
-    eventEmitter.emit("onReady", {type: "onReady" });
+    wrapper.setVideoUrl("url");
+    player.conf.events.onReady({type: "onReady"});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.CAN_PLAY);
   });
 
   it('vtc should fire PLAY and PLAYING events on player\'s \'onPlay\' event callback', function(){
     vtc.interface.EVENTS.PLAY = "play";
     vtc.interface.EVENTS.PLAYING = "playing";
-    eventEmitter.on("onPlay", function(args) { wrapper.onPlay(args); });
-    eventEmitter.emit("onPlay", {type: "onPlay" });
+    wrapper.setVideoUrl("url");
+    player.conf.events.onPlay({type: "onPlay"});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.PLAY);
     expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.PLAYING);
   });
 
   it('vtc should fire PAUSE event on player\'s \'onPause\' event callback', function(){
     vtc.interface.EVENTS.PAUSED = "paused";
-    eventEmitter.on("onPause", function(args) { wrapper.onPause(args); });
-    eventEmitter.emit("onPause", {type: "onPause" });
+    wrapper.setVideoUrl("url");
+    player.conf.events.onPause({type: "onPause"});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.PAUSED);
   });
 
   it('vtc should fire SEEKING event on player\'s \'onSeek\' event callback', function(){
     vtc.interface.EVENTS.SEEKING = "seeking";
     expect(wrapper.isSeeking).to.be(false);
-    eventEmitter.on("onSeek", function(args) { wrapper.onSeek(args); });
-    eventEmitter.emit("onSeek", {type: "onSeek" });
+    wrapper.setVideoUrl("url");
+    player.conf.events.onSeek({type: "onSeek"});
     expect(wrapper.isSeeking).to.be(true);
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.SEEKING);
   });
 
   it('vtc should fire VOLUME_CHANGE event on player\'s \'onVolumeChange\' event callback', function(){
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumechange";
-    eventEmitter.on("onVolumeChange", function(args) { wrapper.onVolumeChange(args); });
-    eventEmitter.emit("onVolumeChange", {type: "onVolumeChange", volumeTarget: 10 });
+    wrapper.setVideoUrl("url");
+    player.conf.events.onVolumeChange({type: "onVolumeChange", volumeTarget: 10});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.VOLUME_CHANGE);
-    expect(vtc.notifyParameters[1]).to.eql({volume: 10});
+    expect(vtc.notifyParameters[1]).to.eql({volume: 0.1});
   });
 
   it('vtc should fire VOLUME_CHANGE event and volume value being set to zero on player\'s \'onMute\' event callback', function(){
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumechange";
-    eventEmitter.on("onMute", function(args) { wrapper.onMute(args); });
-    eventEmitter.emit("onMute", {type: "onMute" });
+    wrapper.setVideoUrl("url");
+    player.conf.events.onMute({type: "onMute"});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.VOLUME_CHANGE);
     expect(vtc.notifyParameters[1]).to.eql({volume: 0});
   });
@@ -95,13 +92,11 @@ describe('bit_wrapper wrapper tests', function () {
   it('vtc should fire VOLUME_CHANGE event and volume value being set to previously set value on player\'s \'onUnmute\' event callback', function(){
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
     player.setVolume(75);
-    eventEmitter.on("onMute", function(args) { wrapper.onMute(args); });
-    eventEmitter.on("onUnmute", function(args) { wrapper.onUnmute(args); });
-
-    eventEmitter.emit("onMute", {type: "onMute" });
+    wrapper.setVideoUrl("url");
+    player.conf.events.onMute({type: "onMute"});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.VOLUME_CHANGE);
     expect(vtc.notifyParameters[1]).to.eql({volume: 0});
-    eventEmitter.emit("onUnmute", {type: "onUnmute" });
+    player.conf.events.onUnmute({type: "onUnmute"});
     expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.VOLUME_CHANGE);
     expect(vtc.notifyParameters[1]).to.eql({volume: 0.75 });
   });
@@ -109,10 +104,9 @@ describe('bit_wrapper wrapper tests', function () {
   it('vtc should fire FULLSCREEN_CHANGED event with \'isFullScreen\' parameter set to true and \'paused\' parameter reflecting whether player is paused on player\'s \'onFullscreenEnter\' event callback', function(){
     vtc.interface.EVENTS.FULLSCREEN_CHANGED = "fullScreenChanged";
 
-    eventEmitter.on("onFullscreenEnter", function(args) { wrapper.onFullscreenEnter(args); });
-
+    wrapper.setVideoUrl("url");
     wrapper.pause();
-    eventEmitter.emit("onFullscreenEnter", {type: "onFullscreenEnter" });
+    player.conf.events.onFullscreenEnter({type: "onFullscreenEnter"});
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.FULLSCREEN_CHANGED,
       {
         "isFullScreen": true,
@@ -120,7 +114,7 @@ describe('bit_wrapper wrapper tests', function () {
       }]);
 
     wrapper.play();
-    eventEmitter.emit("onFullscreenEnter", {type: "onFullscreenEnter" });
+    player.conf.events.onFullscreenEnter({type: "onFullscreenEnter"});
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.FULLSCREEN_CHANGED,
       {
         "isFullScreen": true,
@@ -131,10 +125,9 @@ describe('bit_wrapper wrapper tests', function () {
   it('vtc should fire FULLSCREEN_CHANGED event with \'isFullScreen\' parameter set to false and \'paused\' parameter reflecting whether player is paused on player\'s \'onFullscreenExit\' event callback', function(){
     vtc.interface.EVENTS.FULLSCREEN_CHANGED = "fullScreenChanged";
 
-    eventEmitter.on("onFullscreenExit", function(args) { wrapper.onFullscreenExit(args); });
-
+    wrapper.setVideoUrl("url");
     wrapper.pause();
-    eventEmitter.emit("onFullscreenExit", {type: "onFullscreenExit" });
+    player.conf.events.onFullscreenExit({type: "onFullscreenExit"});
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.FULLSCREEN_CHANGED,
       {
         "isFullScreen": false,
@@ -142,7 +135,7 @@ describe('bit_wrapper wrapper tests', function () {
       }]);
 
     wrapper.play();
-    eventEmitter.emit("onFullscreenExit", {type: "onFullscreenExit" });
+    player.conf.events.onFullscreenExit({type: "onFullscreenExit"});
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.FULLSCREEN_CHANGED,
       {
         "isFullScreen": false,
@@ -152,8 +145,9 @@ describe('bit_wrapper wrapper tests', function () {
 
   it('vtc should fire BUFFERING event on player\'s \'onStartBuffering\' event callback', function(){
     vtc.interface.EVENTS.BUFFERING = "buffering";
-    eventEmitter.on("onStartBuffering", function(args) { wrapper.onStartBuffering(args); });
-    eventEmitter.emit("onStartBuffering", {type: "onStartBuffering" });
+
+    wrapper.setVideoUrl("url");
+    player.conf.events.onStartBuffering({type: "onStartBuffering"});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.BUFFERING);
   });
 
@@ -161,10 +155,10 @@ describe('bit_wrapper wrapper tests', function () {
     vtc.interface.EVENTS.SEEKING = "seeking";
     vtc.interface.EVENTS.SEEKED = "seeked";
     vtc.interface.EVENTS.BUFFERING = "buffering";
-    wrapper.onSeek({type: "onSeek" });
-    eventEmitter.on("onStartBuffering", function(args) { wrapper.onStartBuffering(args); });
-    eventEmitter.emit("onStartBuffering", {type: "onStartBuffering" });
-    
+
+    wrapper.setVideoUrl("url");
+    player.conf.events.onSeek({type: "onSeek"});
+    player.conf.events.onStartBuffering({type: "onStartBuffering"});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.SEEKING);
     expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.SEEKED);
     expect(vtc.notified[2]).to.eql(vtc.interface.EVENTS.BUFFERING);
@@ -172,8 +166,9 @@ describe('bit_wrapper wrapper tests', function () {
 
   it('vtc should fire BUFFERED event on player\'s \'onStopBuffering\' event callback', function(){
     vtc.interface.EVENTS.BUFFERED = "buffered";
-    eventEmitter.on("onStopBuffering", function(args) { wrapper.onStopBuffering(args); });
-    eventEmitter.emit("onStopBuffering", {type: "onStopBuffering" });
+
+    wrapper.setVideoUrl("url");
+    player.conf.events.onStopBuffering({type: "onStopBuffering"});
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.BUFFERED);
   });
 
@@ -182,9 +177,8 @@ describe('bit_wrapper wrapper tests', function () {
 
     player.currentTime = 10;
     player.duration = 300;
-    
-    eventEmitter.on("onTimeChanged", function(args) { wrapper.onTimeChanged(args); });
-    eventEmitter.emit("onTimeChanged", {type: "onTimeChanged" });
+    wrapper.setVideoUrl("url");
+    player.conf.events.onTimeChanged({type: "onTimeChanged"});
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE,
       { currentTime: 10,
         duration: 300,

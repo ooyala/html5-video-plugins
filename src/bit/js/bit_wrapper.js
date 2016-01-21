@@ -17,7 +17,7 @@ require("../../../html5-common/js/utils/environment.js");
   var filename = "bit_wrapper.*\.js";
 
   if (window.runningUnitTests) {
-      bitdashLibLoaded = true;
+    bitdashLibLoaded = true;
   } else {
     var scripts = document.getElementsByTagName('script');
     for (var index in scripts) {
@@ -384,14 +384,20 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      var safeTime = getSafeSeekTimeIfPossible(time);
-
-      if (safeTime !== null) {
+      if (typeof time !== "number") {
+        return false;
+      }
+      var duration = player.getDuration();
+      if (duration > 0) {
+        if (time < 0) {
+          time = 0;
+        } else if (time > duration) {
+          time = duration;
+        }
         this.isSeeking = true;
-        this.controller.notify(this.controller.EVENTS.SEEKING, safeTime);
-        this.player.seek(safeTime);
-        _currentTime = safeTime;
-        
+        this.controller.notify(this.controller.EVENTS.SEEKING, time);
+        this.player.seek(time);
+        _currentTime = time;
         return true;
       }
 
@@ -448,65 +454,11 @@ require("../../../html5-common/js/utils/environment.js");
       this.player.destroy();
     };
 
-    /************************************************************************************/
-    // Helper methods
-    /************************************************************************************/
-
-    var getSafeSeekRange = function() {
-      // This code may require follow-up for live streams of for specific-to-platform corner cases
-      return { start: 0, end: player.getDuration() };
-    };
-
-    /**
-     * Converts the desired seek time to a safe seek time based on the duration and platform.  If seeking
-     * within OO.CONSTANTS.SEEK_TO_END_LIMIT of the end of the stream, seeks to the end of the stream.
-     * @private
-     * @method BitdashWrapper#convertToSafeSeekTime
-     * @param {number} time The desired seek-to position
-     * @param {number} duration The video's duration
-     * @returns {number} The safe seek-to position
-     */
-    var convertToSafeSeekTime = function(time, duration) {
-      // If seeking within some threshold of the end of the stream, seek to end of stream directly
-      if (duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) {
-        time = duration;
-      }
-
-      var safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
-
-      // iPad with 6.1 has an interesting bug that causes the video to break if seeking exactly to zero
-      if (OO.isIpad && safeTime < 0.1) {
-        safeTime = 0.1;
-      }
-      return safeTime;
-    };
-
-    /**
-     * Returns the safe seek time if seeking is possible.  Null if seeking is not possible.
-     * @private
-     * @method BitdashWrapper#getSafeSeekTimeIfPossible
-     * @param {number} time The desired seek-to position
-     * @returns {?number} The seek-to position, or null if seeking is not possible
-     */
-    var getSafeSeekTimeIfPossible = function(time) {
-      if (typeof time !== "number") {
-        return null;
-      }
-
-      var safeTime = convertToSafeSeekTime(time, player.getDuration());
-      var seekRange = getSafeSeekRange();
-      if (seekRange.start <= safeTime && seekRange.end >= safeTime) {
-        return safeTime;
-      }
-
-      return null;
-    };
-
     /**************************************************/
     // BitPlayer event callbacks
     /**************************************************/
 
-    this.onReady = conf.events["onReady"] = _.bind(function() {
+    var _onReady = conf.events["onReady"] = _.bind(function() {
       printevent(arguments);
       if (_isM3u8 && !OO.isIos) {
         // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
@@ -516,51 +468,51 @@ require("../../../html5-common/js/utils/environment.js");
       this.controller.notify(this.controller.EVENTS.CAN_PLAY);
     }, this);
 
-    this.onPlay = conf.events["onPlay"] = _.bind(function() {
+    var _onPlay = conf.events["onPlay"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.PLAY);
       this.controller.notify(this.controller.EVENTS.PLAYING);
     }, this);
 
-    this.onPause = conf.events["onPause"] = _.bind(function() {
+    var _onPause = conf.events["onPause"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.PAUSED);
     }, this);
 
-    this.onSeek = conf.events["onSeek"] = _.bind(function() {
+    var _onSeek = conf.events["onSeek"] = _.bind(function() {
       printevent(arguments);
       this.isSeeking = true;
       this.controller.notify(this.controller.EVENTS.SEEKING, arguments[0].seekTarget);
     }, this);
 
-    this.onVolumeChange = conf.events["onVolumeChange"] = _.bind(function() {
+    var _onVolumeChange = conf.events["onVolumeChange"] = _.bind(function() {
       printevent(arguments);
-      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: arguments[0].volumeTarget });
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: arguments[0].volumeTarget / 100});
     }, this);
 
-    this.onMute = conf.events["onMute"] = _.bind(function() {
+    var _onMute = conf.events["onMute"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: 0 });
     }, this);
 
-    this.onUnmute = conf.events["onUnmute"] = _.bind(function() {
+    var _onUnmute = conf.events["onUnmute"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: this.player.getVolume() / 100 });
     }, this);
 
-    this.onFullscreenEnter = conf.events["onFullscreenEnter"] = _.bind(function() {
+    var _onFullscreenEnter = conf.events["onFullscreenEnter"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { isFullScreen: true, paused: this.player.isPaused() });
     }, this);
 
-    this.onFullscreenExit = conf.events["onFullscreenExit"] = _.bind(function() {
+    var _onFullscreenExit = conf.events["onFullscreenExit"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { isFullScreen: false, paused: this.player.isPaused() });
     }, this);
 
-    this.onPlaybackFinished = conf.events["onPlaybackFinished"] = _.bind(function() {
+    var _onPlaybackFinished = conf.events["onPlaybackFinished"] = _.bind(function() {
       printevent(arguments);
       if (this.videoEnded) {
         // no double firing ended event
@@ -570,7 +522,7 @@ require("../../../html5-common/js/utils/environment.js");
       this.controller.notify(this.controller.EVENTS.ENDED);
     }, this);
 
-    this.onStartBuffering = conf.events["onStartBuffering"] = _.bind(function() {
+    var _onStartBuffering = conf.events["onStartBuffering"] = _.bind(function() {
       printevent(arguments);
       if (this.isSeeking) {
         this.isSeeking = false;
@@ -579,40 +531,40 @@ require("../../../html5-common/js/utils/environment.js");
       this.controller.notify(this.controller.EVENTS.BUFFERING);
     }, this);
 
-    this.onStopBuffering = conf.events["onStopBuffering"] = _.bind(function() {
+    var _onStopBuffering = conf.events["onStopBuffering"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.BUFFERED);
     }, this);
 
-    this.onAudioChange = conf.events["onAudioChange"] = _.bind(function() {
+    var _onAudioChange = conf.events["onAudioChange"] = _.bind(function() {
       printevent(arguments);
     }, this);
 
-    this.onSubtitleChange = conf.events["onSubtitleChange"] = _.bind(function() {
+    var _onSubtitleChange = conf.events["onSubtitleChange"] = _.bind(function() {
       printevent(arguments);
     }, this);
 
-    this.onVideoDownloadQualityChange = conf.events["onVideoDownloadQualityChange"] = _.bind(function() {
-      printevent(arguments);
-      this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
-    }, this);
-
-    this.onAudioDownloadQualityChange = conf.events["onAudioDownloadQualityChange"] = _.bind(function() {
+    var _onVideoDownloadQualityChange = conf.events["onVideoDownloadQualityChange"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     }, this);
 
-    this.onVideoPlaybackQualityChange = conf.events["onVideoPlaybackQualityChange"] = _.bind(function() {
+    var _onAudioDownloadQualityChange = conf.events["onAudioDownloadQualityChange"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     }, this);
 
-    this.onAudioPlaybackQualityChange = conf.events["onAudioPlaybackQualityChange"] = _.bind(function() {
+    var _onVideoPlaybackQualityChange = conf.events["onVideoPlaybackQualityChange"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     }, this);
 
-    this.onTimeChanged = conf.events["onTimeChanged"] = _.bind(function(data) {
+    var _onAudioPlaybackQualityChange = conf.events["onAudioPlaybackQualityChange"] = _.bind(function() {
+      printevent(arguments);
+      this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
+    }, this);
+
+    var _onTimeChanged = conf.events["onTimeChanged"] = _.bind(function(data) {
       printevent([data]);
       _currentTime = this.player.getCurrentTime();
       var buffer = this.player.getVideoBufferLength();
@@ -624,17 +576,17 @@ require("../../../html5-common/js/utils/environment.js");
                                seekRange: { "start" : 0, "end" : duration } });
     }, this);
 
-    this.onCueEnter = conf.events["onCueEnter"] = _.bind(function() {
+    var _onCueEnter = conf.events["onCueEnter"] = _.bind(function() {
       // TO BE IMPLEMENTED
       printevent(arguments);
     }, this);
 
-    this.onCueExit = conf.events["onCueExit"] = _.bind(function() {
+    var _onCueExit = conf.events["onCueExit"] = _.bind(function() {
       // TO BE IMPLEMENTED
       printevent(arguments);
     }, this);
 
-    this.onMetadata = conf.events["onMetadata"] = _.bind(function() {
+    var _onMetadata = conf.events["onMetadata"] = _.bind(function() {
       // TO BE IMPLEMENTED
       printevent(arguments);
     }, this);

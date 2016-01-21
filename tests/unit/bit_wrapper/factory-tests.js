@@ -63,13 +63,6 @@ describe('bit_wrapper factory tests', function () {
     expect(parentElement.children()).to.have.length(1);
   });
 
-  it('should create element with id "test"', function(){
-    var parentElement = $("<div>");
-    pluginFactory.create(parentElement, "test", vtc, {});
-    var element = parentElement.children()[0];
-    expect(element.getAttribute("id")).to.eql("test");
-  });
-
   it('should create element with given domId', function(){
     var domId = "testId";
     var parentElement = $("<div>");
@@ -86,14 +79,6 @@ describe('bit_wrapper factory tests', function () {
     expect(element.getAttribute("style")).to.be.ok();
     expect(element.getAttribute("style")).to.contain("visibility");
     expect(element.getAttribute("style")).to.contain("hidden");
-  });
-
-  it('should create element with proper attributes', function(){
-    var parentElement = $("<div>");
-    pluginFactory.create(parentElement, "test", vtc, {});
-    var element = parentElement.children()[0];
-    expect(element.getAttribute("loop")).to.not.be.ok();;
-    expect(element.getAttribute("autoplay")).to.not.be.ok();;
   });
 
   it('should remove list of encodings on destroy', function(){

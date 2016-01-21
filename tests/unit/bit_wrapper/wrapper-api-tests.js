@@ -2,7 +2,7 @@
  * https://github.com/Automattic/expect.js
  */
 
-describe('bit_wrapper wrapper tests', function () {
+describe('bit_wrapper wrapper API tests', function () {
   // Load test helpers
   require('../../utils/test_lib.js');
   jest.dontMock('../../utils/mock_vtc.js');
@@ -47,29 +47,18 @@ describe('bit_wrapper wrapper tests', function () {
   // tests
 
   it('should set the video url and return true', function(){
+    spyOn(player, "setup");
     var returns = wrapper.setVideoUrl("url");
+    expect(player.setup.wasCalled).to.be(true);
     expect(returns).to.be(true);
   });
 
   it('should not reset the same url', function(){
     wrapper.setVideoUrl("url");
+    spyOn(player, "setup");
     var returns = wrapper.setVideoUrl("url");
+    expect(player.setup.wasCalled).to.be(false);
     expect(returns).to.be(false);
-  });
-
-  it('should ignore cache buster', function(){
-    wrapper.setVideoUrl("url?_=1");
-    var returns = wrapper.setVideoUrl("url");
-    expect(returns).to.be(false);
-    wrapper.setVideoUrl("url?extra=2&_=1");
-    var returns = wrapper.setVideoUrl("url?extra=2");
-    expect(returns).to.be(false);
-    wrapper.setVideoUrl("url?_=1&extra=2");
-    var returns = wrapper.setVideoUrl("url?extra=2");
-    expect(returns).to.be(true); // this is a bug
-    wrapper.setVideoUrl("url?_=1&extra=2");
-    var returns = wrapper.setVideoUrl("url");
-    expect(returns).to.be(true);
   });
 
   it('should call player load', function(){
@@ -173,15 +162,15 @@ describe('bit_wrapper wrapper tests', function () {
     player.duration = 0;
     var returns = wrapper.seek(0);
     expect(returns).to.be(false);
-    var returns = wrapper.seek(1);
+    returns = wrapper.seek(1);
     expect(returns).to.be(false);
   });
 
-  it('should ignore seeking if seekvalue invalid', function(){
+  it('should ignore seeking if seek value invalid', function(){
     player.duration = 10;
     var returns = wrapper.seek(true);
     expect(returns).to.be(false);
-    var returns = wrapper.seek("hi");
+    returns = wrapper.seek("hi");
     expect(returns).to.be(false);
   });
 
@@ -190,23 +179,9 @@ describe('bit_wrapper wrapper tests', function () {
     var returns = wrapper.seek(-1);
     expect(returns).to.be(true);
     expect(player.currentTime).to.eql(0);
-    var returns = wrapper.seek(11);
+    returns = wrapper.seek(11);
     expect(returns).to.be(true);
-    expect(player.currentTime).to.eql(player.duration - 0.01);
-  });
-
-  it('should force seeks within SEEK_TO_END_LIMIT to seek to duration - 0.01', function(){
-    OO.CONSTANTS = { SEEK_TO_END_LIMIT: 3 };
-    player.duration = 10;
-    var returns = wrapper.seek(player.duration - 3);
-    expect(returns).to.be(true);
-    expect(player.currentTime).to.eql(player.duration - 3);
-    var returns = wrapper.seek(player.duration - 2.99);
-    expect(returns).to.be(true);
-    expect(player.currentTime).to.eql(player.duration - 0.01);
-    var returns = wrapper.seek(player.duration - 1);
-    expect(returns).to.be(true);
-    expect(player.currentTime).to.eql(player.duration - 0.01);
+    expect(player.currentTime).to.eql(10);
   });
 
   it('should set volume if between 0 and 1', function(){
@@ -349,32 +324,8 @@ describe('bit_wrapper wrapper tests', function () {
     expect(wrapper.getCurrentTime()).to.eql(1000000);
   });
 
-  /*
-  // TODO: implement unsubscription test
-  it('should unsubscribe from events on destroy', function(){
-    // Verify notify api is not called when event raised on element after destroy
-  });
-  */
-
   it('should remove the video element on destroy', function(){
     wrapper.destroy();
     expect($(parentElement).has(":first-child").length).to.eql(0);
   });
-
-  /*
-  it('should', function(){
-  });
-
-  // TODO: Complete this test once we have ability to simulate browsers and devices
-  it('should apply cache buster to chrome', function(){
-    var returns = wrapper.setVideoUrl("url");
-    expect(returns).to.be(true);
-    expect(element.src).to.eql("url");
-  });
-
-  it('should call "event" with specific parameters', function(){
-    vtc.interface.notify("event", {"param":true});
-    expect(vtc.notifyParameters).to.eql(["event", {"param":true}]);
-  });
-  */
 });
