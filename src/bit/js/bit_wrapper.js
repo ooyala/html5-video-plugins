@@ -201,19 +201,17 @@ require("../../../html5-common/js/utils/environment.js");
         conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
 
         if (bitdashLibLoaded) {
-          if (!window.runningUnitTests) {
-            if (_hasPlayed) {
-              this.load(false);
-            } else {
-              this.player.setup(conf);
-              _loaded = true;
-              if (_isM3u8) {
-                // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
-                // Should be removed once this bug is fixed
-                this.controller.notify(this.controller.EVENTS.CAN_PLAY);
-              } 
-              OO.log("Bitdash player has been set up!");
-            }
+          if (_hasPlayed) {
+            this.load(false);
+          } else {
+            this.player.setup(conf);
+            _loaded = true;
+            if (_isM3u8) {
+              // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
+              // Should be removed once this bug is fixed
+              this.controller.notify(this.controller.EVENTS.CAN_PLAY);
+            } 
+            OO.log("Bitdash player has been set up!");
           }
         } else {
           var start = Date.now();
@@ -397,7 +395,6 @@ require("../../../html5-common/js/utils/environment.js");
         return true;
       }
 
-      // XXX we may also have to add queueSeek / dequeueSeek as it is done for main_html5 plugin
       return false;
     };
 
@@ -455,14 +452,6 @@ require("../../../html5-common/js/utils/environment.js");
     // Helper methods
     /************************************************************************************/
 
-    /**
-     * Gets the range of video that can be safely seeked to.
-     * @private
-     * @method BitdashWrapper#getSafeSeekRange
-     * @param {object} seekRange The seek range object from the video element.  It contains a length, a start
-     *                           function, and an end function.
-     * @returns {object} The safe seek range object containing { "start": number, "end": number}
-     */
     var getSafeSeekRange = function() {
       // This code may require follow-up for live streams of for specific-to-platform corner cases
       return { start: 0, end: player.getDuration() };

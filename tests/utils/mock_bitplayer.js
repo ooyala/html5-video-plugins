@@ -10,6 +10,7 @@ mock_bitplayer = function() {
   this.cc_name = "";
   this.cc_subtitle = "";
   this.subtitles = {};
+  this.conf = null;
   
   this.isReady = function() {
     return true;
@@ -28,6 +29,10 @@ mock_bitplayer = function() {
 
   this.seek = function(time) {
     this.currentTime = time;
+  };
+
+  this.setup = function(conf) {
+    this.conf = conf;
   };
   
   this.play = function() {

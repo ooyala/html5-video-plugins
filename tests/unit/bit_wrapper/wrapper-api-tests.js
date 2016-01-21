@@ -20,6 +20,7 @@ describe('bit_wrapper wrapper tests', function () {
   // Setup
   var pluginFactory, parentElement, wrapper, element, vtc, originalTimeout;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
+  OO.log = function() {}
 
   // Load file under test
   jest.dontMock('../../../src/bit/js/bit_wrapper');

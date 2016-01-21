@@ -5,8 +5,6 @@
 describe('bit_wrapper factory tests', function () {
   // Load test helpers
   require('../../utils/test_lib.js');
-  jest.dontMock('../../utils/mock_bitplayer.js');
-  require('../../utils/mock_bitplayer.js');
 
   // Setup
   var pluginFactory;
@@ -15,7 +13,7 @@ describe('bit_wrapper factory tests', function () {
   // set up mock environment
   window.runningUnitTests = true;
   bitdash = function(domId) {
-    return new mock_bitplayer();
+    return {};
   }
 
   // Load file under test
