@@ -440,7 +440,7 @@
     };
 
     var raiseErrorEvent = function(event) {
-      var code = event.target.error ? event.target.error.code : -1;
+      var code = event.eventObject.errorCode ? event.eventObject.errorCode : -1;
       newController.notify(newController.EVENTS.ERROR, { "errorcode" : code });
     };
 
