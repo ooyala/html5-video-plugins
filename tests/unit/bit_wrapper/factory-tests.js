@@ -43,7 +43,7 @@ describe('bit_wrapper factory tests', function () {
   it('should report max supported elements', function(){
     expect(pluginFactory.maxSupportedElements).to.be.ok();
     expect(pluginFactory.maxSupportedElements).to.be.a("number");
-    expect(pluginFactory.maxSupportedElements).to.be.above(-2);
+    expect(pluginFactory.maxSupportedElements).to.eql(-1);
   });
 
   it('should be able to create an element', function(){
