@@ -465,7 +465,7 @@
     };
 
     var raiseVolumeEvent = function(event) {
-      newController.notify(newController.EVENTS.VOLUME_CHANGE, { "volume" : event.target.volume });
+      newController.notify(newController.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
     };
 
     var raiseWaitingEvent = function() {
@@ -595,7 +595,7 @@
        case "STALLED":
         raiseStalledEvent();
         break;
-       case "VOLUME_CHANGE":
+       case "VOLUME_CHANGED":
         raiseVolumeEvent(data);
         break;
        case "WAITING":
