@@ -308,14 +308,6 @@ describe('bit_wrapper wrapper API tests', function () {
     expect(returns).to.be(null);
   });
 
-  it('should set the crossorigin attribute', function(){
-    expect(element.getAttribute("crossorigin")).to.not.be.ok();
-    wrapper.setCrossorigin("anonymous");
-    expect(element.getAttribute("crossorigin")).to.eql("anonymous");
-    wrapper.setCrossorigin(null);
-    expect(element.getAttribute("crossorigin")).to.not.be.ok();
-  });
-
   it('should return current time on getCurrentTime', function(){
     player.duration = 100000000;
     wrapper.seek(10);
