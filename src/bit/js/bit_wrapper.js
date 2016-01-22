@@ -441,7 +441,7 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
-     * Destroys the individual video element.
+     * Removes video wrapper element and destroys the player
      * @public
      * @method BitdashVideoWrapper#destroy
      */

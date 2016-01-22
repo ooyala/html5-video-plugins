@@ -152,7 +152,7 @@ describe('bit_wrapper wrapper API tests', function () {
     expect(wrapper.seek.wasCalled).to.be(false);
   });
 
-  it('should call pause on element when wrapper paused', function(){
+  it('should call pause on player when wrapper paused', function(){
     spyOn(player, "pause");
     wrapper.pause();
     expect(player.pause.wasCalled).to.be(true);
@@ -229,15 +229,16 @@ describe('bit_wrapper wrapper API tests', function () {
     expect(element.getAttribute("style")).to.contain("100%");
   });
 
-  it('should pause the video element on destroy', function(){
+  it('should pause the player on destroy', function(){
     spyOn(player, "pause");
     expect(player.pause.wasCalled).to.be(false);
     wrapper.destroy();
     expect(player.pause.wasCalled).to.be(true);
   });
 
-  it('should unset the src on destroy', function(){
+  it('should destroy player object on destroy', function(){
     wrapper.setVideoUrl("url");
+    expect(player.exists).to.eql(true);
     wrapper.destroy();
     expect(player.exists).to.eql(false);
   });
