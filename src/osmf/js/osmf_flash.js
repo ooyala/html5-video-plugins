@@ -144,8 +144,6 @@
    *                                       native video controls
    */
   var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer) {
-    var readyEvent = new Event('JSREADY');
-
     parentContainer = "container";
     var _video = video;
     var listeners = {};
@@ -568,7 +566,6 @@
       switch (eventtitle)
       {
        case "JSREADY":
-        dispatchEvent(readyEvent);
         while (actionscriptCommandQueue.length > 0) {
           this.callToFlash(actionscriptCommandQueue.shift());
         }
