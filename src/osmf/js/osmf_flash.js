@@ -426,7 +426,7 @@
     };
 
     var raisePlayEvent = function(event) {
-      newController.notify(newController.EVENTS.PLAY, { url: event.target.src });
+      newController.notify(newController.EVENTS.PLAY, { url: event.eventObject.url });
     };
 
     var raisePlayingEvent = function() {
