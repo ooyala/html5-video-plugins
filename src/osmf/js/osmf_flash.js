@@ -619,7 +619,7 @@
        case "FULLSCREEN_CHANGED_END":
         raiseFullScreenEnd(data);
         break;
-       default:
+       case "ERROR":
         raiseErrorEvent(data);
         break;
       }
