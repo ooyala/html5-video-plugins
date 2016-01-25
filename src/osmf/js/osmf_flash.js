@@ -373,13 +373,22 @@
     this.destroy = function() {
       // Pause the video
       this.pause();
+
       // Reset the source
+      this.setVideoUrl = "";
+
       // Unsubscribe all events
-      this.callToFlash("destroy");
       this.unsubscribeAllEvents();
+
+      // Pass destroy to flash plugin.
+      this.callToFlash("destroy");
+
       // Remove the element
-      return JFlashBridge.unbind(playerId);
+      $('#'+playerId).replaceWith('');
       _flashVideoObject=null;
+
+      // return unbound object.
+      return JFlashBridge.unbind(playerId);
     };
 
     // Returns the SWF instance
