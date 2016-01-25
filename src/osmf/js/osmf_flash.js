@@ -375,7 +375,7 @@
       this.pause();
 
       // Reset the source
-      this.setVideoUrl = "";
+      this.setVideoUrl('');
 
       // Unsubscribe all events
       this.unsubscribeAllEvents();
