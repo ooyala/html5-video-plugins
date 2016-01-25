@@ -296,20 +296,6 @@ require("../../../html5-common/js/utils/environment.js");
       }
     };
 
-    /**
-     * Sets the crossorigin attribute on the video element.
-     * @public
-     * @method BitdashVideoWrapper#setCrossorigin
-     * @param {string} crossorigin The value to set the crossorigin attribute. Will remove crossorigin attribute if null.
-     */
-    this.setCrossorigin = function(crossorigin) {
-      if (crossorigin) {
-        $(_videoWrapper).attr("crossorigin", crossorigin);
-      } else {
-        $(_videoWrapper).removeAttr("crossorigin");
-      }
-    };
-
     var resetStreamData = _.bind(function() {
       _hasPlayed = false;
       this.videoEnded = false;
