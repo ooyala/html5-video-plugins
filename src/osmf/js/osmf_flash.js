@@ -106,7 +106,7 @@
       video.attr("id", id);
       parentContainer.append(video);
 
-      element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer);
+      element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer, css);
       element.controller = controller;
       // TODO: Wait for loadstart before calling this?
       element.subscribeAllEvents();
@@ -139,11 +139,12 @@
    * @param {string} playerId The id of the video player element
    * @param {object} video The core video object to wrap
    * @param {string} parentContainer Id of the Div element in which the swf will be embedded
+   * @param {object} css The css to apply to the object element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer) {
+  var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer, css) {
     parentContainer = "container";
     var _video = video;
     var listeners = {};
@@ -173,7 +174,13 @@
     var attributes = {};
     attributes.id = playerId;
     attributes.class = 'video';
-    attributes.style = 'z-index:0';
+    attributes.preload = 'none';
+    attributes.style = '';
+
+    // Combine the css object into a string for swfobject.
+    for(i in css) {
+      attributes.style += i+":"+css[i]+"; ";
+    }
     attributes.name = playerId;
     attributes.align = "middle";
     swfobject.embedSWF(
@@ -361,7 +368,7 @@
      * @param {object} css The css to apply in key value pairs
      */
     this.applyCss = function(css) {
-      $(_video).css(css);
+      $('#'+playerId).css(css);
     };
 
     /**
