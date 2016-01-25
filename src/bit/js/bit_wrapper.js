@@ -10,34 +10,37 @@ require("../../../html5-common/js/utils/environment.js");
 
 (function(_, $) {
   var pluginName = "bitdash";
-  var currentInstances = 0;
   var bitdashLibLoaded = false;
   var bitdashLibURL;
   var BITDASH_LIB_TIMEOUT = 30000;
   var filename = "bit_wrapper.*\.js";
 
-  var scripts = document.getElementsByTagName('script');
-  for (var index in scripts) {
-    var match = scripts[index].src.match(filename);
-    if (match && match.length > 0) {
-      bitdashLibURL = match.input.match(/.*\//)[0];
-      break;
-    }
-  }
-  if (!bitdashLibURL) {
-    console.error("Can't get path to script", filename);
-    return;
-  }
-  bitdashLibURL += "bitdash.min.js";
-
-  var playerJs = document.createElement("script");
-  playerJs.type = "text/javascript";
-  playerJs.src = bitdashLibURL;
-
-  playerJs.onload = (function(callback) {
+  if (window.runningUnitTests) {
     bitdashLibLoaded = true;
-  });
-  document.head.appendChild(playerJs);
+  } else {
+    var scripts = document.getElementsByTagName('script');
+    for (var index in scripts) {
+      var match = scripts[index].src.match(filename);
+      if (match && match.length > 0) {
+        bitdashLibURL = match.input.match(/.*\//)[0];
+        break;
+      }
+    }
+    if (!bitdashLibURL) {
+      console.error("Can't get path to script", filename);
+      return;
+    }
+    bitdashLibURL += "bitdash.min.js";
+
+    var playerJs = document.createElement("script");
+    playerJs.type = "text/javascript";
+    playerJs.src = bitdashLibURL;
+
+    playerJs.onload = (function(callback) {
+      bitdashLibLoaded = true;
+    });
+    document.head.appendChild(playerJs);
+  }
 
   /**
    * @class BitdashVideoFactory
@@ -51,8 +54,8 @@ require("../../../html5-common/js/utils/environment.js");
   var BitdashVideoFactory = function() {
     this.name = pluginName;
     this.encodings = [ OO.VIDEO.ENCODING.DASH, OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4 ];
-    this.features = [];
     this.technology = OO.VIDEO.TECHNOLOGY.MIXED;
+    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS ];
 
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
@@ -76,7 +79,6 @@ require("../../../html5-common/js/utils/environment.js");
 
       parentContainer.append(videoWrapper);
       var wrapper = new BitdashVideoWrapper(domId, ooyalaVideoController, videoWrapper[0]);
-      currentInstances++;
 
       return wrapper;
     };
@@ -113,19 +115,19 @@ require("../../../html5-common/js/utils/environment.js");
   var BitdashVideoWrapper = function(domId, videoController, videoWrapper) {
     this.controller = videoController;
     this.disableNativeSeek = false;
+    this.player = null;
+    this.isSeeking = false;
+    this.videoEnded = false;
 
     var _domId = domId;
-    var _player = null;
     var _videoWrapper = videoWrapper;
     var _currentUrl = '';
-    var _videoEnded = false;
-    var _initialTime = 0;
+    var _loaded = false;
     var _hasPlayed = false;
     var _currentTime = 0;
     var _isM3u8 = false;
     var _isDash = false;
-    var _isReady = false;
-    var _wasSeeking = false;
+    var _trackId = '';
 
     var conf = {
       key: this.controller.PLUGIN_MAGIC,
@@ -151,7 +153,7 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     if (bitdashLibLoaded) {
-      _player = bitdash(domId);
+      this.player = bitdash(domId);
     } 
 
 
@@ -200,14 +202,15 @@ require("../../../html5-common/js/utils/environment.js");
           if (_hasPlayed) {
             this.load(false);
           } else {
-            _player.setup(conf);
+            this.player.setup(conf);
+            _loaded = true;
             if (_isM3u8) {
               // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
               // Should be removed once this bug is fixed
               this.controller.notify(this.controller.EVENTS.CAN_PLAY);
             } 
             OO.log("Bitdash player has been set up!");
-          } 
+          }
         } else {
           var start = Date.now();
           (function waitForLibrary() {
@@ -219,10 +222,11 @@ require("../../../html5-common/js/utils/environment.js");
             }
             setTimeout(function() {
               if (bitdashLibLoaded) {
-                if (!_player) {
-                  _player = bitdash(_domId);
+                if (!this.player) {
+                  this.player = bitdash(_domId);
                 }
-                _player.setup(conf);
+                this.player.setup(conf);
+                _loaded = true;
                 OO.log("Bitdash player has been set up!");
               } else {
                 OO.log("Loading library...");
@@ -246,7 +250,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.setClosedCaptions = function(language, closedCaptions, params) {
       if (!!language && params.mode === "showing") {
-        var captions =  _player.getAvailableSubtitles() || [];
+        var captions =  this.player.getAvailableSubtitles() || [];
         var trackId = "1";
         if (captions.length > 0) {
           if (captions[captions.length - 1].lang === language) {
@@ -263,22 +267,42 @@ require("../../../html5-common/js/utils/environment.js");
             trackId = (parseInt(captions[captions.length - 1].id) + 1).toString();
           }
         }
-        _player.addSubtitle(
+        this.player.addSubtitle(
           closedCaptions.closed_captions_vtt[language].url,
           trackId,
           "subtitle",
           language,
           closedCaptions.closed_captions_vtt[language].name);
-        _player.setSubtitle(trackId);
+        this.player.setSubtitle(trackId);
+        _trackId = trackId;
       } else {
-        _player.setSubtitle(null);
+        this.player.setSubtitle(null);
+      }
+    };
+
+    /**
+     * Sets the closed captions mode on the video element.
+     * @public
+     * @method BitdashVideoWrapper#setClosedCaptionsMode
+     * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
+     */
+    this.setClosedCaptionsMode = function(mode) {
+      if (mode === "hidden") {
+        this.player.setSubtitle(null);
+      } else if (mode === "disabled") {
+        this.player.setSubtitle(null);
+      } else if (mode === "showing" && !!_trackId) {
+        this.player.setSubtitle(_trackId);
       }
     };
 
     var resetStreamData = _.bind(function() {
       _hasPlayed = false;
-      _videoEnded = false;
-      _wasSeeking = false;
+      this.videoEnded = false;
+      this.isSeeking = false;
+      _loaded = false;
+      _currentTime = 0;
+      _trackId = '';
     }, this);
 
     /**
@@ -288,7 +312,15 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      _player.load(conf.source);
+      if (_loaded && !rewind) {
+        return;
+      }
+      if (!!rewind) {
+        _currentTime = 0;
+        this.player.pause();
+      }
+      this.player.load(conf.source);
+      _loaded = true;
     };
 
     /**
@@ -298,7 +330,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
-      _initialTime = initialTime;
+      if (!_hasPlayed && initialTime > 0) {
+        this.seek(initialTime);
+      }
     };
 
     /**
@@ -307,9 +341,16 @@ require("../../../html5-common/js/utils/environment.js");
      * @method BitdashVideoWrapper#play
      */
     this.play = function() {
-      _player.play();
-      _hasPlayed = true;
-      _videoEnded = false;
+      if (this.player.isReady() && !this.isSeeking) {
+        if (!_loaded) {
+          this.load();
+        }
+        if (_loaded) {
+          this.player.play();
+          _hasPlayed = true;
+          this.videoEnded = false;
+        }
+      }
     };
 
     /**
@@ -318,7 +359,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method BitdashVideoWrapper#pause
      */
     this.pause = function() {
-      _player.pause();
+      this.player.pause();
     };
 
     /**
@@ -328,9 +369,24 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      _wasSeeking = true;
-      this.controller.notify(this.controller.EVENTS.SEEKING, time);
-      _player.seek(_hasPlayed ? time : _initialTime);
+      if (typeof time !== "number") {
+        return false;
+      }
+      var duration = this.player.getDuration();
+      if (duration > 0) {
+        if (time < 0) {
+          time = 0;
+        } else if (time > duration) {
+          time = duration;
+        }
+        this.isSeeking = true;
+        this.controller.notify(this.controller.EVENTS.SEEKING, time);
+        this.player.seek(time);
+        _currentTime = time;
+        return true;
+      }
+
+      return false;
     };
 
     /**
@@ -340,7 +396,14 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      _player.setVolume(volume * 100);
+      var resolvedVolume = volume;
+      if (resolvedVolume < 0) {
+        resolvedVolume = 0;
+      } else if (resolvedVolume > 1) {
+        resolvedVolume = 1;
+      }
+
+      this.player.setVolume(resolvedVolume * 100);
     };
 
     /**
@@ -364,30 +427,15 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
-     * Destroys the individual video element.
+     * Removes video wrapper element and destroys the player
      * @public
      * @method BitdashVideoWrapper#destroy
      */
     this.destroy = function() {
-      _player.destroy();
-    };
-
-    /**
-     * Gets the range of video that can be safely seeked to.
-     * @private
-     * @method BitdashVideoWrapper#getSafeSeekRange
-     * @param {object} seekRange The seek range object from the video element.  It contains a length, a start
-     *                           function, and an end function.
-     * @returns {object} The safe seek range object containing { "start": number, "end": number}
-     */
-    var getSafeSeekRange = function(seekRange) {
-      if (!seekRange || !seekRange.length || !(typeof seekRange.start == "function") ||
-          !(typeof seekRange.end == "function" )) {
-        return { "start" : 0, "end" : 0 };
-      }
-
-      return { "start" : seekRange.length > 0 ? seekRange.start(0) : 0,
-               "end" : seekRange.length > 0 ? seekRange.end(0) : 0 };
+      this.player.pause();
+      _currentUrl = '';
+      $(_videoWrapper).remove();
+      this.player.destroy();
     };
 
     /**************************************************/
@@ -395,12 +443,11 @@ require("../../../html5-common/js/utils/environment.js");
     /**************************************************/
 
     var _onReady = conf.events["onReady"] = _.bind(function() {
-      _isReady = true;
       printevent(arguments);
       if (_isM3u8 && !OO.isIos) {
         // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
         // Should be removed once this bug is fixed
-        _player.play();
+        this.player.play();
       } 
       this.controller.notify(this.controller.EVENTS.CAN_PLAY);
     }, this);
@@ -418,49 +465,51 @@ require("../../../html5-common/js/utils/environment.js");
 
     var _onSeek = conf.events["onSeek"] = _.bind(function() {
       printevent(arguments);
-      _wasSeeking = true;
+      this.isSeeking = true;
       this.controller.notify(this.controller.EVENTS.SEEKING, arguments[0].seekTarget);
     }, this);
 
     var _onVolumeChange = conf.events["onVolumeChange"] = _.bind(function() {
       printevent(arguments);
-      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: arguments[0].volumeTarget });
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: arguments[0].volumeTarget / 100});
     }, this);
 
     var _onMute = conf.events["onMute"] = _.bind(function() {
       printevent(arguments);
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: 0 });
     }, this);
 
     var _onUnmute = conf.events["onUnmute"] = _.bind(function() {
       printevent(arguments);
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: this.player.getVolume() / 100 });
     }, this);
 
     var _onFullscreenEnter = conf.events["onFullscreenEnter"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { isFullScreen: true, paused: _player.isPaused() });
+                             { isFullScreen: true, paused: this.player.isPaused() });
     }, this);
 
     var _onFullscreenExit = conf.events["onFullscreenExit"] = _.bind(function() {
       printevent(arguments);
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { isFullScreen: false, paused: _player.isPaused() });
+                             { isFullScreen: false, paused: this.player.isPaused() });
     }, this);
 
     var _onPlaybackFinished = conf.events["onPlaybackFinished"] = _.bind(function() {
       printevent(arguments);
-      if (_videoEnded) {
+      if (this.videoEnded) {
         // no double firing ended event
         return;
       }
-      _videoEnded = true;
+      this.videoEnded = true;
       this.controller.notify(this.controller.EVENTS.ENDED);
     }, this);
 
     var _onStartBuffering = conf.events["onStartBuffering"] = _.bind(function() {
       printevent(arguments);
-      if (_wasSeeking) {
-        _wasSeeking = false;
+      if (this.isSeeking) {
+        this.isSeeking = false;
         this.controller.notify(this.controller.EVENTS.SEEKED);
       }
       this.controller.notify(this.controller.EVENTS.BUFFERING);
@@ -501,9 +550,9 @@ require("../../../html5-common/js/utils/environment.js");
 
     var _onTimeChanged = conf.events["onTimeChanged"] = _.bind(function(data) {
       printevent([data]);
-      _currentTime = _player.getCurrentTime();
-      var buffer = _player.getVideoBufferLength();
-      var duration = _player.getDuration();
+      _currentTime = this.player.getCurrentTime();
+      var buffer = this.player.getVideoBufferLength();
+      var duration = this.player.getDuration();
       this.controller.notify(this.controller.EVENTS.TIME_UPDATE,
                              { currentTime: _currentTime,
                                duration: duration,
@@ -528,6 +577,9 @@ require("../../../html5-common/js/utils/environment.js");
 
     var printevent = function(arr) {
       // XXX this is debugging code, should be removed before release
+      if (window.runningUnitTests) {
+        return;
+      }
       if (arr[0].type !== "onTimeChanged") {
         console.log("bitplayer:", arr[0].type, JSON.stringify(arr[0]));
       }
