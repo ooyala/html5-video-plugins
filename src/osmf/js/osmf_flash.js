@@ -312,6 +312,7 @@
       this.callToFlash("videoPlay");
       loaded = true;
       hasPlayed = true;
+      videoEnded = false;
     };
 
     /**
@@ -443,7 +444,7 @@
     var raiseEndedEvent = function() {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
-      newController.controller.notify(newController.EVENTS.ENDED);
+      newController.notify(newController.EVENTS.ENDED);
     };
 
     var raiseErrorEvent = function(event) {
