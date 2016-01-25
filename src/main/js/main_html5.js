@@ -519,6 +519,20 @@ require("../../../html5-common/js/utils/environment.js");
       }
     };
 
+    /**
+     * Sets the poster attribute on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setPoster
+     * @param {string} url The source url for the poster attribute. Will remove poster attribute if null.
+     */
+    this.setPoster = function(url) {
+      if (url) {
+        $(_video).attr("poster", url);
+      } else {
+        $(_video).removeAttr("poster");
+      }
+    };
+
     // **********************************************************************************/
     // Event callback methods
     // **********************************************************************************/

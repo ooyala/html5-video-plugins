@@ -298,6 +298,15 @@ require("../html5-common/js/utils/constants.js");
     this.setCrossorigin = function(crossorigin) {
     };
 
+    /**
+     * Sets the poster attribute on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#setPoster
+     * @param {string} url The source url for the poster attribute. Will remove poster attribute if null.
+     */
+    this.setPoster = function(url) {
+    };
+
     // **********************************************************************************/
     // Example callback methods
     // **********************************************************************************/
