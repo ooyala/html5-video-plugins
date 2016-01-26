@@ -1108,6 +1108,7 @@ require("../../../html5-common/js/utils/environment.js");
   /**
    * @class Platform
    * @classdesc Functions that provide platform information
+   * @private
    */
   var Platform = {
     /**

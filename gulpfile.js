@@ -91,3 +91,6 @@ gulp.task('watch', function() {
 // The default task (called when you run `gulp` from cli)
 gulp.task('default', ['build']);
 
+// Generate documentation
+gulp.task("docs", shell.task("./node_modules/.bin/jsdoc -c ./jsdoc_conf.json"));
+
