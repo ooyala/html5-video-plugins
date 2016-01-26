@@ -168,7 +168,7 @@
     params.bgcolor = "#000000";
     params.allowscriptaccess = "always";
     params.allowfullscreen = "true";
-    params.wmode = "direct";
+    params.wmode = "opaque";
 
     var attributes = {};
     attributes.id = playerId;
