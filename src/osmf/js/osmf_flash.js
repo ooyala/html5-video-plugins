@@ -178,8 +178,7 @@
     attributes.id = playerId;
     attributes.class = 'video';
     attributes.preload = 'none';
-    attributes.style = '';
-
+    attributes.style = 'position:absolute;';
     // Combine the css object into a string for swfobject.
     if (cssFromContainer.length) {
       for(i in cssFromContainer) {
