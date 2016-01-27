@@ -211,28 +211,24 @@
      * @method OoyalaFlashVideoWrapper#subscribeAllEvents
      */
     this.subscribeAllEvents = function() {
-      listeners = { 
+      listeners = { "play": _.bind(raisePlayEvent, this),
+                    "playing": _.bind(raisePlayingEvent, this),
+                    "ended": _.bind(raiseEndedEvent, this),
+                    "error": _.bind(raiseErrorEvent, this),
+                    "seeking": _.bind(raiseSeekingEvent, this),
+                    "seeked": _.bind(raiseSeekedEvent, this),
+                    "pause": _.bind(raisePauseEvent, this),
+                    "ratechange": _.bind(raiseRatechangeEvent, this),
+                    "stalled": _.bind(raiseStalledEvent, this),
+                    "volumechange": _.bind(raiseVolumeEvent, this),
+                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
+                    "waiting": _.bind(raiseWaitingEvent, this),
+                    "timeupdate": _.bind(raiseTimeUpdate, this),
+                    "durationchange": _.bind(raiseDurationChange, this),
                     "loadstart": _.bind(onLoadStart, this),
                     "loadedmetadata": _.bind(onLoadedMetadata, this),
                     "progress": _.bind(raiseProgress, this),
-                    "error": _.bind(raiseErrorEvent, this),
-                    "stalled": _.bind(raiseStalledEvent, this),
-
-
-
                     "canplaythrough": _.bind(raiseCanPlayThrough, this),
-                    "playing": _.bind(raisePlayingEvent, this),
-                    "waiting": _.bind(raiseWaitingEvent, this),
-                    "seeking": _.bind(raiseSeekingEvent, this),
-                    "seeked": _.bind(raiseSeekedEvent, this),
-                    "ended": _.bind(raiseEndedEvent, this),
-                    "durationchange": _.bind(raiseDurationChange, this),
-                    "timeupdate": _.bind(raiseTimeUpdate, this),
-                    "play": _.bind(raisePlayEvent, this),
-                    "pause": _.bind(raisePauseEvent, this),
-                    "ratechange": _.bind(raiseRatechangeEvent, this),
-                    "volumechange": _.bind(raiseVolumeEvent, this),
-                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
                     "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
                   };
