@@ -5,6 +5,7 @@
 (function(_, $) {
   var pluginName = "ooyalaFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
+  var cssFromContainer;
 
   /**
    * Config variables for paths to flash resources.
@@ -105,8 +106,9 @@
       var video = $("<video>");
       video.attr("id", id);
       parentContainer.append(video);
+      cssFromContainer = css;
 
-      element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer, css);
+      element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer);
       element.controller = controller;
       // TODO: Wait for loadstart before calling this?
       element.subscribeAllEvents();
@@ -144,7 +146,8 @@
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer, css) {
+  var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer) {
+
     parentContainer = "container";
     var _video = video;
     var listeners = {};
@@ -178,8 +181,10 @@
     attributes.style = '';
 
     // Combine the css object into a string for swfobject.
-    for(i in css) {
-      attributes.style += i+":"+css[i]+"; ";
+    if (cssFromContainer.length) {
+      for(i in cssFromContainer) {
+        attributes.style += i + ":" + cssFromContainer[i] + "; ";
+      }
     }
     attributes.name = playerId;
     attributes.align = "middle";
@@ -206,24 +211,28 @@
      * @method OoyalaFlashVideoWrapper#subscribeAllEvents
      */
     this.subscribeAllEvents = function() {
-      listeners = { "play": _.bind(raisePlayEvent, this),
-                    "playing": _.bind(raisePlayingEvent, this),
-                    "ended": _.bind(raiseEndedEvent, this),
-                    "error": _.bind(raiseErrorEvent, this),
-                    "seeking": _.bind(raiseSeekingEvent, this),
-                    "seeked": _.bind(raiseSeekedEvent, this),
-                    "pause": _.bind(raisePauseEvent, this),
-                    "ratechange": _.bind(raiseRatechangeEvent, this),
-                    "stalled": _.bind(raiseStalledEvent, this),
-                    "volumechange": _.bind(raiseVolumeEvent, this),
-                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
-                    "waiting": _.bind(raiseWaitingEvent, this),
-                    "timeupdate": _.bind(raiseTimeUpdate, this),
-                    "durationchange": _.bind(raiseDurationChange, this),
+      listeners = { 
                     "loadstart": _.bind(onLoadStart, this),
                     "loadedmetadata": _.bind(onLoadedMetadata, this),
                     "progress": _.bind(raiseProgress, this),
+                    "error": _.bind(raiseErrorEvent, this),
+                    "stalled": _.bind(raiseStalledEvent, this),
+
+
+
                     "canplaythrough": _.bind(raiseCanPlayThrough, this),
+                    "playing": _.bind(raisePlayingEvent, this),
+                    "waiting": _.bind(raiseWaitingEvent, this),
+                    "seeking": _.bind(raiseSeekingEvent, this),
+                    "seeked": _.bind(raiseSeekedEvent, this),
+                    "ended": _.bind(raiseEndedEvent, this),
+                    "durationchange": _.bind(raiseDurationChange, this),
+                    "timeupdate": _.bind(raiseTimeUpdate, this),
+                    "play": _.bind(raisePlayEvent, this),
+                    "pause": _.bind(raisePauseEvent, this),
+                    "ratechange": _.bind(raiseRatechangeEvent, this),
+                    "volumechange": _.bind(raiseVolumeEvent, this),
+                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
                     "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
                   };
@@ -368,7 +377,7 @@
      * @param {object} css The css to apply in key value pairs
      */
     this.applyCss = function(css) {
-      $('#'+playerId).css(css);
+      $(_video).css(css);
     };
 
     /**
@@ -485,7 +494,7 @@
 
     var raiseWaitingEvent = function() {
       videoEnded = false;
-    newController.notify(newController.EVENTS.WAITING);
+      newController.notify(newController.EVENTS.WAITING);
     };
 
     var raiseTimeUpdate = function(event) {
