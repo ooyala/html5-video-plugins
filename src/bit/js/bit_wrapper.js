@@ -132,7 +132,9 @@ require("../../../html5-common/js/utils/environment.js");
 
     var conf = {
       key: this.controller.PLUGIN_MAGIC,
-      screeenLogoImage: "",
+      skin: {
+        screenLogoImage: ""
+      },
       style: {
         width: '100%',
         height: '100%',
