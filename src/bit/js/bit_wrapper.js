@@ -1,5 +1,6 @@
 /*
  * Plugin for bitdash player by Bitmovin GMBH
+ * This player is used for demo only. Access can be revoked at any time. Please contact Ooyala for more detail.
  */
 
 require("../../../html5-common/js/utils/InitModules/InitOO.js");
