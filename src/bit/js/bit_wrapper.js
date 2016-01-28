@@ -1,5 +1,6 @@
 /*
  * Plugin for bitdash player by Bitmovin GMBH
+ * This player is used for demo purposes only. Access can be revoked at any time
  */
 
 require("../../../html5-common/js/utils/InitModules/InitOO.js");
@@ -131,6 +132,7 @@ require("../../../html5-common/js/utils/environment.js");
 
     var conf = {
       key: this.controller.PLUGIN_MAGIC,
+      screeenLogoImage: "",
       style: {
         width: '100%',
         height: '100%',
