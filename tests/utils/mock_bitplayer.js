@@ -10,7 +10,8 @@ mock_bitplayer = function() {
   this.cc_name = "";
   this.cc_subtitle = "";
   this.subtitles = {};
-  this.conf = null;
+  this.conf = {};
+  this.skin = null;
   
   this.isReady = function() {
     return true;
@@ -45,7 +46,7 @@ mock_bitplayer = function() {
 
   this.getVideoBufferLength = function() {
     return 100;
-  }
+  };
 
   this.getCurrentTime = function() {
     return this.currentTime;
@@ -78,7 +79,7 @@ mock_bitplayer = function() {
   this.removeSubtitle = function(trackId) {
     delete subtitles.trackId;
     this.trackId = null;
-  }
+  };
 
   this.setSubtitle = function(trackId) {
     this.trackId = trackId;
@@ -94,6 +95,10 @@ mock_bitplayer = function() {
 
   this.getAvailableSubtitles = function() {
     return this.subtitles;
+  };
+
+  this.setSkin = function(skin) {
+    this.skin = skin;
   };
 
   this.destroy = function() { 

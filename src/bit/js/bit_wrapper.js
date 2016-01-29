@@ -8,7 +8,10 @@ require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
 require("../../../html5-common/js/utils/environment.js");
-require("../lib/bitdash.min.js");
+
+if (!window.runningUnitTests) {
+  require("../lib/bitdash.min.js");
+}
 
 (function(_, $) {
   var pluginName = "bitdash";

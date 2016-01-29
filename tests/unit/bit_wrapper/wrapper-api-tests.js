@@ -51,11 +51,11 @@ describe('bit_wrapper wrapper API tests', function () {
     var returns = wrapper.setVideoUrl("url");
     expect(player.setup.wasCalled).to.be(true);
     expect(returns).to.be(true);
-    expect(player.conf.source.progressive).to.be(["url"]);
   });
 
   it('should not reset the same url', function(){
     wrapper.setVideoUrl("url");
+    expect(player.conf.source.progressive).to.eql(["url"]);
     spyOn(player, "setup");
     var returns = wrapper.setVideoUrl("url");
     expect(player.setup.wasCalled).to.be(false);
