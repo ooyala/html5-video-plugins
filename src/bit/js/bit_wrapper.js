@@ -132,9 +132,6 @@ require("../../../html5-common/js/utils/environment.js");
 
     var conf = {
       key: this.controller.PLUGIN_MAGIC,
-      skin: {
-        screenLogoImage: ""
-      },
       style: {
         width: '100%',
         height: '100%',
@@ -207,6 +204,7 @@ require("../../../html5-common/js/utils/environment.js");
             this.load(false);
           } else {
             this.player.setup(conf);
+            this.player.setSkin({screenLogoImage: ''});
             _loaded = true;
             if (_isM3u8) {
               // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
@@ -230,6 +228,7 @@ require("../../../html5-common/js/utils/environment.js");
                   this.player = bitdash(_domId);
                 }
                 this.player.setup(conf);
+                this.player.setSkin({screenLogoImage: ''});
                 _loaded = true;
                 OO.log("Bitdash player has been set up!");
               } else {
