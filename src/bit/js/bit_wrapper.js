@@ -9,39 +9,13 @@ require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
 require("../../../html5-common/js/utils/environment.js");
 
+if (!window.runningUnitTests) {
+  require("../lib/bitdash.min.js");
+}
+
 (function(_, $) {
   var pluginName = "bitdash";
-  var bitdashLibLoaded = false;
-  var bitdashLibURL;
   var BITDASH_LIB_TIMEOUT = 30000;
-  var filename = "bit_wrapper.*\.js";
-
-  if (window.runningUnitTests) {
-    bitdashLibLoaded = true;
-  } else {
-    var scripts = document.getElementsByTagName('script');
-    for (var index in scripts) {
-      var match = scripts[index].src.match(filename);
-      if (match && match.length > 0) {
-        bitdashLibURL = match.input.match(/.*\//)[0];
-        break;
-      }
-    }
-    if (!bitdashLibURL) {
-      console.error("Can't get path to script", filename);
-      return;
-    }
-    bitdashLibURL += "bitdash.min.js";
-
-    var playerJs = document.createElement("script");
-    playerJs.type = "text/javascript";
-    playerJs.src = bitdashLibURL;
-
-    playerJs.onload = (function(callback) {
-      bitdashLibLoaded = true;
-    });
-    document.head.appendChild(playerJs);
-  }
 
   /**
    * @class BitdashVideoFactory
@@ -129,12 +103,10 @@ require("../../../html5-common/js/utils/environment.js");
     var _isM3u8 = false;
     var _isDash = false;
     var _trackId = '';
+    var _willPlay = false;
 
     var conf = {
       key: this.controller.PLUGIN_MAGIC,
-      skin: {
-        screenLogoImage: ""
-      },
       style: {
         width: '100%',
         height: '100%',
@@ -156,10 +128,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
     };
 
-    if (bitdashLibLoaded) {
-      this.player = bitdash(domId);
-    } 
-
+    this.player = bitdash(domId);
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
@@ -202,42 +171,13 @@ require("../../../html5-common/js/utils/environment.js");
         conf.source.hls = (_isM3u8 ? _currentUrl : "");
         conf.source.progressive = (_isDash || _isM3u8 ? "" : [ _currentUrl ]);
 
-        if (bitdashLibLoaded) {
-          if (_hasPlayed) {
-            this.load(false);
-          } else {
-            this.player.setup(conf);
-            _loaded = true;
-            if (_isM3u8) {
-              // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
-              // Should be removed once this bug is fixed
-              this.controller.notify(this.controller.EVENTS.CAN_PLAY);
-            } 
-            OO.log("Bitdash player has been set up!");
-          }
+        if (_hasPlayed) {
+          this.load(false);
         } else {
-          var start = Date.now();
-          (function waitForLibrary() {
-            if (Date.now() - start >= BITDASH_LIB_TIMEOUT) {
-              console.error("Timed out loading library");
-              this.controller.notify(this.controller.EVENTS.CAN_PLAY);
-              this.controller.notify(this.controller.EVENTS.ERROR, {errorcode:-1});
-              return false;
-            }
-            setTimeout(function() {
-              if (bitdashLibLoaded) {
-                if (!this.player) {
-                  this.player = bitdash(_domId);
-                }
-                this.player.setup(conf);
-                _loaded = true;
-                OO.log("Bitdash player has been set up!");
-              } else {
-                OO.log("Loading library...");
-                waitForLibrary();
-              } 
-            }, 200);
-          })();
+          this.player.setup(conf);
+          this.player.setSkin({screenLogoImage: ''});
+          _loaded = true;
+          OO.log("Bitdash player has been set up!");
         }
       }
 
@@ -345,15 +285,19 @@ require("../../../html5-common/js/utils/environment.js");
      * @method BitdashVideoWrapper#play
      */
     this.play = function() {
-      if (this.player.isReady() && !this.isSeeking) {
-        if (!_loaded) {
-          this.load();
+      if (this.player.isReady()) {
+        if (!this.isSeeking) {
+          if (!_loaded) {
+            this.load();
+          }
+          if (_loaded) {
+            this.player.play();
+            _hasPlayed = true;
+            this.videoEnded = false;
+          }
         }
-        if (_loaded) {
-          this.player.play();
-          _hasPlayed = true;
-          this.videoEnded = false;
-        }
+      } else {
+        _willPlay = true;
       }
     };
 
@@ -448,12 +392,13 @@ require("../../../html5-common/js/utils/environment.js");
 
     var _onReady = conf.events["onReady"] = _.bind(function() {
       printevent(arguments);
-      if (_isM3u8 && !OO.isIos) {
-        // XXX HACK - workaround for bitmovin problem reported in bug OOYALA-107
-        // Should be removed once this bug is fixed
-        this.player.play();
-      } 
-      this.controller.notify(this.controller.EVENTS.CAN_PLAY);
+      if (_willPlay) {
+        if (this.player.isReady()) {
+          this.player.play();
+        } else {
+          console.error("bitdash error: player not ready to play");
+        }
+      }
     }, this);
 
     var _onPlay = conf.events["onPlay"] = _.bind(function() {
