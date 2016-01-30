@@ -103,6 +103,7 @@ if (!window.runningUnitTests) {
     var _isM3u8 = false;
     var _isDash = false;
     var _trackId = '';
+    var _willPlay = false;
 
     var conf = {
       key: this.controller.PLUGIN_MAGIC,
@@ -284,15 +285,19 @@ if (!window.runningUnitTests) {
      * @method BitdashVideoWrapper#play
      */
     this.play = function() {
-      if (this.player.isReady() && !this.isSeeking) {
-        if (!_loaded) {
-          this.load();
+      if (this.player.isReady()) {
+        if (!this.isSeeking) {
+          if (!_loaded) {
+            this.load();
+          }
+          if (_loaded) {
+            this.player.play();
+            _hasPlayed = true;
+            this.videoEnded = false;
+          }
         }
-        if (_loaded) {
-          this.player.play();
-          _hasPlayed = true;
-          this.videoEnded = false;
-        }
+      } else {
+        _willPlay = true;
       }
     };
 
@@ -387,7 +392,13 @@ if (!window.runningUnitTests) {
 
     var _onReady = conf.events["onReady"] = _.bind(function() {
       printevent(arguments);
-      this.controller.notify(this.controller.EVENTS.CAN_PLAY);
+      if (_willPlay) {
+        if (this.player.isReady()) {
+          this.player.play();
+        } else {
+          console.error("bitdash error: player not ready to play");
+        }
+      }
     }, this);
 
     var _onPlay = conf.events["onPlay"] = _.bind(function() {
