@@ -393,6 +393,7 @@ if (!window.runningUnitTests) {
     var _onReady = conf.events["onReady"] = _.bind(function() {
       printevent(arguments);
       if (_willPlay) {
+        _willPlay = false; // in case Bitmovin calls onReady more than once
         if (this.player.isReady()) {
           this.player.play();
         } else {

@@ -32,7 +32,6 @@ describe('bit_wrapper player event callback tests', function () {
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
-    player.ready = true;
   });
 
   afterEach(function() {
@@ -41,11 +40,14 @@ describe('bit_wrapper player event callback tests', function () {
 
   // tests
 
-  it('vtc should fire CAN_PLAY event on player\'s \'onReady\' event callback', function(){
-    vtc.interface.EVENTS.CAN_PLAY = "canPlay";
+  it('vtc should call player\'s play when from \'onReady\' if wrapper\'s \'play\' was called earlier', function(){
+    spyOn(player, "play");
     wrapper.setVideoUrl("url");
+    wrapper.play();
+    expect(player.play.wasCalled).to.be(false);
+    player.ready = true;
     player.conf.events.onReady({type: "onReady"});
-    expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.CAN_PLAY);
+    expect(player.play.wasCalled).to.be(true);
   });
 
   it('vtc should fire PLAY and PLAYING events on player\'s \'onPlay\' event callback', function(){
@@ -113,6 +115,7 @@ describe('bit_wrapper player event callback tests', function () {
         "paused": true
       }]);
 
+    player.ready = true;
     wrapper.play();
     player.conf.events.onFullscreenEnter({type: "onFullscreenEnter"});
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.FULLSCREEN_CHANGED,
@@ -134,6 +137,7 @@ describe('bit_wrapper player event callback tests', function () {
         "paused": true
       }]);
 
+    player.ready = true;
     wrapper.play();
     player.conf.events.onFullscreenExit({type: "onFullscreenExit"});
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.FULLSCREEN_CHANGED,
