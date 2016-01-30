@@ -2,7 +2,7 @@ mock_bitplayer = function() {
   this.duration = 0;
   this.currentTime = 0;
   this.volume = 0;
-  this.isPaused = false;
+  this.paused = false;
   this.exists = true;
   this.trackId = "";
   this.cc_url = "";
@@ -12,9 +12,10 @@ mock_bitplayer = function() {
   this.subtitles = {};
   this.conf = {};
   this.skin = null;
+  this.ready = false;
   
   this.isReady = function() {
-    return true;
+    return this.ready;
   };
   
   this.load = function(reload) {
