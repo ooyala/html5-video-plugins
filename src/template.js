@@ -298,6 +298,15 @@ require("../html5-common/js/utils/constants.js");
     this.setCrossorigin = function(crossorigin) {
     };
 
+     /**
+     * Sets the stream to play back based on given bitrate
+     * @public
+     * @method TemplateVideoWrapper#setBitrate
+     * @param {object} bitrate The object containing the stream bitrate and resolution data to select
+     */
+    this.setBitrate = function(bitrate) {
+    };
+
     // **********************************************************************************/
     // Example callback methods
     // **********************************************************************************/
@@ -383,6 +392,18 @@ require("../html5-common/js/utils/constants.js");
     var raiseFullScreenEnd = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { "isFullScreen" : false, "paused" : event.target.paused });
+    };
+
+    var raiseBitrateChanged = function(event) {
+      this.controller.notify(this.controller.EVENTS.BITRATE_CHANGED,
+                             {"height": 1080, "width": 1920, "bitrate": "8 Mbps"});
+    };
+
+    var raiseBitratesAvailable = function(event) {
+      this.controller.notify(this.controller.EVENTS.BITRATE_CHANGED,
+                             [{"height": 1080, "width": 1920, "bitrate": "4 Mbps"},
+                              {"height": 1080, "width": 1920, "bitrate": "8 Mbps"}
+                              {"height": 1080, "width": 1920, "bitrate": "16 Mbps"}]);
     };
   };
 
