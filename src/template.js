@@ -396,18 +396,20 @@ require("../html5-common/js/utils/constants.js");
                              { "isFullScreen" : false, "paused" : event.target.paused });
     };
 
-    // Plugin must support the ADAPTIVE_BITRATE feature notify the controller of this event
+    // Plugin must support the ADAPTIVE_BITRATE feature notify the controller of this event.
+    // Bitrate should be reported in bits per second.
     var raiseBitrateChanged = function(event) {
       this.controller.notify(this.controller.EVENTS.BITRATE_CHANGED,
-                             {"height": 1080, "width": 1920, "bitrate": "8 Mbps"});
+                             {"height": 1080, "width": 1920, "bitrate": 7500000});
     };
 
-    // Plugin must support the ADAPTIVE_BITRATE feature notify the controller of this event
+    // Plugin must support the ADAPTIVE_BITRATE feature notify the controller of this event.
+    // Bitrate should be reported in bits per second.
     var raiseBitratesAvailable = function(event) {
       this.controller.notify(this.controller.EVENTS.BITRATES_AVAILABLE,
-                             [{"height": 1080, "width": 1920, "bitrate": "4 Mbps"},
-                              {"height": 1080, "width": 1920, "bitrate": "8 Mbps"}
-                              {"height": 1080, "width": 1920, "bitrate": "16 Mbps"}]);
+                             [{"height": 1080, "width": 1920, "bitrate": 3750000},
+                              {"height": 1080, "width": 1920, "bitrate": 7500000},
+                              {"height": 1080, "width": 1920, "bitrate": 15000000}]);
     };
   };
 
