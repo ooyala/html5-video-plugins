@@ -13,18 +13,11 @@ var gulp = require('gulp'),
 
 var path = {
   mainJs: './src/main/js/main_html5.js',
-  bitJs: './src/bit/js/bit_wrapper.js',
   flashJs: './src/osmf/js/osmf_flash.js'
 };
 
 var main_html5_fn = function() {
   uglify_fn(path.mainJs);
-}
-
-var bit_fn = function() {
-  uglify_fn(path.bitJs);
-  gulp.src(['./src/bit/lib/*'])
-    .pipe(gulp.dest('./build'));
 }
 
 var osmf_fn = function() {
@@ -77,7 +70,6 @@ gulp.task('build_flash', function(callback) {
 
 gulp.task('build', ['init_module', 'build_flash'], function() {
   main_html5_fn();
-  bit_fn();
   osmf_fn();
 });
 
