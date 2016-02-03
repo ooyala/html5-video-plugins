@@ -8,7 +8,7 @@ html5-video-plugin builds js files that are used as unique plugins to the Ooyala
 
 ## Plug and Play capability
 
-core.js is a lightweight core player that enables core player functionality and provides a framework for video plugins. Most additional capabilities such as ads, discovery, and skin are separated from core player JS. To enable this functionality, you may be required load additional plugins.
+core.js is a lightweight core player that enables core player functionality and provides a framework for video plugins. Most additional capabilities such as ads, discovery, and skin are separated from core player JS. To enable this functionality, you may be required to load additional plugins.
 
 # Getting started
 
@@ -19,7 +19,7 @@ core.js is a lightweight core player that enables core player functionality and 
    $ git submodule init
    $ git submodule update
    ```
-   
+
 3. Install npm:
 
    Get https://npmjs.org/install.sh and install with `sh install.sh`. Make sure to install npm 1.1.16 or
@@ -52,12 +52,10 @@ core.js is a lightweight core player that enables core player functionality and 
    ```bash
    <property name="FLEX_HOME" value="/opt/flex_sdk_4.6.0"/>
    ```
- 
-3. Check if ANT is already installed or not by typing "ant -version". If ant is installed, you will get output. If not, you 
-   will get 'command not found'. If it is not already installed install using the steps below.
 
-  a. Check if brew is installed or not by typing "brew help". If brew is installed, you will get output. If not, you will get 
-   'command not found'. If it is not already installed install using
+3. Check if ANT is already installed or not by typing "ant -version". If ant is installed, you will get output. If not, you will receive a 'command not found' error. If it is not already installed install using the steps below.
+
+  a. Check if brew is installed by typing "brew help". If brew is installed, you will receive help information. If not, you will receive a 'command not found' error. If it is not already installed install using
    ```bash
    $ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
    ```
@@ -65,18 +63,18 @@ core.js is a lightweight core player that enables core player functionality and 
   b. Install ANT using
    ```bash
    $ brew install ant
-   ```  
+   ```
 
-4. Set ANT_HOME environment variable. 
+4. Set ANT_HOME environment variable.
 
-  a. In your home folder, open the .bash_profile file in the root directory.
+  a. In your home folder, open the .bash_profile file.
 
   b. Add the following lines to the file, substituting the directory where you installed Ant:
    ```bash
    ANT_HOME=/apache-install-dir/apache-ant-version
    PATH=$PATH:$HOME/bin:$ANT_HOME/bin
    export ANT_HOME PATH
-   ```  
+   ```
 
 # Testing
 
