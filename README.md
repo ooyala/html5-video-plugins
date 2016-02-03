@@ -1,6 +1,16 @@
 # html5-video-plugins
 
-## Getting started
+Open-source interfaces to video renderers that plug into the Ooyala V4 core player. This README contains introduction, setup, test, and build sections.
+
+## High Level Overview
+
+html5-video-plugin builds js files that are used as unique plugins to the Ooyala core V4 player.  It interfaces with the video technology framework of the Ooyala core V4 player to decode and render videos. All static files necessary to create and run an Ooyala player are hosted and can be accessed publicly. This repo is available to be git cloned or forked and be modified by developers (terms and condition apply).
+
+## Plug and Play capability
+
+core.js is a lightweight core player that enables core player functionality and provides a framework for video plugins. Most additional capabilities such as ads, discovery, and skin are separated from core player JS. To enable this functionality, you may be required load additional plugins.
+
+# Getting started
 
 1. Install node.js for Mac: http://howtonode.org/how-to-install-nodejs
 
@@ -46,29 +56,29 @@
 3. Check if ANT is already installed or not by typing "ant -version". If ant is installed, you will get output. If not, you 
    will get 'command not found'. If it is not already installed install using the steps below.
 
-a. Check if brew is installed or not by typing "brew help". If brew is installed, you will get output. If not, you will get 
+  a. Check if brew is installed or not by typing "brew help". If brew is installed, you will get output. If not, you will get 
    'command not found'. If it is not already installed install using
    ```bash
    $ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
    ```
 
-b. Install ANT using
+  b. Install ANT using
    ```bash
    $ brew install ant
    ```  
 
 4. Set ANT_HOME environment variable. 
 
-a. In your home folder, open the .bash_profile file in the root directory.
+  a. In your home folder, open the .bash_profile file in the root directory.
 
-b. Add the following lines to the file, substituting the directory where you installed Ant:
+  b. Add the following lines to the file, substituting the directory where you installed Ant:
    ```bash
    ANT_HOME=/apache-install-dir/apache-ant-version
    PATH=$PATH:$HOME/bin:$ANT_HOME/bin
    export ANT_HOME PATH
    ```  
 
-## Testing
+# Testing
 
 Unit tests live in the folder "test".  Unit tests are based on the "jest" framework.
 Run tests with the command:
@@ -76,7 +86,7 @@ Run tests with the command:
 $ gulp test
 ```
 
-## Building
+# Building
 
 Minify and package the plugins by running the following command:
 ```bash
