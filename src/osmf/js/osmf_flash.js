@@ -90,7 +90,7 @@
     }
     this.encodings = testForFlash();
     this.technology = "flash";
-    this.features = []; //when CC need to be enabled, it needs to be set to OO.VIDEO.FEATURE.CLOSED_CAPTIONS
+    this.features = ["closedCaptions"];
 
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
@@ -280,6 +280,31 @@
     };
 
     /**
+     * Sets the closed captions on the video element.
+     * @public
+     * @method OoyalaFlashVideoWrapper#setClosedCaptions
+     * @param {string} language Selected language of captions
+     * @param {object} closedCaptions The captions object
+     * @param {object} params The parameters object
+     */
+      
+     this.setClosedCaptions = function(language,closedCaptions,params){
+       var parameters = {language:language, closedCaptions:closedCaptions, params:params};
+        this.callToFlash("setVideoClosedCaptions()" , parameters);
+     };
+
+    /**
+     * Sets the closed captions mode of the video playback.
+     * @public
+     * @method OoyalaFlashVideoWrapper#setClosedCaptionsMode
+     * @param {string} mode Mode of the captions(disabled/showing) 
+     */
+
+    this.setClosedCaptionsMode = function(mode){
+      this.callToFlash("setVideoClosedCaptionsMode("+mode+")",null);
+    };
+
+    /**
      * Loads the current stream url in the video element; the element should be left paused.
      * @public
      * @method OoyalaFlashVideoWrapper#load
@@ -289,7 +314,7 @@
       if (loaded && !rewind) return;
       if (!!rewind) {
         try {
-          this.callToFlash("load("+rewind+")");
+          this.callToFlash("load("+rewind+")",null);
           loaded = true;
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
@@ -320,7 +345,7 @@
       if (!loaded) {
         this.load(true);
       }
-      this.callToFlash("videoPlay");
+      this.callToFlash("videoPlay",null);
       loaded = true;
       hasPlayed = true;
       videoEnded = false;
@@ -332,7 +357,7 @@
      * @method OoyalaFlashVideoWrapper#pause
      */
     this.pause = function() {
-      this.callToFlash("videoPause");
+      this.callToFlash("videoPause",null);
     };
 
     /**
@@ -342,7 +367,7 @@
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      this.callToFlash("videoSeek("+time+")");
+      this.callToFlash("videoSeek("+time+")",null);
     };
 
     /**
@@ -352,7 +377,7 @@
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      this.callToFlash("changeVolume("+volume+")");
+      this.callToFlash("changeVolume("+volume+")",null);
     };
 
     /**
@@ -362,7 +387,7 @@
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
-      this.callToFlash("getCurrentTime");
+      this.callToFlash("getCurrentTime",null);
     }
 
     /**
@@ -383,15 +408,15 @@
     this.destroy = function() {
       // Pause the video
       this.pause();
-
       // Reset the source
       this.setVideoUrl('');
 
       // Unsubscribe all events
+      
       this.unsubscribeAllEvents();
 
       // Pass destroy to flash plugin.
-      this.callToFlash("destroy");
+      this.callToFlash("destroy",null);
 
       // Remove the element
       $('#'+playerId).replaceWith('');
@@ -407,9 +432,9 @@
     };
 
     // Calls a Flash method
-    this.callToFlash = function (data) {
+    this.callToFlash = function (data,dataObj) {
       if (_flashVideoObject.sendToActionScript) {
-        return _flashVideoObject.sendToActionScript(data);
+        return _flashVideoObject.sendToActionScript(data,dataObj);
       } else {
         actionscriptCommandQueue.push(data);
       }
@@ -436,7 +461,7 @@
      * @method OoyalaFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
-      _currentUrl = this.callToFlash("getUrl");
+      _currentUrl = this.callToFlash("getUrl",null);
       console.log("[OSMF]:" + _currentUrl);
     };
 

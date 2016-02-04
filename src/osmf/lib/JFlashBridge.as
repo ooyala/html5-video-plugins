@@ -96,14 +96,13 @@ package
       js = <script><![CDATA[
         function(__randomFunction) {
           var check = function(objects){
-              for (var i = 0; i < objects.length; i++){
-                if (objects[i][__randomFunction]) return objects[i].id;
-              }
-              return undefined;
-            };
-
-            return check(document.getElementsByTagName("object")) || check(document.getElementsByTagName("embed"));
-        }
+            for (var i = 0; i < objects.length; i++){
+              if (objects[i][__randomFunction]) return objects[i].id;
+            }
+            return undefined;
+        };
+        return check(document.getElementsByTagName("object")) || check(document.getElementsByTagName("embed"));
+      }
       ]]></script>;
 
       var __randomFunction:String = "checkFunction_" + Math.floor(Math.random() * 99999); // Something random just so it's safer
