@@ -19,7 +19,18 @@
       express-install="true" 
       version-detection="true" 
       output="${basedir}/build"/> 
-  </target>     
+  </target>  
+ 
+  <!-- Build closed caption swc -->
+  <target name="build-CCswc">
+    <compc output="${basedir}/src/osmf/lib/closedCaption.swc" >
+      <source-path path-element="${basedir}/utils/ClosedCaption/"/>
+        <include-sources dir="${basedir}/utils/ClosedCaption/" includes="*.as"/>
+      <library-path dir="${basedir}/src/osmf/lib" append="true">
+        <include name="*.swc"/>
+      </library-path>
+    </compc>
+  </target>
 
   <!-- Release build for latest OSMF release and Flash Player 11.1 -->
   <target name="release-build" >
@@ -47,6 +58,7 @@
     <delete file="${basedir}/build/index.html"/>
     <delete file="${basedir}/build/swfobject.js"/>
     <delete file="${basedir}/link_report.xml"/>
+    <delete file="${basedir}/src/osmf/lib/closedCaption.swc"/>
   </target> 
- <target name="main" depends="release-build,wrapper,clean"/>
+ <target name="main" depends="build-CCswc,release-build,wrapper,clean"/>
 </project>
