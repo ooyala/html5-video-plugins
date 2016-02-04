@@ -381,7 +381,7 @@ package
       }
       else
       {
-        _playQueue=true;
+        _playQueue = true;
       }
     }
     
@@ -505,16 +505,7 @@ package
       var captionsObject:Object =(Object)(event.args);
       var closedCaptions:Object = captionsObject.closedCaptions;
       var params:Object = captionsObject.params;
-      var language:String = captionsObject.language;
-      
-      if (_selectedCaptionLanguage == "" )
-      {
-        _selectedCaptionLanguage = captionsObject.language;
-      }
-      else if (_selectedCaptionLanguage != language)
-      {
-        _selectedCaptionLanguage = captionsObject.language;
-      }
+      _selectedCaptionLanguage = captionsObject.language;
       
       if (closedCaptions.closed_captions_dfxp != null)
       {
@@ -534,7 +525,7 @@ package
         _mode = params.mode;
       }
 
-      SendToDebugger("Set Video Closed Captions :" + language +", "+ closedCaptions + ", " +params, "onSetVideoClosedCaptions");
+      SendToDebugger("Set Video Closed Captions :" + _selectedCaptionLanguage +", "+ closedCaptions + ", " +params, "onSetVideoClosedCaptions");
 
       if (!_captionFlag)
       {
@@ -652,25 +643,31 @@ package
      */
     public function onShowCaption(selectedId:int):void
     {
-     
-      _captionLabel.background = true;
-      _captionLabel.backgroundColor = 0x000000;
-      _captionLabel.opaqueBackground = 0.5;
-      if (_selectedCaptionLanguage != _previousSelectedCaptionLanguage)
+      if (_selectedCaptionLanguage != "")
       {
-        _selectedCaptionObject = _captionObject[_selectedCaptionLanguage];
-        _previousSelectedCaptionLanguage = _selectedCaptionLanguage;
-      }
-      _currentCaption = _selectedCaptionObject[selectedId];
-      if (_captioningEnabled && _currentCaption != null)
-      {
-        _captionLabel.htmlText = _currentCaption.text;
-        if (_currentCaption.text != _previousCaption)
+        _captionLabel.background = true;
+        _captionLabel.backgroundColor = 0x000000;
+        _captionLabel.opaqueBackground = 0.5;
+        if (_selectedCaptionLanguage != _previousSelectedCaptionLanguage)
         {
-          _captionLabel.autoSize = TextFieldAutoSize.CENTER;
-          setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
-          _previousCaption = _currentCaption.text;
+          _selectedCaptionObject = _captionObject[_selectedCaptionLanguage];
+          _previousSelectedCaptionLanguage = _selectedCaptionLanguage;
         }
+        _currentCaption = _selectedCaptionObject[selectedId];
+        if (_captioningEnabled && _currentCaption != null)
+        {
+          _captionLabel.htmlText = _currentCaption.text;
+          if (_currentCaption.text != _previousCaption)
+          {
+            _captionLabel.autoSize = TextFieldAutoSize.CENTER;
+            setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
+            _previousCaption = _currentCaption.text;
+          }
+        }
+      }
+      else
+      {
+        SendToDebugger("Set Video Closed Captions language is null" , "onShowCaption");
       }
     }
     
