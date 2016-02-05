@@ -305,6 +305,7 @@ require("../html5-common/js/utils/constants.js");
      * @method TemplateVideoWrapper#setBitrate
      * @param {object} bitrate The object containing the stream bitrate and resolution data to select.
      *   Use a bitrate of 'auto' to return to automatic bitrate selection.
+     *   Example: {"height": 1080, "width": 1920, "bitrate": 12000000}
      */
     this.setBitrate = function(bitrate) {
     };
@@ -396,7 +397,7 @@ require("../html5-common/js/utils/constants.js");
                              { "isFullScreen" : false, "paused" : event.target.paused });
     };
 
-    // Plugin must support the BITRATE_CONTROL feature notify the controller of this event.
+    // The VTC should be notified whenever a plugin changes streams to a different bitrate or resolution.
     // Bitrate should be reported in bits per second.
     var raiseBitrateChanged = function(event) {
       this.controller.notify(this.controller.EVENTS.BITRATE_CHANGED,
