@@ -82,6 +82,8 @@ package
       addEventListener("load", onLoadVideo);
       addEventListener("playheadTimeChanged", onPlayheadTimeChanged);
       addEventListener("fullScreenChanged", onFullScreenChanged);
+      addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
+      addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       /*addEventListener("rateChange", onRateChanged);
       addEventListener("stalled", onStalled);
       addEventListener("progress", onProgress);
@@ -127,6 +129,8 @@ package
       removeEventListener("load", onLoadVideo);
       removeEventListener("playheadTimeChanged", onPlayheadTimeChanged);
       removeEventListener("fullScreenChanged", onFullScreenChanged);
+      removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
+      removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       /*removeEventListener("rateChange", onRateChanged);
       removeEventListener("stalled", onStalled);
       removeEventListener("progress", onProgress);
@@ -163,28 +167,6 @@ package
      */
     private function onFlashEvent(event:DynamicEvent):void
     {
-      /*
-      sendToJavaScript(event.type);
-      if (event.eventObject != null)
-      {
-        var eventObject:Object = event.eventObject;
-        for (var key:String in eventObject)
-        {
-          if (getQualifiedClassName(eventObject[key]) == "Object")
-          {
-            var innerObject:Object = eventObject[key];
-            for (var key2:String in innerObject)
-            {
-              sendToJavaScript(key2 + ":" + innerObject[key2]);
-            }
-          }
-          else
-          {
-            sendToJavaScript(key + ":" + eventObject[key]);
-          }
-        }
-      }
-      */
       var eventData : Object = new Object();
       eventData.eventtype = event.type;
       eventData.eventObject = event.eventObject;
@@ -280,6 +262,28 @@ package
       _hdsPlayer.onFullScreenChanged(event);
     }
 
+    /**
+    * Sets the closed captions for the video playback
+    * @private
+    * @method ExternalJavaScriptAPI#onSetVideoClosedCaptions
+    * @param {Event} event
+    */
+    private function onSetVideoClosedCaptions(event:DynamicEvent):void
+    {
+      _hdsPlayer.onSetVideoClosedCaptions(event);
+    }
+   
+   /**
+    * Sets the closed captions mode through the player
+    * @private
+    * @method ExternalJavaScriptAPI#onSetVideoClosedCaptionsMode
+    * @param {Event} event
+    */
+    private function onSetVideoClosedCaptionsMode(event:DynamicEvent):void
+    {
+      _hdsPlayer.onSetVideoClosedCaptionsMode(event);
+    }
+
    /**
     * Initiates replay functionality through the player
     * @private
@@ -363,8 +367,9 @@ package
     * @private
     * @method ExternalJavaScriptAPI#receivedFromJavaScript
     * @param {string} value The value to be send to the java script page.
+    * @param {object} dataObj The object to be send to the java script page.
     */
-    private function receivedFromJavaScript(value:String):void
+    private function receivedFromJavaScript(value:String , dataObj:Object = null):void
     {
       var eventArgs:String = "";
 
@@ -380,6 +385,10 @@ package
       if (eventArgs != "")
       {
         jsEvent.args = eventArgs;
+      }
+      else if(dataObj != null)
+      {
+        jsEvent.args = dataObj;
       }
       dispatchEvent(jsEvent);
       SendToDebugger(jsEvent.toString(), "receivedFromJavaScript event", "info");

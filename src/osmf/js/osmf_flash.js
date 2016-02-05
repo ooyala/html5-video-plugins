@@ -90,7 +90,7 @@
     }
     this.encodings = testForFlash();
     this.technology = "flash";
-    this.features = []; //when CC need to be enabled, it needs to be set to OO.VIDEO.FEATURE.CLOSED_CAPTIONS
+    this.features = ["closedCaptions"];
 
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
@@ -280,6 +280,30 @@
     };
 
     /**
+     * Sets the closed captions on the video element.
+     * @public
+     * @method OoyalaFlashVideoWrapper#setClosedCaptions
+     * @param {string} language Selected language of captions
+     * @param {object} closedCaptions The captions object
+     * @param {object} params The parameters object
+     */
+    this.setClosedCaptions = function(language,closedCaptions,params){
+       var parameters = {language:language, closedCaptions:closedCaptions, params:params};
+        this.callToFlash("setVideoClosedCaptions()" , parameters);
+     };
+
+    /**
+     * Sets the closed captions mode of the video playback.
+     * @public
+     * @method OoyalaFlashVideoWrapper#setClosedCaptionsMode
+     * @param {string} mode Mode of the captions(disabled/showing) 
+     */
+
+    this.setClosedCaptionsMode = function(mode){
+      this.callToFlash("setVideoClosedCaptionsMode("+mode+")");
+    };
+
+    /**
      * Loads the current stream url in the video element; the element should be left paused.
      * @public
      * @method OoyalaFlashVideoWrapper#load
@@ -383,11 +407,11 @@
     this.destroy = function() {
       // Pause the video
       this.pause();
-
       // Reset the source
       this.setVideoUrl('');
 
       // Unsubscribe all events
+      
       this.unsubscribeAllEvents();
 
       // Pass destroy to flash plugin.
@@ -407,11 +431,12 @@
     };
 
     // Calls a Flash method
-    this.callToFlash = function (data) {
+    this.callToFlash = function (data,dataObj) {
       if (_flashVideoObject.sendToActionScript) {
-        return _flashVideoObject.sendToActionScript(data);
+        dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
+        return _flashVideoObject.sendToActionScript(data,dataObj);
       } else {
-        actionscriptCommandQueue.push(data);
+        actionscriptCommandQueue.push([data,dataObj]);
       }
     };
 
@@ -578,8 +603,8 @@
       switch (eventtitle)
       {
        case "JSREADY":
-        while (actionscriptCommandQueue.length > 0) {
-          this.callToFlash(actionscriptCommandQueue.shift());
+        for (i = 0; i < actionscriptCommandQueue.length; i++) {
+          this.callToFlash(actionscriptCommandQueue[i][0],actionscriptCommandQueue[i][1]);
         }
         break;
        case "PAUSED":
