@@ -162,11 +162,11 @@ package
 		
 		private function cleanUp():void
 		{
+			_loadTrait.removeEventListener(LoadEvent.LOAD_STATE_CHANGE, onLoadStateChange);
 			// Our work is done, remove the custom LoadTrait.  This will
 			// expose the base LoadTrait, which we can then use to do
 			// the actual load.
 			removeTrait(MediaTraitType.LOAD);
-			
 			var loadTrait:LoadTrait = getTrait(MediaTraitType.LOAD) as LoadTrait;
 			if (loadTrait != null && loadTrait.loadState == LoadState.UNINITIALIZED)
 			{

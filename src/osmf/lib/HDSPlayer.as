@@ -57,7 +57,7 @@ package
     private var _captionLabel:TextField = new TextField();;
     private var _defaultCaptionFormat:TextFormat;
     private var _captionsURL:String;
-    private var _resource:StreamingURLResource;
+    private var _resource:StreamingURLResource = null;
     private var _element:MediaElement;
     private var _captionFlag:Boolean = false;
     private var _loadFlag:Boolean = false;
@@ -178,9 +178,14 @@ package
       registerListeners();
     }
     
+    /**
+     * Decides the type of the plugin's source and then loads it. 
+     * @private
+     * @method HDSPlayer#loadPlugin
+     * @param {String} source Source of the plugin.
+     */
     private function loadPlugin(source:String):void
     {
-      ExternalInterface.call("console.log","loadPlugin :"+source,true);
       var pluginResource:MediaResourceBase;
       if (source.substr(0, 4) == "http" || source.substr(0, 4) == "file")
       {
@@ -189,7 +194,6 @@ package
       }
       else
       {
-        ExternalInterface.call("console.log","loadPlugin else:"+source,true);
         // Assume this is a class
         var pluginInfoRef:Class = flash.utils.getDefinitionByName(source) as Class;
         pluginResource = new PluginInfoResource(new pluginInfoRef);
@@ -197,24 +201,38 @@ package
       loadPluginFromResource(pluginResource);
     }
     
+    /**
+     * Loads the plugin using plugin's resource.
+     * @private
+     * @method HDSPlayer#loadPluginFromResource
+     * @param {MediaResourceBase} pluginResource Resource from where the plugin is loaded.
+     */
     private function loadPluginFromResource(pluginResource:MediaResourceBase):void
     {
-      ExternalInterface.call("console.log","loadPluginFromResource :"+pluginResource,true);
       _mediaFactory.addEventListener(MediaFactoryEvent.PLUGIN_LOAD, onPluginLoaded);
       _mediaFactory.addEventListener(MediaFactoryEvent.PLUGIN_LOAD_ERROR, onPluginLoadFailed);
       _mediaFactory.loadPlugin(pluginResource);
     }
     
-    // Event Responses
+    /**
+     * Event listner for MediaFactoryEvent
+     * @private
+     * @method HDSPlayer#onPluginLoaded
+     * @param {MediaFactoryEvent} event
+     */
     private function onPluginLoaded( event:MediaFactoryEvent ):void
     {
-      ExternalInterface.call("console.log","onPluginLoaded:",true);
       SendToDebugger("Plugin LOADED", "onPluginLoaded");
     }
     
+    /**
+     * Event listner for MediaFactoryEvent
+     * @private
+     * @method HDSPlayer#onPluginLoadFailed
+     * @param {MediaFactoryEvent} event
+     */
     private function onPluginLoadFailed( event:MediaFactoryEvent ):void
     {
-      ExternalInterface.call("console.log","onPluginLoadFailed:",true);
       SendToDebugger("Plugin LOAD FAILED", "onPluginLoadFailed");
     }
     
@@ -282,11 +300,8 @@ package
      */
     private function onPlayComplete(event:TimeEvent):void
     {
-      if (_captionLabel.visible)
-      {
-        _captionLabel.visible = false;
-      }
       _playheadTimer.stop();
+      _resource = null;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
     
@@ -680,10 +695,25 @@ package
     public function onSetVideoClosedCaptionsMode(event:DynamicEvent):void
     {
       _mode = (String)(event.args);
-      _captionLabel.visible = false;
+
+      if(_mode == "disabled")
+      {
+        _captionLabel.visible = false;
+      }
+      else if(_mode == "showing")
+      {
+        _captionLabel.visible = true;
+      }
+       
       SendToDebugger("Set Video Closed Captions Mode :" + _mode, "onSetVideoClosedCaptionsMode");
     }
     
+    /**
+     * Handler for MouseEvent
+     * @public
+     * @method HDSPlayer#onClickHandler
+     * @param {Event} event Mouse event.
+     */
     public function onClickHandler(event:MouseEvent):void
     {
       //Resizes the player to full screen and vice versa. This fuction should be called with mouse click event
@@ -826,6 +856,12 @@ package
       dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
     }
     
+    /**
+     * Handler for TimerEvent
+     * @public
+     * @method HDSPlayer#onPlayheadTimeChanged
+     * @param {Event} event Timer event.
+     */
     public function onPlayheadTimeChanged(event:TimerEvent = null):void
     {
       // if (!_mediaPlayerSprite.mediaPlayer.seeking) { dispatchPlayheadEvent(this.playheadTime); }

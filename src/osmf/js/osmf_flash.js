@@ -287,8 +287,7 @@
      * @param {object} closedCaptions The captions object
      * @param {object} params The parameters object
      */
-      
-     this.setClosedCaptions = function(language,closedCaptions,params){
+    this.setClosedCaptions = function(language,closedCaptions,params){
        var parameters = {language:language, closedCaptions:closedCaptions, params:params};
         this.callToFlash("setVideoClosedCaptions()" , parameters);
      };
@@ -301,7 +300,7 @@
      */
 
     this.setClosedCaptionsMode = function(mode){
-      this.callToFlash("setVideoClosedCaptionsMode("+mode+")",null);
+      this.callToFlash("setVideoClosedCaptionsMode("+mode+")");
     };
 
     /**
@@ -314,7 +313,7 @@
       if (loaded && !rewind) return;
       if (!!rewind) {
         try {
-          this.callToFlash("load("+rewind+")",null);
+          this.callToFlash("load("+rewind+")");
           loaded = true;
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
@@ -345,7 +344,7 @@
       if (!loaded) {
         this.load(true);
       }
-      this.callToFlash("videoPlay",null);
+      this.callToFlash("videoPlay");
       loaded = true;
       hasPlayed = true;
       videoEnded = false;
@@ -357,7 +356,7 @@
      * @method OoyalaFlashVideoWrapper#pause
      */
     this.pause = function() {
-      this.callToFlash("videoPause",null);
+      this.callToFlash("videoPause");
     };
 
     /**
@@ -367,7 +366,7 @@
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      this.callToFlash("videoSeek("+time+")",null);
+      this.callToFlash("videoSeek("+time+")");
     };
 
     /**
@@ -377,7 +376,7 @@
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      this.callToFlash("changeVolume("+volume+")",null);
+      this.callToFlash("changeVolume("+volume+")");
     };
 
     /**
@@ -387,7 +386,7 @@
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
-      this.callToFlash("getCurrentTime",null);
+      this.callToFlash("getCurrentTime");
     }
 
     /**
@@ -416,7 +415,7 @@
       this.unsubscribeAllEvents();
 
       // Pass destroy to flash plugin.
-      this.callToFlash("destroy",null);
+      this.callToFlash("destroy");
 
       // Remove the element
       $('#'+playerId).replaceWith('');
@@ -434,9 +433,10 @@
     // Calls a Flash method
     this.callToFlash = function (data,dataObj) {
       if (_flashVideoObject.sendToActionScript) {
+        dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
         return _flashVideoObject.sendToActionScript(data,dataObj);
       } else {
-        actionscriptCommandQueue.push(data);
+        actionscriptCommandQueue.push([data,dataObj]);
       }
     };
 
@@ -461,7 +461,7 @@
      * @method OoyalaFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
-      _currentUrl = this.callToFlash("getUrl",null);
+      _currentUrl = this.callToFlash("getUrl");
       console.log("[OSMF]:" + _currentUrl);
     };
 
@@ -603,8 +603,8 @@
       switch (eventtitle)
       {
        case "JSREADY":
-        while (actionscriptCommandQueue.length > 0) {
-          this.callToFlash(actionscriptCommandQueue.shift());
+        for (i = 0; i < actionscriptCommandQueue.length; i++) {
+          this.callToFlash(actionscriptCommandQueue[i][0],actionscriptCommandQueue[i][1]);
         }
         break;
        case "PAUSED":
