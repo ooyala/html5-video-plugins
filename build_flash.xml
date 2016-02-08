@@ -4,7 +4,7 @@
   <property file="build.properties"/>
   
   <!-- do not change next 2 lines, it adds flex tasks to ant -->
-  <property name="FLEX_HOME" value="/opt/flex_sdk_4.6.0"/>
+  <property name="FLEX_HOME" value="/Applications/AdobeFlashBuilder4.7/sdks/4.6.0"/>
   <property name="FLEXTASKS" value="${FLEX_HOME}/ant/lib/flexTasks.jar"/>
   <taskdef resource="flexTasks.tasks" classpath="${FLEXTASKS}"/>   
 

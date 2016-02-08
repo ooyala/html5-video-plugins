@@ -459,18 +459,24 @@ require("../../../html5-common/js/utils/environment.js");
       // The textTrack added by QuickTime will not be removed by removing track element
       // But the textTrack that we added by adding track element will be removed by removing track element.
       // This first check is to check for live CC
-      if (OO.isSafari && _video.textTracks.length !== 0) {
+      if (language == "CC" && _video.textTracks.length !== 0) {
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].language === language ||
-              (language == "CC" && _video.textTracks[i].kind === "captions")) {
+             (language == "CC" && _video.textTracks[i].kind === "captions")) {
             var mode = (!!params && params.mode) || 'showing';
             _video.textTracks[i].mode = mode;
-          } else {
-           _video.textTracks[i].mode = 'disabled';
+          }
+          else {
+            _video.textTracks[i].mode = 'disabled';
           }
         }
       } else {
         var captionsFormat = "closed_captions_vtt";
+        if(_video.textTracks.length !== 0) {
+          for (var i = 0; i < _video.textTracks.length; i++) {
+            _video.textTracks[i].mode = 'disabled';
+          }
+        }
         if (closedCaptions[captionsFormat] && closedCaptions[captionsFormat][language]) {
           var captions = closedCaptions[captionsFormat][language];
           var label = captions.name;
