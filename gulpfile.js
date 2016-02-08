@@ -21,14 +21,7 @@ var main_html5_fn = function() {
 }
 
 var osmf_fn = function() {
-  gulp.src([path.flashJs])
-    .pipe(buffer())
-    .pipe(gulp.dest('./build/'))
-    .pipe(uglify())
-    .pipe(rename({
-      extname: '.min.js'
-    }))
-    .pipe(gulp.dest('./build/'));
+  uglify_fn(path.flashJs);
 }
 
 var uglify_fn = function(srcFile) {
@@ -63,14 +56,14 @@ gulp.task('init_module', function(callback) {
 
 gulp.task('build_flash', function(callback) {
   exec("ant -file build_flash.xml", function(err) {
-    if (err) return callback(err);
+    if (err) { console.log("Error occured in building osmf plugin"); }
+    else osmf_fn();
     callback();
   });
 });
 
 gulp.task('build', ['init_module', 'build_flash'], function() {
   main_html5_fn();
-  osmf_fn();
 });
 
 gulp.task('test', shell.task(['jest --verbose']));
