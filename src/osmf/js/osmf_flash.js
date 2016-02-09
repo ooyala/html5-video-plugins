@@ -6,7 +6,6 @@ require("../../../html5-common/js/utils/InitModules/InitOO.js");
 require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
-require("../../../html5-common/js/utils/environment.js");
 (function(_, $) {
   var pluginName = "ooyalaFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
