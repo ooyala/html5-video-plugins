@@ -92,11 +92,6 @@ require("../../../html5-common/js/utils/environment.js");
 
       parentContainer.append(video);
 
-      // On Android, we need to "activate" the video on a click so we can control it with JS later on mobile
-      if (OO.isAndroid) {
-        element.play();
-        element.pause();
-      }
       return element;
     };
 
@@ -415,6 +410,12 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.getCurrentTime = function() {
       return _video.currentTime;
+    };
+
+    this.primeVideoElement = function() {
+      // We need to "activate" the video on a click so we can control it with JS later on mobile
+      _video.play();
+      _video.pause();
     };
 
     /**
