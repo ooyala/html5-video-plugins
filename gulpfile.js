@@ -56,7 +56,7 @@ gulp.task('init_module', function(callback) {
 
 gulp.task('build_flash', function(callback) {
   exec("ant -file build_flash.xml", function(err) {
-    if (err) { console.log("Error occured in building osmf plugin"); }
+    if (err) console.log("Error occured in building osmf plugin : " + err);
     else osmf_fn();
     callback();
   });
