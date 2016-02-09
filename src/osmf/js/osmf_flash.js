@@ -2,6 +2,10 @@
  * OSMF flash video plugin
  */
 
+require("../../../html5-common/js/utils/InitModules/InitOO.js");
+require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
+require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
+require("../../../html5-common/js/utils/constants.js");
 (function(_, $) {
   var pluginName = "ooyalaFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
@@ -85,12 +89,12 @@
         return [];
       }
       else {
-        return ["hds"];
+        return [ OO.VIDEO.ENCODING.HDS ];
       }
     }
     this.encodings = testForFlash();
-    this.technology = "flash";
-    this.features = ["closedCaptions"];
+    this.technology = OO.VIDEO.TECHNOLOGY.FLASH;
+    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS ];
 
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
@@ -728,12 +732,11 @@ var JFlashBridge = {
 
 // Return if the Dom and JavaScript are ready.
 // We cannot predict the presence of jQuery, so use a core javascript technique here.
-function isReady()
-{
+isReady = _.bind(function() {
   if (document.readyState === "complete") {
     return true;
   }
-}
+},this);
 
 /*! SWFObject v2.2 <http://code.google.com/p/swfobject/>
   is released under the MIT License <http://www.opensource.org/licenses/mit-license.php>
