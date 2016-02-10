@@ -1,6 +1,7 @@
 package 
 {
-	import org.osmf.utils.TimeUtil;
+	import flash.external.ExternalInterface;
+
 
 	/**
 	 * This class parses a W3C Timed Text DFXP file and
@@ -26,43 +27,44 @@ package
 		 * document object model.
 		 */
 		public function parse(rawData:String):CaptioningDocument
-		{  
-			xmlNamespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+		{           
+			rawData = rawData.replace(/\s+$/, "");
+			rawData = rawData.replace(/>\s+</g, "><");
+			rawData = rawData.replace(/\r\n/g, "\n");
+			
+			if (rawData == null || rawData.length == 0) { return null; }
 			var document:CaptioningDocument = new CaptioningDocument();
+
+			
 			var saveXMLIgnoreWhitespace:Boolean = XML.ignoreWhitespace;
 			var saveXMLPrettyPrinting:Boolean = XML.prettyPrinting; 
 			
-			// Remove line ending whitespaces
-			var xmlStr:String = rawData.replace(/\s+$/, "");
-			
-			// Remove whitespaces between tags
-			xmlStr = xmlStr.replace(/>\s+</g, "><");
-
-			// Tell the XML class to show white space in text nodes		
 			XML.ignoreWhitespace = false;
-			// Tell the XML class not to normalize white space for toString() method calls
 			XML.prettyPrinting = false;
 			
-			try
-			{
-				var xml:XML = new XML(xmlStr);
-			}
-			catch (e:Error)
-			{
-				debugLog("Unhandled exception in DFXPParser : "+e.message);
-				throw e;				
-			}
-			finally
-			{
-				XML.ignoreWhitespace = saveXMLIgnoreWhitespace;
-				XML.prettyPrinting = saveXMLPrettyPrinting;
-			}
+			var xml:XML = new XML(rawData);
+			// restore the old value:
+			XML.ignoreWhitespace = saveXMLIgnoreWhitespace;
+			XML.prettyPrinting = saveXMLPrettyPrinting;
 			
-			rootNamespace = xml.namespace();
-			
+			if (xml == null || xml.localName() == null || xml.localName() != "tt")
+			{
+				throw new Error("Invalid XML for this movie");
+				return;
+			}
+			// Set proper namespace:
+			xmlns = xml.namespace();
 			ns = xml.namespace();
-			ttm = xml.namespace("ttm");
-			tts = xml.namespace("tts");
+			rootNamespace = xml.namespace();
+
+			xmlNamespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+			default xml namespace = new Namespace(xmlns.uri);
+			tts = new Namespace("tts", xmlns.uri + "#styling");
+			ttp = new Namespace("ttp", xmlns.uri + "#parameter");
+			ttm = new Namespace("ttm", xmlns.uri + "#metadata");
+
+			// Validate the timeBase attribute if it is defined.
+			checkValidTimeBaseAttribute(xml.@ttp::timeBase);
 			
 			try 
 			{
@@ -72,12 +74,22 @@ package
 			catch (err:Error) 
 			{
 				debugLog("Unhandled exception in DFXPParser : "+err.message);
-				throw err;
 			}
 			
 			return document;
 		}		
-			
+		
+		/**
+		 * Checks for the valid time base attribute.
+		 */	
+		private function checkValidTimeBaseAttribute(timeBaseAttribute:XMLList):void
+		{
+			if (timeBaseAttribute.length() > 0 && timeBaseAttribute[0].toString() != "media")
+			{
+				debugLog("Invalid timeBaseAttr:" + timeBaseAttribute[0].toString());
+				return;
+			}
+		}
 		/**
 		 * Parses the title and description present in dfxp and adds the info to the doc.
 		 */	
@@ -91,13 +103,7 @@ package
 			}
 			catch (err:Error) 
 			{
-				// Catch only this one: "Error #1080: Illegal value for namespace." This
-				// means the document is missing some of the metadata tags we tried to
-				// access, not a fatal error.
-				if (err.errorID != 1080) 
-				{
-					throw err;
-				}
+					debugLog("Error in parseHead"+err.message);
 			}	
 		}
 		
@@ -115,23 +121,23 @@ package
 			else
 			{
 				// Support for one <div> tag only, but it is not required
-				var divTags:XMLList = xml..ns::div;
-			   if (divTags.length() < 1)
-			   {
-				 // todo: make this more clear, if a user were to see it what would they say?
-				 throw new Error("must have at least one div element");
-			   }
+				var divTags:XMLList =body[0].div;
+				if (divTags.length() < 1)
+				{
+					// todo: make this more clear, if a user were to see it what would they say?
+					debugLog("must have at least one div element");
+				}
 				
-			   for each (var divNode:XML in divTags)
-			   {	
-			     var divLang:String = divNode.@xmlNamespace::lang ;
-				 _availableLanguage.push(divLang);
-				 // if there is begin attribute for the div tag, that is an unsupported div Node for us, ignore it.
-				 if (divNode["@begin"].length >= 1) { continue; }
-				 _captionsObject[divLang] = (parseDivNode(divNode,doc));
-	             doc.addCaptionsArray(_captionsObject, _numOfCaption, _availableLanguage);
-		       }
-		  }
+				for each (var divNode:XML in divTags)
+				{	
+					var divLang:String = divNode.@xmlNamespace::lang ;
+					_availableLanguage.push(divLang);
+					// if there is begin attribute for the div tag, that is an unsupported div Node for us, ignore it.
+					if (divNode["@begin"].length >= 1) { continue; }
+					_captionsObject[divLang] = (parseDivNode(divNode,doc));
+				}
+				doc.addCaptionsArray(_captionsObject, _numOfCaption, _availableLanguage);
+			}
 		}
 		
 		/**
@@ -154,11 +160,11 @@ package
 				{
 					
 			     	var caption:Caption =parsePTag(doc, pNode, i);
-					if(i == 0 || _captions[_captions.length-1].start != caption.start)
+					if((i == 0 || _captions[_captions.length-1].start != caption.start)&& caption!=null)
 					{
 						_captions.push(caption);
 					}
-					else if(_captions[_captions.length-1].start == caption.start) 
+					else if((_captions[_captions.length-1].start == caption.start)&& caption!=null)
 					{
 						var firstCaption:Caption = _captions[_captions.length-1];
 						_captions[_captions.length-1].text = firstCaption.text + "\n" + caption.text;
@@ -167,6 +173,11 @@ package
 						{
 							_captions[_captions.length-1].end = Math.max(firstCaption.end, caption.end);
 						}
+					}
+					else
+					{
+						debugLog("Incorrect DFXP");
+						return null;
 					}
 				}
 				else
@@ -198,18 +209,18 @@ package
 			}
 			
 			// Format begin in seconds
-			var beginSecs:Number = TimeUtil.parseTime(begin);
+			var beginSecs:Number = parseTime(begin);
 			
 			var endSecs:Number = 0;
 			
 			// If we found both 'end' and 'dur', ignore 'dur'
 			if (end != "") 
 			{
-				endSecs = TimeUtil.parseTime(end);
+				endSecs = parseTime(end);
 			}
 			else if (dur != "") 
 			{
-				endSecs = beginSecs + TimeUtil.parseTime(dur);
+				endSecs = beginSecs + parseTime(dur);
 			}
 									
 			var captionFormatList:Array = new Array();
@@ -250,7 +261,62 @@ package
 			text += "</p>";
 
 			var captionItem:Caption = new Caption(index, beginSecs, endSecs, text);
+			if(isNaN(captionItem.start))
+			{
+				return null;
+			}
 			return captionItem;
+		}
+    
+    /**
+		 * Parses and returns the time of the Caption.
+		 */	
+		private  function parseTime(value:String):Number 
+    {
+			var time:Number = 0;
+			var captionTimeArray:Array = value.split(":");
+			if (captionTimeArray.length == 3) 
+			{
+				// Clock format, e.g. "hh:mm:ss"
+				time = captionTimeArray[0] * 3600;
+				time += captionTimeArray[1] * 60;
+				time += Number(captionTimeArray[2]);
+			}
+			else if(captionTimeArray.length == 2)
+			{
+				time += captionTimeArray[0] * 60;
+				time += Number(captionTimeArray[1]);
+			}
+			else if(captionTimeArray.length == 1)
+			{
+				time += Number(captionTimeArray[0]);		
+			}
+			else 
+			{
+				// Offset time format, e.g. "1h", "8m", "10s"
+				var offsetTime:int = 0;
+				switch (value.charAt(value.length-1)) 
+				{
+					case 'h':
+						offsetTime = 3600;
+						break;
+					case 'm':
+						offsetTime = 60;
+						break;
+					case 's':
+						offsetTime = 1;
+						break;
+				}
+				if (offsetTime) 
+				{
+					time = Number(value.substr(0, value.length-1)) * offsetTime;
+				}
+				else 
+				{
+					time = Number(value);
+				}
+			}
+			return time;
 		}
 		
 		/**
@@ -298,12 +364,14 @@ package
 					
 		private function debugLog(msg:String):void
 		{
-
+			ExternalInterface.call("console.log"," "+msg);
 		}
 		private var xmlNamespace:Namespace;
 		private var ns:Namespace;
 		private var ttm:Namespace;
 		private var tts:Namespace;
+		private var ttp:Namespace;
+		private var xmlns:Namespace;
 		private var rootNamespace:Namespace;
 		private var _availableLanguage:Array= new Array();
 		private var _captionsObject:Object=new Object();

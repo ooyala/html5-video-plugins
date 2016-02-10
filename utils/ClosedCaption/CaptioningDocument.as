@@ -5,6 +5,9 @@ package
 	import __AS3__.vec.Vector;
 	
 	import org.osmf.utils.OSMFStrings;
+	import flash.events.EventDispatcher;
+	import flash.events.Event;
+	import flash.external.ExternalInterface;
 	
 	/**
 	 * This class represents the root level object
@@ -12,6 +15,9 @@ package
 	 */
 	public class CaptioningDocument
 	{
+		// Use Class Event handler.
+		protected static var disp:EventDispatcher;
+		public static const CAPTION_READY:String = "onCaptionReady";
 		/**
 		 * The title, if it was found in the metadata in the header.
 		 */
@@ -46,8 +52,37 @@ package
 			_captionsArray=captionArray;
 			_captionsLength=captionslength;
 			_availableLanguage=availableLanguage;
+			dispatchEvent(new Event(CAPTION_READY));
+				
 		} 
+
+		/**
+		 * Add static access events to class.
+		 */
+		public static function addEventListener(p_type:String, p_listener:Function, p_useCapture:Boolean=false, p_priority:int=0, p_useWeakReference:Boolean=false):void
+		{
 		
+		  if (disp == null) { disp = new EventDispatcher(); }
+		  disp.addEventListener(p_type, p_listener, p_useCapture, p_priority, p_useWeakReference);
+		}
+		
+		/**
+		 * remove static access events from class.
+		 */
+		public static function removeEventListener(p_type:String, p_listener:Function, p_useCapture:Boolean=false):void
+		{
+		  if (disp == null) { return; }
+		  disp.removeEventListener(p_type, p_listener, p_useCapture);
+		}
+
+		/**
+		 * dispatch event.
+		 */
+		public static function dispatchEvent(p_event:Event):void
+		{
+		  if (disp == null) { return; }
+			disp.dispatchEvent(p_event);
+		}
 
 		/**
 		 * Returns the number of caption objects in this class'

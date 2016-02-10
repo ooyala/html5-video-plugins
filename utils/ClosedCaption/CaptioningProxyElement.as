@@ -127,23 +127,6 @@ package
 					captionMetadata = new TimelineMetadata(proxiedElement);
 					proxiedElement.addMetadata(CaptioningPluginInfo.CAPTIONING_TEMPORAL_METADATA_NAMESPACE, captionMetadata);
 				}
-				
-				for (var i:int = 0; i < document.numCaptions; i++)
-				{
-					var caption:Caption = document.getCaptionAt(i);
-					
-					// Check for sub-clipping
-					if (mediaElement != null && mediaElement.resource is StreamingURLResource)
-					{
-						var res:StreamingURLResource = StreamingURLResource(mediaElement.resource);
-					}
-					
-					// Check for valid time since we adjusted for sub-clipping
-					if (caption.time >= 0)
-					{
-						captionMetadata.addMarker(caption);
-					}
-				}
 
 				cleanUp();
 			}
