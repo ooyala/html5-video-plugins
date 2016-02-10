@@ -879,7 +879,7 @@ package
       {
         SendToDebugger(sourceURL ,"loadMediaSource");
         
-        _resource = new StreamingURLResource(sourceURL,null,5);
+        _resource = new StreamingURLResource(sourceURL);
         _element = _mediaFactory.createMediaElement( _resource );
         
         _mediaPlayerSprite.scaleMode = ScaleMode.LETTERBOX;
