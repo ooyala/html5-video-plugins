@@ -152,6 +152,7 @@ require("../../../html5-common/js/utils/environment.js");
     var videoDimension = {height: 0, width: 0};
     var queuedInitialTime = 0;
     var canSeek = true;
+    var isPriming = false;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -287,6 +288,7 @@ require("../../../html5-common/js/utils/environment.js");
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
       canSeek = true;
+      isPriming = false;
       stopUnderflowWatcher();
     }, this);
 
@@ -353,7 +355,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video.seeking) {
         playQueued = true;
       } else {
-        executePlay();
+        executePlay(false);
       }
     };
 
@@ -421,7 +423,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.primeVideoElement = function() {
       // We need to "activate" the video on a click so we can control it with JS later on mobile
-      _video.play();
+      executePlay(true);
       _video.pause();
     };
 
@@ -629,6 +631,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raisePlayingEvent
      */
     var raisePlayingEvent = _.bind(function() {
+      // Do not raise playback events if the video is priming
+      if (isPriming) {
+        return;
+      }
+
       this.controller.notify(this.controller.EVENTS.PLAYING);
 
       startUnderflowWatcher();
@@ -663,6 +670,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseSeekingEvent
      */
     var raiseSeekingEvent = _.bind(function() {
+      // Do not raise playback events if the video is priming
+      if (isPriming) {
+        return;
+      }
+
       isSeeking = true;
       this.controller.notify(this.controller.EVENTS.SEEKING);
     }, this);
@@ -754,6 +766,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} event The event from the video
      */
     var raisePlayEvent = _.bind(function(event) {
+      // Do not raise playback events if the video is priming
+      if (isPriming) {
+        return;
+      }
+
       this.controller.notify(this.controller.EVENTS.PLAY, { url: event.target.src });
     }, this);
 
@@ -763,6 +780,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raisePauseEvent
      */
     var raisePauseEvent = _.bind(function() {
+      // Do not raise playback events if the video is priming
+      if (isPriming) {
+        return;
+      }
+
       this.controller.notify(this.controller.EVENTS.PAUSED);
       forceEndOnPausedIfRequired();
     }, this);
@@ -861,7 +883,7 @@ require("../../../html5-common/js/utils/environment.js");
     var dequeuePlay = _.bind(function() {
       if (playQueued) {
         playQueued = false;
-        executePlay();
+        executePlay(false);
       }
     }, this);
 
@@ -869,16 +891,22 @@ require("../../../html5-common/js/utils/environment.js");
      * Loads (if required) and plays the current stream.
      * @private
      * @method OoyalaVideoWrapper#executePlay
+     * @param {boolean} priming True if the element is preparing for device playback
      */
-    var executePlay = _.bind(function() {
+    var executePlay = _.bind(function(priming) {
+      isPriming = priming;
+
       // TODO: Check if no src url is configured?
       if (!loaded) {
         this.load(true);
       }
 
       _video.play();
-      hasPlayed = true;
-      videoEnded = false;
+
+      if (!isPriming) {
+        hasPlayed = true;
+        videoEnded = false;
+      }
     }, this);
 
 
@@ -976,6 +1004,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raisePlayhead
      */
     var raisePlayhead = _.bind(function(eventname, event) {
+      // Do not raise playback events if the video is priming
+      if (isPriming) {
+        return;
+      }
+
       // If the stream is seekable, supress playheads that come before the initialTime has been reached
       // or that come while seeking.
       if (isSeeking || (!!queuedInitialTime &&

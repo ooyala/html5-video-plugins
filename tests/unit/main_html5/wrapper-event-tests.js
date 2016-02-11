@@ -565,5 +565,65 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.not.be(null);
   });
 
+  it('should not raise play events while priming', function(){
+    vtc.interface.EVENTS.PLAY = "play";
+    wrapper.primeVideoElement();
+    $(element).triggerHandler({ type: "play" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.not.eql(vtc.interface.EVENTS.PLAY);
+    wrapper.play();
+    $(element).triggerHandler({ type: "play" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.eql(vtc.interface.EVENTS.PLAY);
+  });
+
+  it('should not raise playing events while priming', function(){
+    vtc.interface.EVENTS.PLAYING = "playing";
+    wrapper.primeVideoElement();
+    $(element).triggerHandler({ type: "playing" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.not.eql(vtc.interface.EVENTS.PLAYING);
+    wrapper.play();
+    $(element).triggerHandler({ type: "playing" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.eql(vtc.interface.EVENTS.PLAYING);
+  });
+
+  it('should not raise pause events while priming', function(){
+    vtc.interface.EVENTS.PAUSED = "paused";
+    wrapper.primeVideoElement();
+    $(element).triggerHandler({ type: "pause" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.not.eql(vtc.interface.EVENTS.PAUSED);
+    wrapper.play();
+    $(element).triggerHandler({ type: "pause" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.eql(vtc.interface.EVENTS.PAUSED);
+  });
+
+  it('should not raise seek events while priming', function(){
+    vtc.interface.EVENTS.SEEKING = "seeking";
+    wrapper.primeVideoElement();
+    $(element).triggerHandler({ type: "seeking" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.not.eql(vtc.interface.EVENTS.SEEKING);
+    wrapper.play();
+    $(element).triggerHandler({ type: "seeking" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.eql(vtc.interface.EVENTS.SEEKING);
+  });
+
+  it('should not raise durationchange events while priming', function(){
+    vtc.interface.EVENTS.DURATION_CHANGE = "duration";
+    wrapper.primeVideoElement();
+    $(element).triggerHandler({ type: "durationchange" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.not.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+    wrapper.play();
+    $(element).triggerHandler({ type: "durationchange" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+  });
+
+  it('should not raise time update events while priming', function(){
+    vtc.interface.EVENTS.TIME_UPDATE = "timeupdate";
+    wrapper.primeVideoElement();
+    $(element).triggerHandler({ type: "timeupdate" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.not.eql(vtc.interface.EVENTS.TIME_UPDATE);
+    wrapper.play();
+    $(element).triggerHandler({ type: "timeupdate" });
+    expect(vtc.notified[vtc.notified.length - 1]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
+  });
+
   // TODO: Add tests for platform parsing when test framework supports
 });
