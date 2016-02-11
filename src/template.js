@@ -248,6 +248,16 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
+     * Prepares a video element to be played via API.  This is called on a user click event, and is used in
+     * preparing HTML5-based video elements on devices.  To prepare the element for playback, call play and
+     * pause.  Do not raise playback events during this time.
+     * @public
+     * @method TemplateVideoWrapper#primeVideoElement
+     */
+    this.primeVideoElement = function() {
+    };
+
+    /**
      * Applies the given css to the video element.
      * @public
      * @method TemplateVideoWrapper#applyCss

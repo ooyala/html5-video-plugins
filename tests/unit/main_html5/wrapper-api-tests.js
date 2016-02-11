@@ -257,6 +257,14 @@ describe('main_html5 wrapper tests', function () {
     expect(element.volume).to.eql(0);
   });
 
+  it('should prime a video element with play and pause', function(){
+    spyOn(element, "play");
+    spyOn(element, "pause");
+    wrapper.primeVideoElement();
+    expect(element.play.wasCalled).to.be(true);
+    expect(element.pause.wasCalled).to.be(true);
+  });
+
   it('should append and change css', function(){
     var css = { "visibility" : "hidden" };
     wrapper.applyCss(css);
@@ -378,19 +386,11 @@ describe('main_html5 wrapper tests', function () {
   });
 
   /*
-  it('should', function(){
-  });
-
   // TODO: Complete this test once we have ability to simulate browsers and devices
   it('should apply cache buster to chrome', function(){
     var returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(true);
     expect(element.src).to.eql("url");
-  });
-
-  it('should call "event" with specific parameters', function(){
-    vtc.interface.notify("event", {"param":true});
-    expect(vtc.notifyParameters).to.eql(["event", {"param":true}]);
   });
   */
 });
