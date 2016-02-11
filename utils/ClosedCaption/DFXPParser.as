@@ -39,9 +39,6 @@ package
 			var saveXMLIgnoreWhitespace:Boolean = XML.ignoreWhitespace;
 			var saveXMLPrettyPrinting:Boolean = XML.prettyPrinting; 
 			
-			XML.ignoreWhitespace = false;
-			XML.prettyPrinting = false;
-			
 			var xml:XML = new XML(rawData);
 			// restore the old value:
 			XML.ignoreWhitespace = saveXMLIgnoreWhitespace;
@@ -174,11 +171,6 @@ package
 							_captions[_captions.length-1].end = Math.max(firstCaption.end, caption.end);
 						}
 					}
-					else
-					{
-						debugLog("Incorrect DFXP");
-						return null;
-					}
 				}
 				else
 				{
@@ -275,7 +267,7 @@ package
     {
 			var time:Number = 0;
 			var captionTimeArray:Array = value.split(":");
-			if (captionTimeArray.length == 3) 
+			if ((captionTimeArray.length == 3) || (captionTimeArray.length == 4))
 			{
 				// Clock format, e.g. "hh:mm:ss"
 				time = captionTimeArray[0] * 3600;

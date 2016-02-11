@@ -93,9 +93,9 @@ package
       _mediaPlayerSprite.mediaPlayer.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                       onPlayerStateChange);
       _mediaPlayerSprite.mediaPlayer.addEventListener(TimeEvent.COMPLETE, onPlayComplete);
-      _mediaPlayerSprite.mediaPlayer.addEventListener(MediaErrorEvent.MEDIA_ERROR,onMediaError);
+      _mediaPlayerSprite.mediaPlayer.addEventListener(MediaErrorEvent.MEDIA_ERROR, onMediaError);
       _mediaPlayerSprite.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
-      CaptioningDocument .addEventListener(CaptioningDocument.CAPTION_READY,onCaptionready);
+      CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
       stage.addEventListener(MouseEvent.CLICK, onClickHandler);
       SendToDebugger("events added", "registerListeners");
     }
