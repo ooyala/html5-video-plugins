@@ -93,8 +93,9 @@ package
       _mediaPlayerSprite.mediaPlayer.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                       onPlayerStateChange);
       _mediaPlayerSprite.mediaPlayer.addEventListener(TimeEvent.COMPLETE, onPlayComplete);
-      _mediaPlayerSprite.mediaPlayer.addEventListener(MediaErrorEvent.MEDIA_ERROR,onMediaError);
+      _mediaPlayerSprite.mediaPlayer.addEventListener(MediaErrorEvent.MEDIA_ERROR, onMediaError);
       _mediaPlayerSprite.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
+      CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
       stage.addEventListener(MouseEvent.CLICK, onClickHandler);
       SendToDebugger("events added", "registerListeners");
     }
@@ -110,6 +111,7 @@ package
                                                          onPlayerStateChange);
       _mediaPlayerSprite.mediaPlayer.removeEventListener(TimeEvent.COMPLETE, onPlayComplete);
       _mediaPlayerSprite.mediaPlayer.removeEventListener(MediaErrorEvent.MEDIA_ERROR,onMediaError);
+      CaptioningDocument.removeEventListener(CaptioningDocument.CAPTION_READY,onCaptionready);
       stage.removeEventListener(MouseEvent.CLICK, onClickHandler);
       
       if (_seekTrait != null)
@@ -624,7 +626,6 @@ package
       {
         _resource.addMetadataValue(CaptioningPluginInfo.CAPTIONING_METADATA_NAMESPACE, metadata);
         _element = _mediaFactory.createMediaElement(_resource);
-        _element.addEventListener(MediaElementEvent.METADATA_ADD, onMetadataAdd);
         _mediaPlayerSprite.media = _element;
       }
       else
@@ -637,17 +638,12 @@ package
     /**
      * Retrives the caption object.
      * @public
-     * @method HDSPlayer#onMetadataAdd
-     * @param {MediaElementEvent} event The event that is raised once the metadata is added to the resource.
+     * @method HDSPlayer#onCaptionready
+     * @param {MediaElementEvent} event The event that is raised once the captions are ready.
      */
-    public function onMetadataAdd(event:MediaElementEvent):void
+    private function onCaptionready(event:Event):void
     {
-      if (event.metadata != null && event.namespaceURL == CaptioningPluginInfo.CAPTIONING_TEMPORAL_METADATA_NAMESPACE)
-      {
-        _element.removeEventListener(MediaElementEvent.METADATA_ADD, onMetadataAdd);
-        _captionMetadata = event.metadata as TimelineMetadata;   
-        _captionObject= CaptioningDocument._captionsArray;    
-      }
+      _captionObject= CaptioningDocument._captionsArray; 
     }
     
     /**
@@ -656,33 +652,21 @@ package
      * @method HDSPlayer#onShowCaption
      * @param {int} selectedId Id of the caption to be displayed .
      */
-    public function onShowCaption(selectedId:int):void
+    public function onShowCaption(caption:Caption):void
     {
-      if (_selectedCaptionLanguage != "")
+      _captionLabel.background = true;
+      _captionLabel.backgroundColor = 0x000000;
+      _captionLabel.opaqueBackground = 0.5;
+
+      if (_captioningEnabled && caption != null)
       {
-        _captionLabel.background = true;
-        _captionLabel.backgroundColor = 0x000000;
-        _captionLabel.opaqueBackground = 0.5;
-        if (_selectedCaptionLanguage != _previousSelectedCaptionLanguage)
+        _captionLabel.htmlText = caption.text;
+        if (caption.text != _previousCaption)
         {
-          _selectedCaptionObject = _captionObject[_selectedCaptionLanguage];
-          _previousSelectedCaptionLanguage = _selectedCaptionLanguage;
+          _captionLabel.autoSize = TextFieldAutoSize.CENTER;
+          setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
+          _previousCaption = caption.text;
         }
-        _currentCaption = _selectedCaptionObject[selectedId];
-        if (_captioningEnabled && _currentCaption != null)
-        {
-          _captionLabel.htmlText = _currentCaption.text;
-          if (_currentCaption.text != _previousCaption)
-          {
-            _captionLabel.autoSize = TextFieldAutoSize.CENTER;
-            setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
-            _previousCaption = _currentCaption.text;
-          }
-        }
-      }
-      else
-      {
-        SendToDebugger("Set Video Closed Captions language is null" , "onShowCaption");
       }
     }
     
@@ -765,26 +749,10 @@ package
       var seekRange:Object = new Object();
       var duration:Number = _mediaPlayerSprite.mediaPlayer.duration;
       var totalTime :Number = 0;
-      var captionFlag:Boolean = false;
       
-      if (_captionMetadata != null && _mode == "showing")
+      if (_captionFlag)
       {
-        for (var i:int = 0; i < _captionMetadata.numMarkers; i++)
-        {
-          var caption:Caption = _captionMetadata.getMarkerAt(i) as Caption;
-          if(caption.end > _mediaPlayerSprite.mediaPlayer.currentTime && caption.start <= _mediaPlayerSprite.mediaPlayer.currentTime)
-          {
-            _captionLabel.visible = true;
-            onShowCaption(i);
-            captionFlag = true;
-            break;
-          }
-        }
-      }
-
-      if (!captionFlag)
-      {
-        _captionLabel.visible = false;
+        selectCaptionObject();
       }
       
       if (_mediaPlayerSprite.mediaPlayer.canSeek && (_mediaPlayerSprite.mediaPlayer.canSeekTo(duration)))
@@ -801,6 +769,34 @@ package
       eventObject.seekRange_start = 0;
       eventObject.seekRange_end = totalTime;
       dispatchEvent(new DynamicEvent(DynamicEvent.TIME_UPDATE,(eventObject)));
+    }
+
+    /**
+     * Selects the appropriate caption object.
+     * @public
+     * @method HDSPlayer#selectCaptionObject
+     */
+    public function selectCaptionObject():void
+    {
+      var captionFlag:Boolean = false;
+      if (_captionObject != null && _mode == "showing")
+      {
+        for each(var captionObject:Caption in _captionObject[_selectedCaptionLanguage])
+        {
+          var caption:Caption = captionObject;
+          if(caption.end > _mediaPlayerSprite.mediaPlayer.currentTime && caption.start <= _mediaPlayerSprite.mediaPlayer.currentTime)
+          {
+            _captionLabel.visible = true;
+            onShowCaption(caption);
+            captionFlag = true;
+            break;
+          }
+        }
+      }
+      if (!captionFlag)
+      {
+        _captionLabel.visible = false;
+      }
     }
     
     /**
