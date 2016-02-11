@@ -254,6 +254,16 @@ package
         case MediaPlayerState.PLAYING:
           if (_initialPlay)
           {
+            //Sets initial time to duration when it is greater than duration
+            if (_initialTime > _mediaPlayerSprite.mediaPlayer.duration)
+            {
+              _initialTime = (int) (_mediaPlayerSprite.mediaPlayer.duration); 
+            }
+            //Sets initial time to zero when it is less than zero
+            else if (_initialTime < 0)
+            {
+              _initialTime = 0;
+            }
             _initialPlay = false;
           }
           
