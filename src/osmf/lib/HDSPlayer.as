@@ -775,7 +775,7 @@ package
       }
       eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime;
       eventObject.duration = duration
-      eventObject.buffer = _mediaPlayerSprite.mediaPlayer.bufferLength;
+      eventObject.buffer = _mediaPlayerSprite.mediaPlayer.bufferLength + _mediaPlayerSprite.mediaPlayer.currentTime;
       eventObject.seekRange_start = 0;
       eventObject.seekRange_end = totalTime;
       dispatchEvent(new DynamicEvent(DynamicEvent.TIME_UPDATE,(eventObject)));
