@@ -858,7 +858,7 @@ package
     public function onGetCurrentTime(event:Event):void
     {
       var eventObject:Object = new Object();
-      eventObject.time = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
+      eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
       dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
     }
     

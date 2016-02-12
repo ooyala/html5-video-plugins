@@ -391,6 +391,7 @@ require("../../../html5-common/js/utils/constants.js");
      */
     this.getCurrentTime = function() {
       this.callToFlash("getCurrentTime");
+      return currentTime;
     }
 
     /**
