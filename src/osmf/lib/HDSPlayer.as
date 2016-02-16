@@ -80,6 +80,8 @@ package
     public function HDSPlayer( )
     {
       Security.allowDomain("*");
+      Security.allowInsecureDomain('*')
+
       var externalJavaScriptApi:ExternalJavaScriptAPI = new ExternalJavaScriptAPI(this);
     }
     
