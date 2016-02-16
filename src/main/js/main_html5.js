@@ -510,7 +510,13 @@ require("../../../html5-common/js/utils/environment.js");
     this.setClosedCaptionsMode = function(mode) {
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
-          _video.textTracks[i].mode = mode;
+          //Workaround for iOS since it doesn't hide captions with their mode is set to disabled.
+          if (OO.isIos && mode == "disabled") {
+            _video.textTracks[i].mode = "hidden";
+          } else {
+            _video.textTracks[i].mode = mode;
+          }
+
         }
       }
     };
@@ -553,7 +559,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var onLoadedMetadata = _.bind(function() {
       dequeueSeek();
-    }, this)
+    }, this);
 
     /**
      * Notifies the controller that a progress event was raised.
