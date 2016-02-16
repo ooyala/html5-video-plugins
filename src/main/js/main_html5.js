@@ -516,7 +516,6 @@ require("../../../html5-common/js/utils/environment.js");
           } else {
             _video.textTracks[i].mode = mode;
           }
-
         }
       }
     };
