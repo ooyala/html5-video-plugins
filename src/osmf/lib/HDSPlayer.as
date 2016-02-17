@@ -404,8 +404,12 @@ package
       
       //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
       _playQueue = false;
+
+      //Included MediaPlayerState.BUFFERING in the condition to handle the play requests that occurs
+      //when the player is in buffering state.
       
-      if (_playerState == MediaPlayerState.READY || _playerState == MediaPlayerState.PAUSED)
+      if (_playerState == MediaPlayerState.READY || _playerState == MediaPlayerState.PAUSED 
+          || _playerState == MediaPlayerState.BUFFERING)
       {
         _mediaPlayerSprite.mediaPlayer.play();
       }
