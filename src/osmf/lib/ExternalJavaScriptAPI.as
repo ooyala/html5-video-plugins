@@ -81,7 +81,6 @@ package
       addEventListener("setVideoUrl", onSetVideoURL);
       addEventListener("load", onLoadVideo);
       addEventListener("playheadTimeChanged", onPlayheadTimeChanged);
-      addEventListener("fullScreenChanged", onFullScreenChanged);
       addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       /*addEventListener("rateChange", onRateChanged);
@@ -109,7 +108,6 @@ package
       _hdsPlayer.addEventListener(DynamicEvent.BUFFERED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.FULLSCREEN_CHANGED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
       SendToDebugger("events added", "registerListeners");
     }
@@ -128,7 +126,6 @@ package
       removeEventListener("setVideoUrl", onSetVideoURL);
       removeEventListener("load", onLoadVideo);
       removeEventListener("playheadTimeChanged", onPlayheadTimeChanged);
-      removeEventListener("fullScreenChanged", onFullScreenChanged);
       removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       /*removeEventListener("rateChange", onRateChanged);
@@ -155,7 +152,6 @@ package
       _hdsPlayer.removeEventListener(DynamicEvent.BUFFERING, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.FULLSCREEN_CHANGED, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
     }
 
@@ -249,17 +245,6 @@ package
     private function onLoadVideo(event:DynamicEvent):void
     {
       _hdsPlayer.onLoadVideo(event);
-    }
-
-   /**
-    * Initiates full screen functionality through the player
-    * @private
-    * @method ExternalJavaScriptAPI#onFullScreenChanged
-    * @param {Event} event
-    */
-    private function onFullScreenChanged(event:Event):void
-    {
-      _hdsPlayer.onFullScreenChanged(event);
     }
 
     /**

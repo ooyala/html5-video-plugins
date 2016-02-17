@@ -17,7 +17,6 @@ package
     public static const BUFFERED:String = "BUFFERED";
     public static const TIME_UPDATE:String = "TIME_UPDATE";
     public static const VOLUME_CHANGED:String = "VOLUME_CHANGED";
-    public static const FULLSCREEN_CHANGED:String = "FULLSCREEN_CHANGED";
     public static const CURRENT_TIME:String = "CURRENT_TIME";
     private var _eventObject:Object;
 
