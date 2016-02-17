@@ -98,7 +98,6 @@ package
       _mediaPlayerSprite.mediaPlayer.addEventListener(MediaErrorEvent.MEDIA_ERROR, onMediaError);
       _mediaPlayerSprite.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
       CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
-      stage.addEventListener(MouseEvent.CLICK, onClickHandler);
       SendToDebugger("events added", "registerListeners");
     }
     
@@ -114,7 +113,6 @@ package
       _mediaPlayerSprite.mediaPlayer.removeEventListener(TimeEvent.COMPLETE, onPlayComplete);
       _mediaPlayerSprite.mediaPlayer.removeEventListener(MediaErrorEvent.MEDIA_ERROR,onMediaError);
       CaptioningDocument.removeEventListener(CaptioningDocument.CAPTION_READY,onCaptionready);
-      stage.removeEventListener(MouseEvent.CLICK, onClickHandler);
       
       if (_seekTrait != null)
       {
@@ -516,17 +514,6 @@ package
     }
     
     /**
-     * Puts the player in fullscreen mode, if it is in normal mode or vice versa.
-     * @public
-     * @method HDSPlayer#onFullScreenChanged
-     * @param {Event} event The event passed from the external interface.
-     */
-    public function onFullScreenChanged(event:Event):void
-    {
-      stage.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
-    }
-    
-    /**
      * Sets the closed captions for the video playback
      * @public
      * @method HDSPlayer#onSetVideoClosedCaptions
@@ -705,50 +692,6 @@ package
       }
        
       SendToDebugger("Set Video Closed Captions Mode :" + _mode, "onSetVideoClosedCaptionsMode");
-    }
-    
-    /**
-     * Handler for MouseEvent
-     * @public
-     * @method HDSPlayer#onClickHandler
-     * @param {Event} event Mouse event.
-     */
-    public function onClickHandler(event:MouseEvent):void
-    {
-      //Resizes the player to full screen and vice versa. This fuction should be called with mouse click event
-      var eventObject:Object = new Object();
-      if (stage.displayState == "normal")
-      {
-        try
-        {
-          stage.displayState = StageDisplayState.FULL_SCREEN;
-          eventObject.isFullScreen = true;
-          eventObject.paused = (_mediaPlayerSprite.mediaPlayer.state == "paused");
-          dispatchEvent(new DynamicEvent(DynamicEvent.FULLSCREEN_CHANGED,(eventObject)));
-        }
-        catch (error:Error)
-        {
-          //Dispatch error event
-          SendToDebugger("Error on change to FullScreen: " + error.errorID+ "onFullScreenChanged");
-        }
-      }
-      else if (stage.displayState == "fullScreen")
-      {
-        try
-        {
-          stage.displayState = StageDisplayState.NORMAL;
-          eventObject.isFullScreen = false;
-          eventObject.paused = (_mediaPlayerSprite.mediaPlayer.state == "paused");
-          dispatchEvent(new DynamicEvent(DynamicEvent.FULLSCREEN_CHANGED,(eventObject)));
-        }
-        catch (error:Error)
-        {
-          //Dispatch error event
-          SendToDebugger("Error on change from FullScreen: " + error.errorID+ "onFullScreenChanged");
-        }
-      }
-      _mediaPlayerSprite.width = stage.stageWidth;
-      _mediaPlayerSprite.height = stage.stageHeight;
     }
     
     /**
