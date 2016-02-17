@@ -297,7 +297,6 @@ package
         case MediaPlayerState.READY:
           if (_playQueue)
           {
-            _playQueue = false;
             onVideoPlay(event);
           }
           break;
@@ -404,6 +403,10 @@ package
       var eventObject:Object = new Object();
       eventObject.url = _videoUrl;
       dispatchEvent(new DynamicEvent(DynamicEvent.PLAY,eventObject));
+      
+      //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
+      _playQueue = false;
+      
       if (_playerState == MediaPlayerState.READY || _playerState == MediaPlayerState.PAUSED)
       {
         _mediaPlayerSprite.mediaPlayer.play();
