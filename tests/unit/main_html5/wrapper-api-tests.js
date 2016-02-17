@@ -73,6 +73,14 @@ describe('main_html5 wrapper tests', function () {
     expect(returns).to.be(true);
   });
 
+  it('should remove src on empty string', function(){
+    wrapper.setVideoUrl("url");
+    var returns = wrapper.setVideoUrl("");
+    expect(returns).to.be(true);
+    console.log(element);
+    expect(element.getAttribute("src")).to.eql(null);
+  });
+
   it('should call stream load', function(){
     spyOn(element, "load");
     spyOn(element, "pause");
