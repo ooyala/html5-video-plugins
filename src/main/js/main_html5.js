@@ -270,7 +270,11 @@ require("../../../html5-common/js/utils/environment.js");
         isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
         urlChanged = true;
         resetStreamData();
-        _video.src = _currentUrl;
+        if (_currentUrl === "") {
+          _video.src = null;
+        } else {
+          _video.src = _currentUrl;
+        }
       }
 
       return urlChanged;
