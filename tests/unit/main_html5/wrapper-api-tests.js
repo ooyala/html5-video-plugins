@@ -77,7 +77,6 @@ describe('main_html5 wrapper tests', function () {
     wrapper.setVideoUrl("url");
     var returns = wrapper.setVideoUrl("");
     expect(returns).to.be(true);
-    console.log(element);
     expect(element.getAttribute("src")).to.eql(null);
   });
 

@@ -271,7 +271,7 @@ require("../../../html5-common/js/utils/environment.js");
         urlChanged = true;
         resetStreamData();
         if (_currentUrl === "") {
-          $(_video).attr("src", null);
+          _video.src = null;
         } else {
           _video.src = _currentUrl;
         }
