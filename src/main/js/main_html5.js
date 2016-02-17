@@ -510,7 +510,7 @@ require("../../../html5-common/js/utils/environment.js");
     this.setClosedCaptionsMode = function(mode) {
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
-          //Workaround for iOS since it doesn't hide captions with their mode is set to disabled.
+          //Workaround for iOS since it doesn't hide captions when their mode is set to disabled.
           if (OO.isIos && mode == "disabled") {
             _video.textTracks[i].mode = "hidden";
           } else {
