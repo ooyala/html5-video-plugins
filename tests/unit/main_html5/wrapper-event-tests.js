@@ -114,6 +114,40 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ERROR, {errorcode: 0}]);
   });
 
+  it('should not notify ERROR on video \'error\' event with code 4 and empty src', function(){
+    vtc.interface.EVENTS.ERROR = "error";
+    $(element).attr("src", "");
+    target = element;
+    target.error = { code: 4 };
+    $(element).triggerHandler({ type:"error",  target: target });
+    expect(vtc.notifyParameters).to.eql([undefined]);
+    target.error = { code: 2 };
+    $(element).triggerHandler({ type:"error",  target: target });
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ERROR, {errorcode: 2}]);
+    $(element).attr("src", "url");
+    target = element;
+    target.error = { code: 4 };
+    $(element).triggerHandler({ type:"error",  target: target });
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ERROR, {errorcode: 4}]);
+  });
+
+  it('should not notify ERROR on video \'error\' event with code 4 and "null" src', function(){
+    vtc.interface.EVENTS.ERROR = "error";
+    $(element).attr("src", "null");
+    target = element;
+    target.error = { code: 4 };
+    $(element).triggerHandler({ type:"error",  target: target });
+    expect(vtc.notifyParameters).to.eql([undefined]);
+    target.error = { code: 2 };
+    $(element).triggerHandler({ type:"error",  target: target });
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ERROR, {errorcode: 2}]);
+    $(element).attr("src", "url");
+    target = element;
+    target.error = { code: 4 };
+    $(element).triggerHandler({ type:"error",  target: target });
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ERROR, {errorcode: 4}]);
+  });
+
   it('should notify STALLED on video \'stalled\' event', function(){
     vtc.interface.EVENTS.STALLED = "stalled";
     element.currentSrc = "url";

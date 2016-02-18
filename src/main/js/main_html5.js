@@ -591,8 +591,12 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var raiseErrorEvent = _.bind(function(event) {
       stopUnderflowWatcher();
+
       var code = event.target.error ? event.target.error.code : -1;
-      this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
+      // Suppress error code 4 when raised by a video element with a null or empty src
+      if (!(code === 4 && ($(event.target).attr("src") === "null" || $(event.target).attr("src") === ""))) {
+        this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
+      }
     }, this);
 
     /**
