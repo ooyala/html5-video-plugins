@@ -191,6 +191,31 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.SEEKING]);
   });
 
+  it('should not raise seeking before initial time has seeked', function(){
+    vtc.interface.EVENTS.SEEKING = "seeking";
+    element.duration = 20;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.seekable.length = 1;
+    wrapper.setInitialTime(10);
+    $(element).triggerHandler("seeking");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.SEEKING);
+    $(element).triggerHandler("seeked");
+    $(element).triggerHandler("seeking");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.SEEKING);
+  });
+
+  it('should raise seeking before initial time has seeked if initialtime is 0', function(){
+    vtc.interface.EVENTS.SEEKING = "seeking";
+    element.duration = 20;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.seekable.length = 1;
+    wrapper.setInitialTime(0);
+    $(element).triggerHandler("seeking");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.SEEKING);
+  });
+
   it('should dequeue play command if seeking completed', function(){
     element.seeking = true;
     spyOn(element, "play");
@@ -214,6 +239,30 @@ describe('main_html5 wrapper tests', function () {
     vtc.interface.EVENTS.SEEKED = "seeked";
     $(element).triggerHandler("seeked");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.SEEKED]);
+  });
+
+  it('should not raise seeked when initial time is set to non-zero', function(){
+    vtc.interface.EVENTS.SEEKED = "seeked";
+    element.duration = 20;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.seekable.length = 1;
+    wrapper.setInitialTime(10);
+    $(element).triggerHandler("seeked");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.SEEKED);
+    $(element).triggerHandler("seeked");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.SEEKED);
+  });
+
+  it('should raise seeked before initial time has seeked if initialtime is 0', function(){
+    vtc.interface.EVENTS.SEEKED = "seeked";
+    element.duration = 20;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.seekable.length = 1;
+    wrapper.setInitialTime(0);
+    $(element).triggerHandler("seeked");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.SEEKED);
   });
 
   it('should not undo seek if disableNativeSeek=false on video \'seeked\' event', function(){
@@ -353,11 +402,15 @@ describe('main_html5 wrapper tests', function () {
     spyOn(element.seekable, "end").andReturn(20);
     element.seekable.length = 1;
     wrapper.setInitialTime(10);
+    element.currentTime = 9;
     $(element).triggerHandler("durationchange");
     expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.DURATION_CHANGE);
-    $(element).triggerHandler("durationchange");
-    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+    $(element).triggerHandler("timeupdate");
     $(element).triggerHandler("seeked");
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+    element.currentTime = 11;
+    $(element).triggerHandler("timeupdate");
     $(element).triggerHandler("durationchange");
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.DURATION_CHANGE);
   });
@@ -371,6 +424,7 @@ describe('main_html5 wrapper tests', function () {
     element.seekable.length = 1;
     element.currentTime = 11;
     wrapper.setInitialTime(10);
+    $(element).triggerHandler("timeupdate");
     $(element).triggerHandler("seeked");
     $(element).triggerHandler("durationchange");
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.DURATION_CHANGE);
@@ -464,13 +518,16 @@ describe('main_html5 wrapper tests', function () {
 
   it('should raise timeUpdate before initial time is used if the initial time position is passed', function(){
     vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
-    OO.isAndroid = true;
     spyOn(element.seekable, "start").andReturn(0);
     spyOn(element.seekable, "end").andReturn(20);
     element.duration = 20;
     element.seekable.length = 1;
-    element.currentTime = 11;
     wrapper.setInitialTime(10);
+    element.currentTime = 9;
+    $(element).triggerHandler("seeked");
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters[0]).not.to.eql(vtc.interface.EVENTS.TIME_UPDATE);
+    element.currentTime = 11;
     $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
   });

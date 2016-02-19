@@ -150,7 +150,7 @@ require("../../../html5-common/js/utils/environment.js");
     var firstPlay = true;
     var playerDimension = dimension;
     var videoDimension = {height: 0, width: 0};
-    var queuedInitialTime = 0;
+    var initialTime = { value: 0, reached: true };
     var canSeek = true;
     var isPriming = false;
 
@@ -331,20 +331,21 @@ require("../../../html5-common/js/utils/environment.js");
      * triggered upon 'loadedmetadata' event.
      * @public
      * @method OoyalaVideoWrapper#setInitialTime
-     * @param {number} initialTime The initial time of the video (seconds)
+     * @param {number} time The initial time of the video (seconds)
      */
-    this.setInitialTime = function(initialTime) {
-      if (!hasPlayed && (initialTime !== 0)) {
-        queuedInitialTime = initialTime;
+    this.setInitialTime = function(time) {
+      if (!hasPlayed && (time !== 0)) {
+        initialTime.value = time;
+        initialTime.reached = false;
 
         // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
         // never raised, even if the seekable property returns an endtime greater than the seek time.
         // To avoid this, save seeking information for use later.
         if (OO.isAndroid) {
-          queueSeek(initialTime);
+          queueSeek(initialTime.value);
         }
         else {
-          this.seek(initialTime);
+          this.seek(initialTime.value);
         }
       }
     };
@@ -683,13 +684,14 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseSeekingEvent
      */
     var raiseSeekingEvent = _.bind(function() {
-      // Do not raise playback events if the video is priming
-      if (isPriming) {
-        return;
-      }
-
       isSeeking = true;
-      this.controller.notify(this.controller.EVENTS.SEEKING);
+
+      // Do not raise playback events if the video is priming
+      // If the stream is seekable, supress seeks that come before or at the time initialTime is been reached
+      // or that come while seeking.
+      if (!isPriming && initialTime.reached) {
+        this.controller.notify(this.controller.EVENTS.SEEKING);
+      }
     }, this);
 
     /**
@@ -698,7 +700,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
     var raiseSeekedEvent = _.bind(function() {
-      queuedInitialTime = 0;
+      isSeeking = false;
 
       // After done seeking, see if any play events were received and execute them now
       // This fixes an issue on iPad where playing while seeking causes issues with end of stream eventing.
@@ -713,8 +715,14 @@ require("../../../html5-common/js/utils/environment.js");
           _video.currentTime = currentTime;
         }
       }
-      this.controller.notify(this.controller.EVENTS.SEEKED);
-      isSeeking = false;
+
+      // If the stream is seekable, supress seeks that come before or at the time initialTime is been reached
+      // or that come while seeking.
+      if (!initialTime.reached) {
+        initialTime.reached = true;
+      } else {
+        this.controller.notify(this.controller.EVENTS.SEEKED);
+      }
     }, this);
 
     /**
@@ -757,8 +765,8 @@ require("../../../html5-common/js/utils/environment.js");
         currentTime = _video.currentTime;
       }
 
-      if (queuedInitialTime && (event.target.currentTime >= queuedInitialTime)) {
-        queuedInitialTime = 0;
+      if (initialTime.value > 0 && (event.target.currentTime >= initialTime.value)) {
+        initialTime.value = 0;
       }
 
       raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
@@ -1024,8 +1032,7 @@ require("../../../html5-common/js/utils/environment.js");
 
       // If the stream is seekable, supress playheads that come before the initialTime has been reached
       // or that come while seeking.
-      if (isSeeking || (!!queuedInitialTime &&
-          !!getSafeSeekTimeIfPossible(_video, queuedInitialTime))) {
+      if (isSeeking || initialTime.value > 0) {
         return;
       }
 
