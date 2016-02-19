@@ -253,10 +253,11 @@ require("../../../html5-common/js/utils/constants.js");
      * Sets the url of the video.
      * @public
      * @method OoyalaFlashVideoWrapper#setVideoUrl
+     * @param {string} encoding The encoding of video stream 
      * @param {string} url The new url to insert into the video element's src attribute
      * @returns {boolean} True or false indicating success
      */
-    this.setVideoUrl = function(url) {
+    this.setVideoUrl = function(encoding, url) {
       var urlChanged = false;
            newController=this.controller;
 
@@ -413,7 +414,7 @@ require("../../../html5-common/js/utils/constants.js");
       // Pause the video
       this.pause();
       // Reset the source
-      this.setVideoUrl('');
+      this.setVideoUrl('', '');
 
       // Unsubscribe all events
       

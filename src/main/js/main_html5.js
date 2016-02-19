@@ -251,11 +251,12 @@ require("../../../html5-common/js/utils/environment.js");
      * Sets the url of the video.
      * @public
      * @method OoyalaVideoWrapper#setVideoUrl
+     * @param {string} encoding The encoding of video stream 
      * @param {string} url The new url to insert into the video element's src attribute
      * @returns {boolean} True or false indicating success
      */
     // Allow for the video src to be changed without loading the video
-    this.setVideoUrl = function(url) {
+    this.setVideoUrl = function(encoding, url) {
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
       var urlChanged = false;
