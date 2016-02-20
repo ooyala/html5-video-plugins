@@ -268,7 +268,7 @@ require("../../../html5-common/js/utils/environment.js");
           _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
-        isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
+        isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0); // XXX this should go away, as we have encoding now
         urlChanged = true;
         resetStreamData();
         if (_currentUrl === "") {
