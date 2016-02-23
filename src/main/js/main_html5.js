@@ -252,7 +252,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
-     * @param {string} encoding The encoding of video stream 
+     * @param {string} encoding The encoding of video stream, possible values are found in OO.VIDEO.ENCODING
      * @returns {boolean} True or false indicating success
      */
     // Allow for the video src to be changed without loading the video
