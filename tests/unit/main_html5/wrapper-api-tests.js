@@ -47,34 +47,34 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set the video url and return true', function(){
-    var returns = wrapper.setVideoUrl("url", "mp4");
+    var returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(true);
     expect(element.src).to.eql("url");
   });
 
   it('should not reset the same url', function(){
-    wrapper.setVideoUrl("url", "mp4");
-    var returns = wrapper.setVideoUrl("url", "mp4");
+    wrapper.setVideoUrl("url");
+    var returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(false);
   });
 
   it('should ignore cache buster', function(){
-    wrapper.setVideoUrl("url?_=1", "mp4");
-    var returns = wrapper.setVideoUrl("url", "mp4");
+    wrapper.setVideoUrl("url?_=1");
+    var returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(false);
-    wrapper.setVideoUrl("url?extra=2&_=1", "mp4");
-    var returns = wrapper.setVideoUrl("url?extra=2", "mp4");
+    wrapper.setVideoUrl("url?extra=2&_=1");
+    var returns = wrapper.setVideoUrl("url?extra=2");
     expect(returns).to.be(false);
-    wrapper.setVideoUrl("url?_=1&extra=2", "mp4");
-    var returns = wrapper.setVideoUrl("url?extra=2", "mp4");
+    wrapper.setVideoUrl("url?_=1&extra=2");
+    var returns = wrapper.setVideoUrl("url?extra=2");
     expect(returns).to.be(true); // this is a bug
-    wrapper.setVideoUrl("url?_=1&extra=2", "mp4");
-    var returns = wrapper.setVideoUrl("url", "mp4");
+    wrapper.setVideoUrl("url?_=1&extra=2");
+    var returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(true);
   });
 
   it('should remove src on empty string', function(){
-    wrapper.setVideoUrl("url", "mp4");
+    wrapper.setVideoUrl("url");
     var returns = wrapper.setVideoUrl("", "");
     expect(returns).to.be(true);
     expect(element.getAttribute("src")).to.eql(null);
@@ -395,7 +395,7 @@ describe('main_html5 wrapper tests', function () {
   /*
   // TODO: Complete this test once we have ability to simulate browsers and devices
   it('should apply cache buster to chrome', function(){
-    var returns = wrapper.setVideoUrl("url", "mp4");
+    var returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(true);
     expect(element.src).to.eql("url");
   });

@@ -414,7 +414,7 @@ require("../../../html5-common/js/utils/constants.js");
       // Pause the video
       this.pause();
       // Reset the source
-      this.setVideoUrl('', '');
+      this.setVideoUrl('');
 
       // Unsubscribe all events
       
