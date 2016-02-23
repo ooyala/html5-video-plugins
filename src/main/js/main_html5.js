@@ -252,10 +252,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
+     * @param {string} encoding The encoding of video stream, possible values are found in OO.VIDEO.ENCODING
      * @returns {boolean} True or false indicating success
      */
     // Allow for the video src to be changed without loading the video
-    this.setVideoUrl = function(url) {
+    this.setVideoUrl = function(url, encoding) {
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
       var urlChanged = false;
@@ -267,7 +268,7 @@ require("../../../html5-common/js/utils/environment.js");
           _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
-        isM3u8 = (_currentUrl.toLowerCase().indexOf("m3u8") > 0);
+        isM3u8 = (encoding == OO.VIDEO.ENCODING.HLS);
         urlChanged = true;
         resetStreamData();
         if (_currentUrl === "") {

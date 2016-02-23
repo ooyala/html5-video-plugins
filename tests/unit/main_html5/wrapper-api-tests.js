@@ -75,7 +75,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should remove src on empty string', function(){
     wrapper.setVideoUrl("url");
-    var returns = wrapper.setVideoUrl("");
+    var returns = wrapper.setVideoUrl("", "");
     expect(returns).to.be(true);
     expect(element.getAttribute("src")).to.eql(null);
   });
