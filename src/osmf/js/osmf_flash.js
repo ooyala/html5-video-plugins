@@ -177,6 +177,7 @@ require("../../../html5-common/js/utils/constants.js");
     params.allowscriptaccess = "always";
     params.allowfullscreen = "true";
     params.wmode = "opaque";
+    params.scale = "noborder";
 
     var attributes = {};
     attributes.id = playerId;
