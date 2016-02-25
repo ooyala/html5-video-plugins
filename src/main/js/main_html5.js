@@ -624,7 +624,7 @@ require("../../../html5-common/js/utils/environment.js");
 
       //Notify controller of video width and height.
       if (firstPlay) {
-        this.controller.notify(this.controller.EVENTS.VIDEO_DIMENSIONS_AVAILABLE, {width: _video.videoWidth, height: _video.videoHeight});
+        this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, {width: _video.videoWidth, height: _video.videoHeight});
       }
     }, this);
 
