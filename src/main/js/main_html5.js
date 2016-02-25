@@ -621,6 +621,11 @@ require("../../../html5-common/js/utils/environment.js");
         raiseCanPlayThrough();
       }
       canPlay = true;
+
+      //Notify controller of video width and height.
+      if (firstPlay) {
+        this.controller.notify(this.controller.EVENTS.VIDEO_DIMENSIONS_AVAILABLE, {width: _video.videoWidth, height: _video.videoHeight});
+      }
     }, this);
 
     /**
