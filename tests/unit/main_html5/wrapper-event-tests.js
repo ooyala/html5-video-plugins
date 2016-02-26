@@ -173,8 +173,11 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify ASSET_DIMENSION on first \'canPlay\' event', function(){
     vtc.interface.EVENTS.ASSET_DIMENSION = "assetDimension";
+    var videoDimensions = {width: 640, height: 480};
+    element.videoWidth = videoDimensions.width;
+    element.videoHeight = videoDimensions.height;
     $(element).triggerHandler("canplay");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ASSET_DIMENSION, {width: 0, height: 0}]);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ASSET_DIMENSION, videoDimensions]);
   });
 
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){
