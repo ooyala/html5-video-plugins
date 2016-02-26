@@ -171,6 +171,15 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAYING]);
   });
 
+  it('should notify ASSET_DIMENSION on first \'canPlay\' event', function(){
+    vtc.interface.EVENTS.ASSET_DIMENSION = "assetDimension";
+    var videoDimensions = {width: 640, height: 480};
+    element.videoWidth = videoDimensions.width;
+    element.videoHeight = videoDimensions.height;
+    $(element).triggerHandler("canplay");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ASSET_DIMENSION, videoDimensions]);
+  });
+
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){
     element.textTracks = [{ kind: "captions" }];
     vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
