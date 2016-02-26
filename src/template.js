@@ -22,7 +22,7 @@ require("../html5-common/js/utils/constants.js");
     this.name = "templateVideoTech";
     this.encodings = [OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4];
     this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-                      OO.VIDEO.FEATURE.VIDEO_OBJECT_OPEN ];
+                      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     // This module defaults to ready because no setup or external loading is required
@@ -49,7 +49,7 @@ require("../html5-common/js/utils/constants.js");
 
    /**
     * Creates a video player instance using TemplateVideoWrapper which wraps and existing video element.
-    * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_TAKE is supported.
+    * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_TAKE is supported.
     * @public
     * @method TemplateVideoFactory#createFromExisting
     * @param {string} domId The dom id of the video DOM object to use
@@ -84,7 +84,6 @@ require("../html5-common/js/utils/constants.js");
      * @property TemplateVideoFactory#maxSupportedElements
      */
     this.maxSupportedElements = -1;
-
   };
 
   /**
@@ -109,8 +108,8 @@ require("../html5-common/js/utils/constants.js");
 
     /**
      * Hands control of the video element off to another plugin.
-     * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_GIVE or
-     * OO.VIDEO.FEATURE.VIDEO_OBJECT_TAKE is supported.
+     * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE or
+     * OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_TAKE is supported.
      * @public
      * @method TemplateVideoWrapper#sharedElementGive
      */
@@ -121,8 +120,8 @@ require("../html5-common/js/utils/constants.js");
 
     /**
      * Takes control of the video element from another plugin.
-     * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_GIVE or
-     * OO.VIDEO.FEATURE.VIDEO_OBJECT_TAKE is supported.
+     * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE or
+     * OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_TAKE is supported.
      * @public
      * @method TemplateVideoWrapper#sharedElementTake
      */
