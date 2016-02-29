@@ -109,6 +109,7 @@ package
       _hdsPlayer.addEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
+      _hdsPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       SendToDebugger("events added", "registerListeners");
     }
 
@@ -153,6 +154,7 @@ package
       _hdsPlayer.removeEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
+      _hdsPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
     }
 
     /**

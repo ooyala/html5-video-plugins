@@ -71,7 +71,7 @@ package
     private var _currentCaption:Caption;
     public static const BASE_SCALE_FACTOR_HEIGHT:Number = 400;
     public static const BASE_SCALE_FACTOR:Number = 1;
-    
+    public var _bitrateArray:Array=new Array();
     
     /**
      * Constructor
@@ -293,6 +293,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          totalBitratesAvailable();
           if (_playQueue)
           {
             onVideoPlay(event);
@@ -849,6 +850,42 @@ package
         SendToDebugger("loadMediaSource LOADED", "loadMediaSource");    
       }
     }
+    
+    /**
+     * Provides the total available bitrates and dispatches BITRATES_AVAILABLE event.
+     * @public
+     * @method HDSPlayer#totalBitratesAvailable
+     */
+    public function  totalBitratesAvailable():void
+    { 
+      var eventObject:Object=new Object();
+      
+      if (getStreamsCount() > 0)
+      {
+        for (var i:int = 0; i < getStreamsCount(); i++)
+        {
+          var id:String = (_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps";
+          var bitrateObject = new Object();
+          bitrateObject.id = id;
+          bitrateObject.height = 0;
+          bitrateObject.width = 0;
+          bitrateObject.bitrate = _mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
+          _bitrateArray[id] = [ bitrateObject, i];
+          eventObject[i] = bitrateObject;
+        }
+      }
+      dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
+    }
+
+    /**
+     * Returns the total number of streams
+     * @private
+     * @method HDSPlayer#getStreamsCount
+     */
+    private function getStreamsCount():int
+    {
+      return _mediaPlayerSprite.mediaPlayer.numDynamicStreams;
+    } 
     
     /**
      * Unregisters events and removes media player child.
