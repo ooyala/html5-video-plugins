@@ -291,6 +291,7 @@ require("../../../html5-common/js/utils/environment.js");
       currentTime = 0;
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
+      initialTime = { value: 0, reached: true };
       canSeek = true;
       isPriming = false;
       stopUnderflowWatcher();
