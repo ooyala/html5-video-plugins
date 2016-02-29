@@ -83,6 +83,7 @@ package
       addEventListener("playheadTimeChanged", onPlayheadTimeChanged);
       addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
+      addEventListener("setTargetBitrate", onSetTargetBitrate);
       /*addEventListener("rateChange", onRateChanged);
       addEventListener("stalled", onStalled);
       addEventListener("progress", onProgress);
@@ -128,6 +129,7 @@ package
       removeEventListener("playheadTimeChanged", onPlayheadTimeChanged);
       removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
+      removeEventListener("setTargetBitrate", onSetTargetBitrate);
       /*removeEventListener("rateChange", onRateChanged);
       removeEventListener("stalled", onStalled);
       removeEventListener("progress", onProgress);
@@ -291,6 +293,17 @@ package
       _hdsPlayer.onSetInitialTime(event);
     }
 
+    /**
+    * Passes the target bitrate to the player.
+    * @private
+    * @method ExternalJavaScriptAPI#onSetTargetBitrate
+    * @param {DynamicEvent} event
+    */
+    private function onSetTargetBitrate(event:DynamicEvent):void
+    {
+      _hdsPlayer.onSetTargetBitrate(event);
+    }
+    
    /**
     * Fetches the current time from the player.
     * @private
