@@ -71,8 +71,8 @@ package
     private var _currentCaption:Caption;
     public static const BASE_SCALE_FACTOR_HEIGHT:Number = 400;
     public static const BASE_SCALE_FACTOR:Number = 1;
-    
-    
+    public var _bitrateArray:Array=new Array();
+
     /**
      * Constructor
      * @public
@@ -847,6 +847,34 @@ package
         _mediaPlayerSprite.media = _element;
         SendToDebugger("element " + _element, "loadMediaSource");
         SendToDebugger("loadMediaSource LOADED", "loadMediaSource");    
+      }
+    }
+
+    /**
+     * Sets the bitrate and dispatches BITRATE_CHANGED event.
+     * @public
+     * @method HDSPlayer#onSetTargetBitrate
+     * @param {DynamicEvent} event The event passed from the external interface.
+     */
+    public function onSetTargetBitrate(event:DynamicEvent):void
+    { 
+      var bitrateId:String= (String)(event.args);
+      try
+      {
+       if (bitrateId != "auto")
+       {
+         _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = false;
+         //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
+         _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
+       }
+       else 
+       {
+          _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = true;
+       }
+      }
+      catch(error:Error)
+      {
+        SendToDebugger("onSetTargetBitrate Error :"+error.errorID,"onSetTargetBitrate");
       }
     }
     
