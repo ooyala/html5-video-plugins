@@ -316,7 +316,7 @@ require("../../../html5-common/js/utils/constants.js");
      * Sets the stream to play back based on given stream ID. Plugin must support the
      * BITRATE_CONTROL feature to have this method called.
      * @public
-     * @method TemplateVideoWrapper#setBitrate
+     * @method OoyalaFlashVideoWrapper#setBitrate
      * @param {string} id The ID of the stream to switch to. This ID will be the ID property from one
      *   of the stream objects passed with the BITRATES_AVAILABLE VTC event.
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
