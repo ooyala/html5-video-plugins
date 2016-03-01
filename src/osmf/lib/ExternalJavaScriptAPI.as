@@ -83,6 +83,7 @@ package
       addEventListener("playheadTimeChanged", onPlayheadTimeChanged);
       addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
+      addEventListener("setTargetBitrate", onSetTargetBitrate);
       /*addEventListener("rateChange", onRateChanged);
       addEventListener("stalled", onStalled);
       addEventListener("progress", onProgress);
@@ -109,6 +110,8 @@ package
       _hdsPlayer.addEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
+      _hdsPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
+      _hdsPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       SendToDebugger("events added", "registerListeners");
     }
 
@@ -128,6 +131,7 @@ package
       removeEventListener("playheadTimeChanged", onPlayheadTimeChanged);
       removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
+      removeEventListener("setTargetBitrate", onSetTargetBitrate);
       /*removeEventListener("rateChange", onRateChanged);
       removeEventListener("stalled", onStalled);
       removeEventListener("progress", onProgress);
@@ -153,6 +157,8 @@ package
       _hdsPlayer.removeEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
+      _hdsPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
+      _hdsPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
     }
 
     /**
@@ -291,6 +297,17 @@ package
       _hdsPlayer.onSetInitialTime(event);
     }
 
+    /**
+    * Passes the target bitrate to the player.
+    * @private
+    * @method ExternalJavaScriptAPI#onSetTargetBitrate
+    * @param {DynamicEvent} event
+    */
+    private function onSetTargetBitrate(event:DynamicEvent):void
+    {
+      _hdsPlayer.onSetTargetBitrate(event);
+    }
+    
    /**
     * Fetches the current time from the player.
     * @private

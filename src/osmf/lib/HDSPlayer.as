@@ -71,7 +71,7 @@ package
     private var _currentCaption:Caption;
     public static const BASE_SCALE_FACTOR_HEIGHT:Number = 400;
     public static const BASE_SCALE_FACTOR:Number = 1;
-    
+    public var _bitrateArray:Array=new Array();
     
     /**
      * Constructor
@@ -293,6 +293,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          totalBitratesAvailable();
           if (_playQueue)
           {
             onVideoPlay(event);
@@ -849,6 +850,82 @@ package
         SendToDebugger("loadMediaSource LOADED", "loadMediaSource");    
       }
     }
+    
+    /**
+     * Provides the total available bitrates and dispatches BITRATES_AVAILABLE event.
+     * @public
+     * @method HDSPlayer#totalBitratesAvailable
+     */
+    public function  totalBitratesAvailable():void
+    { 
+      var eventObject:Object=new Object();
+      
+      if (getStreamsCount() > 0)
+      {
+        for (var i:int = 0; i < getStreamsCount(); i++)
+        {
+          var id:String = (_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps";
+          var bitrateObject = new Object();
+          bitrateObject.id = id;
+          bitrateObject.height = 0;
+          bitrateObject.width = 0;
+          bitrateObject.bitrate = _mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
+          _bitrateArray[id] = [ bitrateObject, i];
+          eventObject[i] = bitrateObject;
+        }
+        dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
+      }
+    }
+
+    /**
+     * Sets the bitrate and dispatches BITRATE_CHANGED event.
+     * @public
+     * @method HDSPlayer#onSetTargetBitrate
+     * @param {DynamicEvent} event The event passed from the external interface.
+     */
+    public function onSetTargetBitrate(event:DynamicEvent):void
+    { 
+      var bitrateId:String= (String)(event.args);
+      var eventObject:Object = new Object();
+      try
+      {
+       if (bitrateId != "auto")
+       {
+         _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = false;
+         //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
+         _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
+         
+         eventObject.id = _bitrateArray[bitrateId][0].id;
+         eventObject.height = _bitrateArray[bitrateId][0].height;
+         eventObject.width = _bitrateArray[bitrateId][0].width;
+         eventObject.bitrate = _mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(_bitrateArray[bitrateId][1]) * 1000;
+       }
+       else 
+       {
+          _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = true;
+
+          eventObject.id = "auto";
+          eventObject.height = 0;
+          eventObject.width = 0;
+          eventObject.bitrate = 0;
+       }
+       dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
+      }
+      catch(error:Error)
+      {
+        SendToDebugger("onSetTargetBitrate Error :"+error.errorID,"onSetTargetBitrate");
+      }
+    }
+    
+    /**
+     * Returns the total number of streams
+     * @private
+     * @method HDSPlayer#getStreamsCount
+     */
+    private function getStreamsCount():int
+    {
+      return _mediaPlayerSprite.mediaPlayer.numDynamicStreams;
+    } 
     
     /**
      * Unregisters events and removes media player child.

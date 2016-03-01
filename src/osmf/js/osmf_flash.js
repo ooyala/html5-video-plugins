@@ -94,7 +94,8 @@ require("../../../html5-common/js/utils/constants.js");
     }
     this.encodings = testForFlash();
     this.technology = OO.VIDEO.TECHNOLOGY.FLASH;
-    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS ];
+    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
+                      OO.VIDEO.FEATURE.BITRATE_CONTROL ];
 
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
@@ -234,7 +235,9 @@ require("../../../html5-common/js/utils/constants.js");
                     "progress": _.bind(raiseProgress, this),
                     "canplaythrough": _.bind(raiseCanPlayThrough, this),
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
-                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
+                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
+                    "totalavailablebitrates": _.bind(raiseBitratesAvailable, this),
+                    "changedbitrate": _.bind(raiseBitrateChanged, this)
                   };
       _.each(listeners, function(v, i) {
         $(_video).on(i, v); }, this);
@@ -307,6 +310,19 @@ require("../../../html5-common/js/utils/constants.js");
 
     this.setClosedCaptionsMode = function(mode){
       this.callToFlash("setVideoClosedCaptionsMode("+mode+")");
+    };
+
+    /**
+     * Sets the stream to play back based on given stream ID. Plugin must support the
+     * BITRATE_CONTROL feature to have this method called.
+     * @public
+     * @method OoyalaFlashVideoWrapper#setBitrate
+     * @param {string} id The ID of the stream to switch to. This ID will be the ID property from one
+     *   of the stream objects passed with the BITRATES_AVAILABLE VTC event.
+     *   An ID of 'auto' should return the plugin to automatic bitrate selection.
+     */
+    this.setBitrate = function(id) {
+      this.callToFlash("setTargetBitrate("+id+")");
     };
 
     /**
@@ -572,6 +588,30 @@ require("../../../html5-common/js/utils/constants.js");
       newController.notify(newControllerr.EVENTS.FULLSCREEN_CHANGED,
                              { "isFullScreen" : false, "paused" : event.target.paused });
     };
+  
+    var raiseBitrateChanged = function(event) {
+      var vtcBitrate = {
+          id: event.eventObject.id,
+          width: event.eventObject.width,
+          height: event.eventObject.height,
+          bitrate: event.eventObject.bitrate
+      }
+      newController.notify(newController.EVENTS.BITRATE_CHANGED,vtcBitrate);
+    };
+
+    var raiseBitratesAvailable = function(event) {
+      var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
+      for (var i in event.eventObject) {
+        var vtcBitrate = {
+          id: event.eventObject[i].id,
+          width: event.eventObject[i].width,
+          height: event.eventObject[i].height,
+          bitrate: event.eventObject[i].bitrate
+        }
+        vtcBitrates.push(vtcBitrate);
+      }
+      newController.notify(newController.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
+    };
 
     // Receives a callback from Flash
     onCallback = _.bind(function(data) {
@@ -668,6 +708,12 @@ require("../../../html5-common/js/utils/constants.js");
         break;
        case "FULLSCREEN_CHANGED_END":
         raiseFullScreenEnd(data);
+        break;
+       case "BITRATES_AVAILABLE":
+        raiseBitratesAvailable(data);
+        break;
+       case "BITRATE_CHANGED":
+        raiseBitrateChanged(data);
         break;
        case "ERROR":
         raiseErrorEvent(data);
