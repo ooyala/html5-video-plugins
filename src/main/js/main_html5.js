@@ -36,7 +36,7 @@ require("../../../html5-common/js/utils/environment.js");
     var getSupportedEncodings = function() {
       var videoElement = document.createElement("video");
       var list = [OO.VIDEO.ENCODING.MP4];
-      if (!OO.isSafari) {
+      if (!OO.isSafari && !OO.isIE && !OO.isEdge) {
         list.push(OO.VIDEO.ENCODING.WEBM);
       }
       if (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
