@@ -62,7 +62,7 @@ gulp.task('build_flash', function(callback) {
   });
 });
 
-gulp.task('build', ['init_module', 'build_flash'], function() {
+gulp.task('build', ['init_module'], function() {
   main_html5_fn();
 });
 
