@@ -23,6 +23,7 @@ package
   import org.osmf.events.MediaPlayerStateChangeEvent;
   import org.osmf.events.SeekEvent;
   import org.osmf.events.TimeEvent;
+  import org.osmf.events.DynamicStreamEvent;
   import org.osmf.layout.ScaleMode;
   import org.osmf.media.DefaultMediaFactory;
   import org.osmf.media.MediaElement;
@@ -72,6 +73,8 @@ package
     public static const BASE_SCALE_FACTOR_HEIGHT:Number = 400;
     public static const BASE_SCALE_FACTOR:Number = 1;
     public var _bitrateArray:Array=new Array();
+    private var _currentBitrate:Number = -1;
+    private var _currentBitrateId:String = "";
     
     /**
      * Constructor
@@ -97,6 +100,7 @@ package
       _mediaPlayerSprite.mediaPlayer.addEventListener(TimeEvent.COMPLETE, onPlayComplete);
       _mediaPlayerSprite.mediaPlayer.addEventListener(MediaErrorEvent.MEDIA_ERROR, onMediaError);
       _mediaPlayerSprite.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
+      _mediaPlayerSprite.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
       SendToDebugger("events added", "registerListeners");
     }
@@ -112,6 +116,7 @@ package
                                                          onPlayerStateChange);
       _mediaPlayerSprite.mediaPlayer.removeEventListener(TimeEvent.COMPLETE, onPlayComplete);
       _mediaPlayerSprite.mediaPlayer.removeEventListener(MediaErrorEvent.MEDIA_ERROR,onMediaError);
+      _mediaPlayerSprite.mediaPlayer.removeEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.removeEventListener(CaptioningDocument.CAPTION_READY,onCaptionready);
       
       if (_seekTrait != null)
@@ -886,7 +891,6 @@ package
     public function onSetTargetBitrate(event:DynamicEvent):void
     { 
       var bitrateId:String= (String)(event.args);
-      var eventObject:Object = new Object();
       try
       {
        if (bitrateId != "auto")
@@ -894,26 +898,53 @@ package
          _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = false;
          //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
          _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
-         
-         eventObject.id = _bitrateArray[bitrateId][0].id;
-         eventObject.height = _bitrateArray[bitrateId][0].height;
-         eventObject.width = _bitrateArray[bitrateId][0].width;
-         eventObject.bitrate = _mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(_bitrateArray[bitrateId][1]) * 1000;
+         _currentBitrateId = bitrateId;
        }
        else 
        {
           _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = true;
-
-          eventObject.id = "auto";
-          eventObject.height = 0;
-          eventObject.width = 0;
-          eventObject.bitrate = 0;
+          _currentBitrateId = "auto";
        }
-       dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
       }
       catch(error:Error)
       {
         SendToDebugger("onSetTargetBitrate Error :"+error.errorID,"onSetTargetBitrate");
+      }
+    }
+
+    /**
+     * Dispatched BITRATE_CHANGED event
+     * @public
+     * @method HDSPlayer#onBitrateChanged
+     * @param {DynamicStreamEvent} event This event dispatched when the properties of a DynamicStreamTrait change.
+     */
+    private function onBitrateChanged(event:DynamicStreamEvent):void
+    {
+      var eventObject:Object = new Object();
+      if (!event.switching)
+      {
+        if (_currentBitrateId == "") return;
+        var newBitrate:Number = _mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(_bitrateArray[_currentBitrateId][1]);
+
+        if (_currentBitrate != newBitrate)
+        {
+          if (_currentBitrateId == "auto")
+          {
+            eventObject.id = "auto";
+            eventObject.height = 0;
+            eventObject.width = 0;
+            eventObject.bitrate = 0;
+          }
+          else
+          {
+            eventObject.id = _bitrateArray[_currentBitrateId][0].id;
+            eventObject.height = _bitrateArray[_currentBitrateId][0].height;
+            eventObject.width = _bitrateArray[_currentBitrateId][0].width;
+            eventObject.bitrate = newBitrate * 1000;
+          }
+          dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
+          _currentBitrate = newBitrate;
+        }
       }
     }
     
