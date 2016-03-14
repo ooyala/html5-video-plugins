@@ -73,8 +73,8 @@ package
     public static const BASE_SCALE_FACTOR_HEIGHT:Number = 400;
     public static const BASE_SCALE_FACTOR:Number = 1;
     public var _bitrateArray:Array=new Array();
+    public var _bitrateIdArray:Array=new Array();
     private var _currentBitrate:Number = -1;
-    private var _currentBitrateId:String = "";
     
     /**
      * Constructor
@@ -298,6 +298,12 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          _bitrateIdArray.length = 0;
+          for(var i:int = 0; i < getStreamsCount(); i++)
+          {
+            _bitrateIdArray.push((_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
+          }
+
           totalBitratesAvailable();
           if (_playQueue)
           {
@@ -864,12 +870,12 @@ package
     public function  totalBitratesAvailable():void
     { 
       var eventObject:Object=new Object();
-      
+      var id:String;
       if (getStreamsCount() > 0)
       {
-        for (var i:int = 0; i < getStreamsCount(); i++)
+        for (var i:int = 0; i < _bitrateIdArray.length; i++)
         {
-          var id:String = (_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps";
+          id = _bitrateIdArray[i];
           var bitrateObject = new Object();
           bitrateObject.id = id;
           bitrateObject.height = 0;
@@ -890,20 +896,26 @@ package
      */
     public function onSetTargetBitrate(event:DynamicEvent):void
     { 
+      var eventObject:Object = new Object();
       var bitrateId:String= (String)(event.args);
       try
       {
        if (bitrateId != "auto")
        {
          _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = false;
+         _mediaPlayerSprite.mediaPlayer.maxAllowedDynamicStreamIndex =  _mediaPlayerSprite.mediaPlayer.numDynamicStreams - 1;
          //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
          _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
-         _currentBitrateId = bitrateId;
        }
        else 
        {
           _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = true;
-          _currentBitrateId = "auto";
+      
+           eventObject.id = "auto";
+           eventObject.height = 0;
+           eventObject.width = 0;
+           eventObject.bitrate = 0;
+           dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
        }
       }
       catch(error:Error)
@@ -913,37 +925,33 @@ package
     }
 
     /**
-     * Dispatched BITRATE_CHANGED event
+     * Dispatches BITRATE_CHANGED event
      * @public
      * @method HDSPlayer#onBitrateChanged
-     * @param {DynamicStreamEvent} event This event dispatched when the properties of a DynamicStreamTrait change.
+     * @param {DynamicStreamEvent} event The event dispatched when the properties of a DynamicStreamTrait change.
      */
     private function onBitrateChanged(event:DynamicStreamEvent):void
     {
       var eventObject:Object = new Object();
+      var id:String;
+    
       if (!event.switching)
       {
-        if (_currentBitrateId == "") return;
-        var newBitrate:Number = _mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(_bitrateArray[_currentBitrateId][1]);
+        var bitrateIndex:int = _mediaPlayerSprite.mediaPlayer.currentDynamicStreamIndex;
+        var newBitrate:Number = _mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(bitrateIndex);
 
-        if (_currentBitrate != newBitrate)
+        if (newBitrate != 0 && _currentBitrate != newBitrate)
         {
-          if (_currentBitrateId == "auto")
+          for (var i:int = 0; i < _bitrateIdArray.length; i++)
           {
-            eventObject.id = "auto";
-            eventObject.height = 0;
-            eventObject.width = 0;
-            eventObject.bitrate = 0;
+            id = _bitrateIdArray[i];
+            if (newBitrate == (_bitrateArray[id][0].bitrate)/1000)
+            {
+              dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(_bitrateArray[id][0])));
+              _currentBitrate = newBitrate;
+              break;
+            }
           }
-          else
-          {
-            eventObject.id = _bitrateArray[_currentBitrateId][0].id;
-            eventObject.height = _bitrateArray[_currentBitrateId][0].height;
-            eventObject.width = _bitrateArray[_currentBitrateId][0].width;
-            eventObject.bitrate = newBitrate * 1000;
-          }
-          dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
-          _currentBitrate = newBitrate;
         }
       }
     }
