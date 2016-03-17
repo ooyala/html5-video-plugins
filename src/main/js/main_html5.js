@@ -666,6 +666,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
       firstPlay = false;
       canSeek = true;
+      isSeeking = false;
       setVideoCentering();
     }, this);
 
@@ -1033,6 +1034,7 @@ require("../../../html5-common/js/utils/environment.js");
 
       // If the stream is seekable, supress playheads that come before the initialTime has been reached
       // or that come while seeking.
+      // TODO: Check _video.seeking?
       if (isSeeking || initialTime.value > 0) {
         return;
       }
