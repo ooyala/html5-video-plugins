@@ -34,14 +34,31 @@ require("../../../html5-common/js/utils/environment.js");
 
     // Determine supported encodings
     var getSupportedEncodings = function() {
+      var list = [];
       var videoElement = document.createElement("video");
-      var list = [OO.VIDEO.ENCODING.MP4];
-      if (!OO.isSafari && !OO.isIE && !OO.isEdge) {
-        list.push(OO.VIDEO.ENCODING.WEBM);
-      }
-      if (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
-          !!videoElement.canPlayType("application/x-mpegURL")) {
-        list.push(OO.VIDEO.ENCODING.HLS);
+
+      if (typeof videoElement.canPlayType === "function") {
+        if (!!videoElement.canPlayType("video/mp4")) {
+          list.push(OO.VIDEO.ENCODING.MP4);
+        }
+
+        if (!!videoElement.canPlayType("video/webm")) {
+          list.push(OO.VIDEO.ENCODING.WEBM);
+        }
+
+        if ((!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
+             !!videoElement.canPlayType("application/x-mpegURL")) &&
+            !OO.isSmartTV && !OO.isRimDevice &&
+            (!OO.isMacOs || OO.isMacOsLionOrLater)) {
+          // 2012 models of Samsung and LG smart TV's do not support HLS even if reported
+          // Mac OS must be lion or later
+          list.push(OO.VIDEO.ENCODING.HLS);
+        }
+
+        // Sony OperaTV supports HLS but doesn't properly report it so we are forcing it here
+        if (window.navigator.userAgent.match(/SonyCEBrowser/)) {
+          list.push(OO.VIDEO.ENCODING.HLS);
+        }
       }
 
       return list;
