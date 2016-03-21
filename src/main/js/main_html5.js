@@ -48,10 +48,11 @@ require("../../../html5-common/js/utils/environment.js");
 
         if ((!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
              !!videoElement.canPlayType("application/x-mpegURL")) &&
-            !OO.isSmartTV && !OO.isRimDevice &&
+            !OO.isSmartTV && !OO.isRimDevice && !OO.isAndroid &&
             (!OO.isMacOs || OO.isMacOsLionOrLater)) {
           // 2012 models of Samsung and LG smart TV's do not support HLS even if reported
           // Mac OS must be lion or later
+          // We do not yet officially support HLS on android chrome; blocking it until it's ready
           list.push(OO.VIDEO.ENCODING.HLS);
         }
 
