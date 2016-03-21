@@ -574,11 +574,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} event The event from the cue change
      */
     var onClosedCaptionCueChange = _.bind(function(event) {
-      var cueText;
+      var cueText = "";
       if (event.currentTarget.activeCues.length > 0 && event.currentTarget.activeCues[0].text) {
         cueText = event.currentTarget.activeCues[0].text;
-      } else {
-        cueText = "";
       }
       raiseClosedCaptionCueChanged(cueText);
     }, this);
