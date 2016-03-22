@@ -575,9 +575,12 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var onClosedCaptionCueChange = _.bind(function(event) {
       var cueText = "";
-      if (event && event.currentTarget && event.currentTarget.activeCues &&
-          event.currentTarget.activeCues.length > 0 && event.currentTarget.activeCues[0].text) {
-        cueText = event.currentTarget.activeCues[0].text;
+      if (event && event.currentTarget && event.currentTarget.activeCues) {
+        for (var i = 0; i < event.currentTarget.activeCues.length; i++) {
+          if (event.currentTarget.activeCues[i].text) {
+            cueText += event.currentTarget.activeCues[i].text + " ";
+          }
+        }
       }
       raiseClosedCaptionCueChanged(cueText);
     }, this);
@@ -592,8 +595,13 @@ require("../../../html5-common/js/utils/environment.js");
       var cueText = "";
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].activeCues && _video.textTracks[i].activeCues.length > 0) {
-            cueText = _video.textTracks[i].activeCues[0].text;
+          if (_video.textTracks[i].activeCues) {
+            for (var i = 0; i < _video.textTracks[i].activeCues.length; i++) {
+              if (_video.textTracks[i].activeCues[i].text) {
+                cueText += _video.textTracks[i].activeCues[i].text + " ";
+              }
+            }
+            break;
           }
         }
       }
