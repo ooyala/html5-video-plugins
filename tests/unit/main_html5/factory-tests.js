@@ -110,12 +110,6 @@ describe('main_html5 factory tests', function () {
     expect(pluginFactory.encodings).to.eql([]);
   });
 
-  it('should set ready to false on destroy', function(){
-    // destroy done in pervious test.  The proper way to test this would be to re-create the plugin
-    // before each test but this requires use of the require.cache function which is not available in jest.
-    expect(pluginFactory.ready).to.be(false);
-  });
-
   it('should not create elements after destroy is called', function(){
     // destroy done in pervious test.  The proper way to test this would be to re-create the plugin
     // before each test but this requires use of the require.cache function which is not available in jest.

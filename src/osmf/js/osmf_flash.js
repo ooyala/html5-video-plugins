@@ -36,14 +36,11 @@ require("../../../html5-common/js/utils/constants.js");
    * @class OoyalaFlashVideoFactory
    * @classdesc Factory for creating video player objects that use Flash in an HTML5 wrapper.
    * @property {string} name The name of the plugin
-   * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
    */
 
   var OoyalaFlashVideoFactory = function() {
     this.name = pluginName;
-    // This module defaults to ready because no setup or external loading is required
-    this.ready = true;
     /**
      * Checks whether flash player is available
      * @public
@@ -126,7 +123,6 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaFlashVideoFactory#destroy
      */
     this.destroy = function() {
-      this.ready = false;
       this.encodings = [];
       this.create = function() {};
     };
