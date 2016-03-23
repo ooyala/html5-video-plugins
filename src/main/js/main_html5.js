@@ -596,9 +596,9 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].activeCues) {
-            for (var i = 0; i < _video.textTracks[i].activeCues.length; i++) {
-              if (_video.textTracks[i].activeCues[i].text) {
-                cueText += _video.textTracks[i].activeCues[i].text + " ";
+            for (var j = 0; j < _video.textTracks[i].activeCues.length; j++) {
+              if (_video.textTracks[i].activeCues[j].text) {
+                cueText += _video.textTracks[i].activeCues[j].text + " ";
               }
             }
             break;
@@ -615,6 +615,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {string} cueText The text of the new closed caption cue. Empty string signifies no active cue.
      */
     var raiseClosedCaptionCueChanged = _.bind(function(cueText) {
+      cueText = cueText.trim();
       if (cueText != lastCueText) {
         lastCueText = cueText;
         this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueText);
