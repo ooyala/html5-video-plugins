@@ -53,8 +53,7 @@ require("../html5-common/js/utils/constants.js");
     * @param {string} playerId The unique player identifier of the player creating this instance
     * @returns {object} A reference to the wrapper for the video element
     */
-    this.createFromExisting = function(domId, ooyalaVideoController, playerId)
-    {
+    this.createFromExisting = function(domId, ooyalaVideoController, playerId) {
       var sharedVideoElement = $("#" + domId)[0];
       var wrapper = new TemplateVideoWrapper(domId, sharedVideoElement);
       wrapper.controller = ooyalaVideoController;
@@ -416,6 +415,11 @@ require("../html5-common/js/utils/constants.js");
                              [{"id": "low", "height": 1080, "width": 1920, "bitrate": 3750000},
                               {"id": "medium", "height": 1080, "width": 1920, "bitrate": 7500000},
                               {"id": "high","height": 1080, "width": 1920, "bitrate": 15000000}]);
+    };
+
+    // The VTC should be notified with new cue text whenever a plugin closed caption cue changes.
+    var raiseClosedCaptionCueChanged = function(cueText) {
+      this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueText);
     };
   };
 

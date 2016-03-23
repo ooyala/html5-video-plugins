@@ -166,6 +166,7 @@ require("../../../html5-common/js/utils/environment.js");
     var initialTime = { value: 0, reached: true };
     var canSeek = true;
     var isPriming = false;
+    var lastCueText = null;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -309,6 +310,7 @@ require("../../../html5-common/js/utils/environment.js");
       canSeek = true;
       isPriming = false;
       stopUnderflowWatcher();
+      lastCueText = null;
     }, this);
 
     /**
@@ -494,6 +496,7 @@ require("../../../html5-common/js/utils/environment.js");
           if (_video.textTracks[i].kind === "captions") {
             var mode = (!!params && params.mode) || 'showing';
             _video.textTracks[i].mode = mode;
+            _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
           } else {
            _video.textTracks[i].mode = 'disabled';
           }
@@ -507,6 +510,9 @@ require("../../../html5-common/js/utils/environment.js");
           var mode = (!!params && params.mode) || 'showing';
 
           $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
+          if (_video.textTracks && _video.textTracks[0]) {
+            _video.textTracks[0].oncuechange = onClosedCaptionCueChange;
+          }
 
           _.delay(function() {
             _video.textTracks[0].mode = mode;
@@ -572,6 +578,61 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var onLoadedMetadata = _.bind(function() {
       dequeueSeek();
+    }, this);
+
+    /**
+     * Callback for when a closed caption track cue has changed.
+     * @private
+     * @method OoyalaVideoWrapper#onClosedCaptionCueChange
+     * @param {object} event The event from the cue change
+     */
+    var onClosedCaptionCueChange = _.bind(function(event) {
+      var cueText = "";
+      if (event && event.currentTarget && event.currentTarget.activeCues) {
+        for (var i = 0; i < event.currentTarget.activeCues.length; i++) {
+          if (event.currentTarget.activeCues[i].text) {
+            cueText += event.currentTarget.activeCues[i].text + " ";
+          }
+        }
+      }
+      raiseClosedCaptionCueChanged(cueText);
+    }, this);
+
+    /**
+     * Workaround for Firefox only.
+     * Check for active closed caption cues and relay them to the controller.
+     * @private
+     * @method OoyalaVideoWrapper#checkForClosedCaptionsCueChange
+     */
+    var checkForClosedCaptionsCueChange = _.bind(function() {
+      var cueText = "";
+      if (_video.textTracks) {
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          if (_video.textTracks[i].activeCues) {
+            for (var j = 0; j < _video.textTracks[i].activeCues.length; j++) {
+              if (_video.textTracks[i].activeCues[j].text) {
+                cueText += _video.textTracks[i].activeCues[j].text + " ";
+              }
+            }
+            break;
+          }
+        }
+      }
+      raiseClosedCaptionCueChanged(cueText);
+    }, this);
+
+    /**
+     * Notify the controller with new closed caption cue text.
+     * @private
+     * @method OoyalaVideoWrapper#raiseClosedCaptionCueChanged
+     * @param {string} cueText The text of the new closed caption cue. Empty string signifies no active cue.
+     */
+    var raiseClosedCaptionCueChanged = _.bind(function(cueText) {
+      cueText = cueText.trim();
+      if (cueText != lastCueText) {
+        lastCueText = cueText;
+        this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueText);
+      }
     }, this);
 
     /**
@@ -791,6 +852,11 @@ require("../../../html5-common/js/utils/environment.js");
 
       // iPad safari has video centering issue. Unfortunately, HTML5 does not have bitrate change event.
       setVideoCentering();
+
+      //Workaround for Firefox because it doesn't support the oncuechange event on a text track
+      if (OO.isFirefox) {
+        checkForClosedCaptionsCueChange();
+      }
 
       forceEndOnTimeupdateIfRequired(event);
     }, this);
