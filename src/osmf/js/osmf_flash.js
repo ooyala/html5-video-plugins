@@ -490,7 +490,6 @@ require("../../../html5-common/js/utils/constants.js");
     var onLoadStart = function() {
       firstPlay = true;
       _currentUrl = this.callToFlash("getUrl");
-      //console.log("[OSMF]:" + _currentUrl);
     };
 
     var onLoadedMetadata = function() {
