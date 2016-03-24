@@ -8,6 +8,7 @@ package
   import flash.display.StageScaleMode;
   import flash.display.StageAlign;
   import flash.events.Event;
+  import flash.events.FullScreenEvent;
   import flash.events.MouseEvent;
   import flash.events.TimerEvent;
   import flash.external.ExternalInterface;
@@ -104,6 +105,7 @@ package
       _mediaPlayerSprite.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
       _mediaPlayerSprite.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
+      stage.addEventListener(FullScreenEvent.FULL_SCREEN, resizeListener);
       stage.addEventListener(Event.RESIZE, resizeListener);
       SendToDebugger("events added", "registerListeners");
     }
@@ -121,6 +123,8 @@ package
       _mediaPlayerSprite.mediaPlayer.removeEventListener(MediaErrorEvent.MEDIA_ERROR,onMediaError);
       _mediaPlayerSprite.mediaPlayer.removeEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.removeEventListener(CaptioningDocument.CAPTION_READY,onCaptionready);
+      stage.removeEventListener(FullScreenEvent.FULL_SCREEN, resizeListener);
+      stage.removeEventListener(Event.RESIZE, resizeListener);
       
       if (_seekTrait != null)
       {
@@ -630,12 +634,12 @@ package
      */
     private function get captionScaleFactor():Number
     {
-      if (parent.width == 0 || parent.height <= BASE_SCALE_FACTOR_HEIGHT) { return BASE_SCALE_FACTOR; }
+      if (stage.stageWidth == 0 || stage.stageHeight <= BASE_SCALE_FACTOR_HEIGHT) { return BASE_SCALE_FACTOR; }
       
       // Change caption scale based on current/base video height ratio
       // it's possible for the video rectangle not to exist, so we'll just
       // use a scale of 1 in the meantime.
-      return BASE_SCALE_FACTOR * (parent.height/BASE_SCALE_FACTOR_HEIGHT);
+      return BASE_SCALE_FACTOR * (stage.stageHeight/BASE_SCALE_FACTOR_HEIGHT);
     }
     
     /**
