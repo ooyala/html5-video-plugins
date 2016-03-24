@@ -5,7 +5,10 @@ package
   
   import flash.display.Sprite;
   import flash.display.StageDisplayState;
+  import flash.display.StageScaleMode;
+  import flash.display.StageAlign;
   import flash.events.Event;
+  import flash.events.FullScreenEvent;
   import flash.events.MouseEvent;
   import flash.events.TimerEvent;
   import flash.external.ExternalInterface;
@@ -102,6 +105,8 @@ package
       _mediaPlayerSprite.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
       _mediaPlayerSprite.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
+      stage.addEventListener(FullScreenEvent.FULL_SCREEN, resizeListener);
+      stage.addEventListener(Event.RESIZE, resizeListener);
       SendToDebugger("events added", "registerListeners");
     }
     
@@ -118,6 +123,8 @@ package
       _mediaPlayerSprite.mediaPlayer.removeEventListener(MediaErrorEvent.MEDIA_ERROR,onMediaError);
       _mediaPlayerSprite.mediaPlayer.removeEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.removeEventListener(CaptioningDocument.CAPTION_READY,onCaptionready);
+      stage.removeEventListener(FullScreenEvent.FULL_SCREEN, resizeListener);
+      stage.removeEventListener(Event.RESIZE, resizeListener);
       
       if (_seekTrait != null)
       {
@@ -612,7 +619,12 @@ package
       var captionTextY:Number = _captionRegionHeight - _captionLabel.height -
         (_captionLabel.scaleY * Number(_defaultCaptionFormat.size));
 
-      _captionLabel.y = captionTextY-50;
+      var responsiveStageHeightAdjustment = 25;
+      if (stage.stageWidth > 1279) responsiveStageHeightAdjustment = 50;
+      else if (stage.stageWidth > 839) responsiveStageHeightAdjustment = 45;
+      else if (stage.stageWidth > 559) responsiveStageHeightAdjustment = 40;
+
+      _captionLabel.y = captionTextY - responsiveStageHeightAdjustment;
     }
     
     /**
@@ -622,12 +634,12 @@ package
      */
     private function get captionScaleFactor():Number
     {
-      if (parent.width == 0 || parent.height <= BASE_SCALE_FACTOR_HEIGHT) { return BASE_SCALE_FACTOR; }
+      if (stage.stageWidth == 0 || stage.stageHeight <= BASE_SCALE_FACTOR_HEIGHT) { return BASE_SCALE_FACTOR; }
       
       // Change caption scale based on current/base video height ratio
       // it's possible for the video rectangle not to exist, so we'll just
       // use a scale of 1 in the meantime.
-      return BASE_SCALE_FACTOR * (parent.height/BASE_SCALE_FACTOR_HEIGHT);
+      return BASE_SCALE_FACTOR * (stage.stageHeight/BASE_SCALE_FACTOR_HEIGHT);
     }
     
     /**
@@ -852,9 +864,12 @@ package
         _resource = new StreamingURLResource(sourceURL);
         _element = _mediaFactory.createMediaElement( _resource );
         
+        stage.scaleMode = StageScaleMode.NO_SCALE;
         _mediaPlayerSprite.scaleMode = ScaleMode.LETTERBOX;
         _mediaPlayerSprite.width = stage.stageWidth;
         _mediaPlayerSprite.height = stage.stageHeight;
+        stage.align = StageAlign.TOP_LEFT;
+
         // Add the media element
         _mediaPlayerSprite.media = _element;
         SendToDebugger("element " + _element, "loadMediaSource");
@@ -975,6 +990,24 @@ package
     {
       unregisterListeners();
       removeChild(_mediaPlayerSprite); 
+    }
+
+    /**
+     * Sets the player height and width according to the stage's dimensions on resize.
+     * @private
+     * @method HDSPlayer#resizeListener
+     * @param {Event} event The event dispatched on player resize
+     */
+    private function resizeListener (event:Event):void
+    {
+      _mediaPlayerSprite.width = stage.stageWidth;
+      _mediaPlayerSprite.height = stage.stageHeight;
+
+      if (_mode == "showing")
+      {
+        _captionLabel.autoSize = TextFieldAutoSize.CENTER;
+        setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
+      }
     }
     
     /*public function onRateChanged(event:Event):void
