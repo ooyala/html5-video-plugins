@@ -5,6 +5,8 @@ package
   
   import flash.display.Sprite;
   import flash.display.StageDisplayState;
+  import flash.display.StageScaleMode;
+  import flash.display.StageAlign;
   import flash.events.Event;
   import flash.events.MouseEvent;
   import flash.events.TimerEvent;
@@ -102,6 +104,7 @@ package
       _mediaPlayerSprite.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
       _mediaPlayerSprite.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
+      stage.addEventListener(Event.RESIZE, resizeListener);
       SendToDebugger("events added", "registerListeners");
     }
     
@@ -612,7 +615,12 @@ package
       var captionTextY:Number = _captionRegionHeight - _captionLabel.height -
         (_captionLabel.scaleY * Number(_defaultCaptionFormat.size));
 
-      _captionLabel.y = captionTextY-50;
+      var responsiveStageHeightAdjustment = 25;
+      if (stage.stageWidth > 1279) responsiveStageHeightAdjustment = 50;
+      else if (stage.stageWidth > 839) responsiveStageHeightAdjustment = 45;
+      else if (stage.stageWidth > 559) responsiveStageHeightAdjustment = 40;
+
+      _captionLabel.y = captionTextY - responsiveStageHeightAdjustment;
     }
     
     /**
@@ -852,9 +860,12 @@ package
         _resource = new StreamingURLResource(sourceURL);
         _element = _mediaFactory.createMediaElement( _resource );
         
+        stage.scaleMode = StageScaleMode.NO_SCALE;
         _mediaPlayerSprite.scaleMode = ScaleMode.LETTERBOX;
         _mediaPlayerSprite.width = stage.stageWidth;
         _mediaPlayerSprite.height = stage.stageHeight;
+        stage.align = StageAlign.TOP_LEFT;
+
         // Add the media element
         _mediaPlayerSprite.media = _element;
         SendToDebugger("element " + _element, "loadMediaSource");
@@ -975,6 +986,24 @@ package
     {
       unregisterListeners();
       removeChild(_mediaPlayerSprite); 
+    }
+
+    /**
+     * Sets the player height and width according to the stage's dimensions on resize.
+     * @public
+     * @method HDSPlayer#resizeListener
+     * @param {Event} event The event dispatched on player resize
+     */
+    private function resizeListener (event:Event):void
+    {
+      _mediaPlayerSprite.width = stage.stageWidth;
+      _mediaPlayerSprite.height = stage.stageHeight;
+
+      if (_mode == "showing")
+      {
+        _captionLabel.autoSize = TextFieldAutoSize.CENTER;
+        setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
+      }
     }
     
     /*public function onRateChanged(event:Event):void
