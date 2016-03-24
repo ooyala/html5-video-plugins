@@ -763,17 +763,17 @@ var JFlashBridge = {
   items: {},
 
   bind: function(id, klass) {
-      console.log('[OSMF]:JFlashBridge: Bind: ', id, klass);
+      OO.log('[OSMF]:JFlashBridge: Bind: ', id, klass);
       this.items[id] = klass;
   },
 
   unbind: function(id) {
-     console.log('[OSMF]:JFlashBridge: Unbind: ', id);
+     OO.log('[OSMF]:JFlashBridge: Unbind: ', id);
      delete this.items[id];
   },
 
   call: function() {
-    console.log('[OSMF]:JFlashBridge: Call: ', arguments);
+    OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
     var klass = this.items[arguments[0]];
     if (klass) {
       var method = klass[arguments[1]];
@@ -782,19 +782,19 @@ var JFlashBridge = {
         method.apply(klass, Array.prototype.slice.call(arguments, 2));
       }
       else
-        console.log('[OSMF]:JFlashBridge: No method: ', arguments[1]);
+        OO.log('[OSMF]:JFlashBridge: No method: ', arguments[1]);
     }
     else
-      console.log('[OSMF]:JFlashBridge: No binding: ', arguments);
+      OO.log('[OSMF]:JFlashBridge: No binding: ', arguments);
   },
 
   getSWF: function(movieName) {
     if (navigator.appName.indexOf("Microsoft") != -1) {
-      console.log("get swf returns some value",document.getElementsByName(movieName)[0]);
+      OO.log("get swf returns some value",document.getElementsByName(movieName)[0]);
       return document.getElementsByName(movieName)[0];
     }
     else{
-      console.log("get swf returns some other value",document.getElementsByName(movieName)[0]);
+      OO.log("get swf returns some other value",document.getElementsByName(movieName)[0]);
       return document.getElementsByName(movieName)[0];
     }
   }
@@ -951,7 +951,7 @@ var swfobject = function() {
   }
 
   function addDomLoadEvent(fn) {
-    console.log("dom Load event");
+    OO.log("dom Load event");
 
     if (isDomLoaded) {
       fn();
