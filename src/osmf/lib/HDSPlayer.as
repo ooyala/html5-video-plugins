@@ -156,9 +156,9 @@ package
      * @param {string} channelBranch It can be info, debug, warn, error or log.
      * @returns {boolean} True or false indicating success
      */
-    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "info"):Boolean
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
     {
-      var channel:String = "console." + channelBranch;
+      var channel:String = "OO." + channelBranch;
       if (referrer) referrer = "[" + referrer + "]";
       var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
                                                         referrer + ": " + value);
