@@ -112,6 +112,7 @@ package
       _hdsPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      _hdsPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
       SendToDebugger("events added", "registerListeners");
     }
 
@@ -159,6 +160,7 @@ package
       _hdsPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      _hdsPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
     }
 
     /**
@@ -335,7 +337,7 @@ package
     // the JavaScript application
     private function onCallback(data:String):void
     {
-      SendToDebugger(data, "swf onCallback", "info");
+      SendToDebugger(data, "swf onCallback", "log");
       var eventData : Object = new Object();
       eventData.eventtype = data;
       eventData.eventObject = null;
@@ -346,7 +348,7 @@ package
     // receive data from the JavaScript application
     private function someMethod(data:String):Object
     {
-      SendToDebugger(data, "swf someMethod", "info");
+      SendToDebugger(data, "swf someMethod", "log");
       onCallback(data);
       return data;
     }
@@ -381,7 +383,7 @@ package
         var end:int = value.lastIndexOf(")");
         eventArgs = (String)(value.slice(start + 1, end));
         value = (value.slice(0, start));
-        SendToDebugger(eventArgs, "receivedFromJavaScript args", "info");
+        SendToDebugger(eventArgs, "receivedFromJavaScript args", "log");
       }
       var jsEvent:DynamicEvent = new DynamicEvent(value);
       if (eventArgs != "")
@@ -393,7 +395,7 @@ package
         jsEvent.args = dataObj;
       }
       dispatchEvent(jsEvent);
-      SendToDebugger(jsEvent.toString(), "receivedFromJavaScript event", "info");
+      SendToDebugger(jsEvent.toString(), "receivedFromJavaScript event", "log");
     }
 
    /**
@@ -406,10 +408,10 @@ package
     * @returns {boolean} True or false indicating success
     */
     private function SendToDebugger(value:String, referrer:String = null,
-                                    channelBranch:String = "info"):Boolean
+                                    channelBranch:String = "log"):Boolean
     {
       // channelBranch = info, debug, warn, error, log
-      var channel:String = "console." + channelBranch;
+      var channel:String = "OO." + channelBranch;
       if (referrer) referrer = "[" + referrer + "]";
       var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
                                                         referrer + ": " + value);

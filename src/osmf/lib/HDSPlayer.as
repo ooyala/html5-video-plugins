@@ -156,9 +156,9 @@ package
      * @param {string} channelBranch It can be info, debug, warn, error or log.
      * @returns {boolean} True or false indicating success
      */
-    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "info"):Boolean
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
     {
-      var channel:String = "console." + channelBranch;
+      var channel:String = "OO." + channelBranch;
       if (referrer) referrer = "[" + referrer + "]";
       var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
                                                         referrer + ": " + value);
@@ -1008,6 +1008,11 @@ package
         _captionLabel.autoSize = TextFieldAutoSize.CENTER;
         setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
       }
+
+      var sizeObject:Object = new Object();
+      sizeObject.height = _mediaPlayerSprite.height;
+      sizeObject.width = _mediaPlayerSprite.width;
+      dispatchEvent(new DynamicEvent(DynamicEvent.SIZE_CHANGED,(sizeObject)));
     }
     
     /*public function onRateChanged(event:Event):void
