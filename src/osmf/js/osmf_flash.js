@@ -160,6 +160,7 @@ require("../../../html5-common/js/utils/constants.js");
     var videoEnded = false;
     var loaded = false;
     var hasPlayed = false;
+    var firstPlay = true;
     var newController;
     var currentTime;
     var totalTime;
@@ -237,7 +238,10 @@ require("../../../html5-common/js/utils/constants.js");
                     "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
                     "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
                     "totalavailablebitrates": _.bind(raiseBitratesAvailable, this),
-                    "changedbitrate": _.bind(raiseBitrateChanged, this)
+                    "changedbitrate": _.bind(raiseBitrateChanged, this),
+                    "sizeChanged": _.bind(raiseSizeChanged, this),
+                    "fullscreenChanged": _.bind(raiseSizeChanged, this),
+                    "changedsize": _.bind(raiseSizeChanged, this)
                   };
       _.each(listeners, function(v, i) {
         $(_video).on(i, v); }, this);
@@ -263,7 +267,7 @@ require("../../../html5-common/js/utils/constants.js");
      */
     this.setVideoUrl = function(url, encoding) {
       var urlChanged = false;
-           newController=this.controller;
+           newController = this.controller;
 
       if (_currentUrl.replace(/[\?&]_=[^&]+$/,'') != url) {
         _currentUrl = url || "";
@@ -276,6 +280,7 @@ require("../../../html5-common/js/utils/constants.js");
         urlChanged = true;
         hasPlayed = false;
         loaded = false;
+        firstPlay = true;
         url = "setVideoUrl("+_currentUrl+")";
       }
       if (_.isEmpty(_currentUrl)) {
@@ -466,7 +471,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash - Not used.
     this.sendToJavaScript = function(data) {
-      console.log('[OSMF]:sendToJavaScript: Call: ', data);
+      //console.log('[OSMF]:sendToJavaScript: Call: ', data);
       return true;
     };
 
@@ -484,8 +489,9 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
+      firstPlay = true;
       _currentUrl = this.callToFlash("getUrl");
-      console.log("[OSMF]:" + _currentUrl);
+      //console.log("[OSMF]:" + _currentUrl);
     };
 
     var onLoadedMetadata = function() {
@@ -613,9 +619,23 @@ require("../../../html5-common/js/utils/constants.js");
       newController.notify(newController.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
     };
 
+    var raiseSizeChanged = function(event) {
+      var assetDimension = {
+        width: event.eventObject.width,
+        height: event.eventObject.height,
+      }
+      //notify VTC about the asset's dimentions
+      if (firstPlay) {
+        newController.notify(this.controller.EVENTS.ASSET_DIMENSION,assetDimension);
+        firstPlay = false;
+      } else {
+        newController.notify(this.controller.EVENTS.SIZE_CHANGED,assetDimension);
+      }
+    };
+
     // Receives a callback from Flash
     onCallback = _.bind(function(data) {
-      console.log("[OSMF]:onCallback: ", data);
+      // console.log("[OSMF]:onCallback: ", data);
       var eventtitle =" ";
 
       for(var key in data) {
@@ -715,6 +735,9 @@ require("../../../html5-common/js/utils/constants.js");
        case "BITRATE_CHANGED":
         raiseBitrateChanged(data);
         break;
+       case "SIZE_CHANGED":
+         raiseSizeChanged(data);
+         break;
        case "ERROR":
         raiseErrorEvent(data);
         break;

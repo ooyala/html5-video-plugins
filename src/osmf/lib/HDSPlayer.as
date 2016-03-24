@@ -1008,6 +1008,11 @@ package
         _captionLabel.autoSize = TextFieldAutoSize.CENTER;
         setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
       }
+
+      var sizeObject:Object = new Object();
+      sizeObject.height = _mediaPlayerSprite.height;
+      sizeObject.width = _mediaPlayerSprite.width;
+      dispatchEvent(new DynamicEvent(DynamicEvent.SIZE_CHANGED,(sizeObject)));
     }
     
     /*public function onRateChanged(event:Event):void
