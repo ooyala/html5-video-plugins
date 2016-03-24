@@ -112,6 +112,7 @@ package
       _hdsPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      _hdsPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
       SendToDebugger("events added", "registerListeners");
     }
 
@@ -159,6 +160,7 @@ package
       _hdsPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      _hdsPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
     }
 
     /**
@@ -172,7 +174,7 @@ package
       var eventData : Object = new Object();
       eventData.eventtype = event.type;
       eventData.eventObject = event.eventObject;
-      SendToDebugger(eventData.eventtype, "onFlashEvent", "log");
+      //SendToDebugger(eventData.eventtype, "onFlashEvent", "log");
       sendToJavaScript(eventData);
     }
 
