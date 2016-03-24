@@ -994,7 +994,7 @@ package
 
     /**
      * Sets the player height and width according to the stage's dimensions on resize.
-     * @public
+     * @private
      * @method HDSPlayer#resizeListener
      * @param {Event} event The event dispatched on player resize
      */
