@@ -240,8 +240,7 @@ require("../../../html5-common/js/utils/constants.js");
                     "totalavailablebitrates": _.bind(raiseBitratesAvailable, this),
                     "changedbitrate": _.bind(raiseBitrateChanged, this),
                     "sizeChanged": _.bind(raiseSizeChanged, this),
-                    "fullscreenChanged": _.bind(raiseSizeChanged, this),
-                    "changedsize": _.bind(raiseSizeChanged, this)
+                    "fullscreenChanged": _.bind(raiseSizeChanged, this)
                   };
       _.each(listeners, function(v, i) {
         $(_video).on(i, v); }, this);
@@ -471,7 +470,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash - Not used.
     this.sendToJavaScript = function(data) {
-      //console.log('[OSMF]:sendToJavaScript: Call: ', data);
+      OO.log('[OSMF]:sendToJavaScript: Call: ', data);
       return true;
     };
 
