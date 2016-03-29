@@ -511,11 +511,13 @@ require("../../../html5-common/js/utils/environment.js");
 
           $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
           if (_video.textTracks && _video.textTracks[0]) {
-            _video.textTracks[0].oncuechange = onClosedCaptionCueChange;
+            _video.textTracks[0].mode = mode;
+            if (mode != "showing") {
+              _video.textTracks[0].oncuechange = onClosedCaptionCueChange;
+            }
           }
 
           _.delay(function() {
-            _video.textTracks[0].mode = mode;
             if (OO.isFirefox) {
               for (var i=0; i < _video.textTracks[0].cues.length; i++) {
                 _video.textTracks[0].cues[i].line = 15;
@@ -537,6 +539,9 @@ require("../../../html5-common/js/utils/environment.js");
         for (var i = 0; i < _video.textTracks.length; i++) {
           _video.textTracks[i].mode = mode;
         }
+      }
+      if (mode == "disabled") {
+        raiseClosedCaptionCueChanged("");
       }
     };
 
