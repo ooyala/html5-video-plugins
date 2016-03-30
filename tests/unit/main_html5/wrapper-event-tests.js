@@ -208,7 +208,7 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks = [{
       oncuechange: null
     }];
-    wrapper.setClosedCaptions("en", closedCaptions);
+    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
     element.textTracks[0].oncuechange(event);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, event.currentTarget.activeCues[0].text]);
   });
@@ -235,12 +235,18 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks = [{
       oncuechange: null
     }];
-    wrapper.setClosedCaptions("en", closedCaptions);
+    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
     element.textTracks[0].oncuechange(event);
     expect(vtc.notifyParameters).to.eql([
       vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED,
       event.currentTarget.activeCues[0].text + " " + event.currentTarget.activeCues[1].text
     ]);
+  });
+
+  it('should notify CLOSED_CAPTION_CUE_CHANGED from setClosedCaptionsMode if mode is disabled', function(){
+    vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
+    wrapper.setClosedCaptionsMode("disabled");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, ""]);
   });
 
   it('should notify CLOSED_CAPTION_CUE_CHANGED on \'timeupdate\' event in Firefox', function(){
