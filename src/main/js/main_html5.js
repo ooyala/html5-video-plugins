@@ -339,6 +339,7 @@ require("../../../html5-common/js/utils/environment.js");
           console.log('VTC_OO: Failed to rewind video, probably ok; continuing');
         }
       }
+      canPlay = false;
       _video.load();
       loaded = true;
     };
@@ -1067,7 +1068,14 @@ require("../../../html5-common/js/utils/environment.js");
         return null;
       }
 
-      var range = getSafeSeekRange(_video.seekable);
+      // Safety against accessing seekable before SAFARI browser canPlay media
+      var range;
+      if (OO.isSafari && !canPlay) {
+        range = getSafeSeekRange(null);
+      } else {
+        range = getSafeSeekRange(_video.seekable);
+      }
+
       if (range.start === 0 && range.end === 0) {
         return null;
       }
