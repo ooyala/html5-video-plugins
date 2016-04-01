@@ -35,8 +35,8 @@ describe('main_html5 wrapper tests', function () {
   // helper functions
   var setFullSeekRange = function(duration) {
     element.duration = duration;
-    element.seekable.start = jasmine.createSpy("seekable.start() spy").andReturn(0);
-    element.seekable.end = jasmine.createSpy("seekable.end() spy").andReturn(duration);
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(duration);
     element.seekable.length = 1;
   }
 
@@ -197,8 +197,8 @@ describe('main_html5 wrapper tests', function () {
 
   it('should ignore seek if seekrange is 0', function(){
     element.duration = 10;
-    element.seekable.start = jasmine.createSpy("seekable.start() spy").andReturn(0);
-    element.seekable.end = jasmine.createSpy("seekable.end() spy").andReturn(0);
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(0);
     element.seekable.length = 0;
     var returns = wrapper.seek(0);
     expect(returns).to.be(false);
@@ -241,7 +241,7 @@ describe('main_html5 wrapper tests', function () {
     expect(element.currentTime).to.eql(duration - 0.01);
   });
 
-  it('should block seekable from seeks before video initialization in safari', function(){
+  it('should block seekable from seeks until video initialization in safari', function(){
     OO.isSafari = true;
     vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
     element.currentTime = 3;
@@ -258,6 +258,28 @@ describe('main_html5 wrapper tests', function () {
     wrapper.seek(8);
     expect(element.seekable.start.wasCalled).to.be(true);
     expect(element.seekable.end.wasCalled).to.be(true);
+  });
+
+  it('should reblock seekable from seeks upon load until video initialization in safari', function(){
+    OO.isSafari = true;
+    vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
+    element.currentTime = 3;
+    element.duration = 10;
+    element.seekable.length = 1;
+
+    spyOn(element.seekable, "start").andReturn(2);
+    spyOn(element.seekable, "end").andReturn(10);
+    $(element).triggerHandler("canplay");
+    wrapper.seek(8);
+    expect(element.seekable.start.wasCalled).to.be(true);
+    expect(element.seekable.end.wasCalled).to.be(true);
+
+    element.seekable.start.reset();
+    element.seekable.end.reset();
+    wrapper.load();
+    wrapper.seek(8);
+    expect(element.seekable.start.wasCalled).to.be(false);
+    expect(element.seekable.end.wasCalled).to.be(false);
   });
 
   it('should set volume if between 0 and 1', function(){

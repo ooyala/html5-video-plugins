@@ -456,7 +456,7 @@ describe('main_html5 wrapper tests', function () {
 
   // TODO: When we have platform testing support, test for iOS behavior for ended event raised when ended != true
 
-  it('should block seekable from playheads before video initialization in safari', function(){
+  it('should block seekable from playheads until video initialization in safari', function(){
     OO.isSafari = true;
     vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
     element.currentTime = 3;
@@ -486,6 +486,42 @@ describe('main_html5 wrapper tests', function () {
       }]);
     expect(element.seekable.start.wasCalled).to.be(true);
     expect(element.seekable.end.wasCalled).to.be(true);
+  });
+
+  it('should reblock seekable from playheads upon load until video initialization in safari', function(){
+    OO.isSafari = true;
+    vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
+    element.currentTime = 3;
+    element.duration = 10;
+    spyOn(element.seekable, "start").andReturn(2);
+    spyOn(element.seekable, "end").andReturn(10);
+    element.seekable.length = 1;
+
+    $(element).triggerHandler("canplay");
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
+      {
+        "currentTime" : 3,
+        "duration" : 10,
+        "buffer" : 0,
+        "seekRange" : {"start": 2, "end" : 10}
+      }]);
+    expect(element.seekable.start.wasCalled).to.be(true);
+    expect(element.seekable.end.wasCalled).to.be(true);
+
+    element.seekable.start.reset();
+    element.seekable.end.reset();
+    wrapper.load();
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
+      {
+        "currentTime" : 3,
+        "duration" : 10,
+        "buffer" : 0,
+        "seekRange" : {"start": 0, "end" : 0}
+      }]);
+    expect(element.seekable.start.wasCalled).to.be(false);
+    expect(element.seekable.end.wasCalled).to.be(false);
   });
 
   it('should notify DURATION_CHANGE on video \'durationchange\' event', function(){
