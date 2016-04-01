@@ -241,6 +241,25 @@ describe('main_html5 wrapper tests', function () {
     expect(element.currentTime).to.eql(duration - 0.01);
   });
 
+  it('should block seekable from seeks before video initialization in safari', function(){
+    OO.isSafari = true;
+    vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
+    element.currentTime = 3;
+    element.duration = 10;
+    spyOn(element.seekable, "start").andReturn(2);
+    spyOn(element.seekable, "end").andReturn(10);
+    element.seekable.length = 1;
+
+    wrapper.seek(8);
+    expect(element.seekable.start.wasCalled).to.be(false);
+    expect(element.seekable.end.wasCalled).to.be(false);
+
+    $(element).triggerHandler("canplay");
+    wrapper.seek(8);
+    expect(element.seekable.start.wasCalled).to.be(true);
+    expect(element.seekable.end.wasCalled).to.be(true);
+  });
+
   it('should set volume if between 0 and 1', function(){
     wrapper.setVolume(0.1);
     expect(element.volume).to.eql(0.1);
