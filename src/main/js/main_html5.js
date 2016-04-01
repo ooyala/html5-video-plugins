@@ -1032,6 +1032,22 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
+     * Gets the seekable object in a way that is safe for all browsers.  This fixes an issue where Safari
+     * HLS videos become unseekable if 'seekable' is queried before the stream has raised 'canPlay'.
+     * @private
+     * @method OoyalaVideoWrapper#getSafeSeekableObject
+     * @returns {object?} Either the video seekable object or null
+     */
+    var getSafeSeekableObject = function() {
+      if (OO.isSafari && !canPlay) {
+        // Safety against accessing seekable before SAFARI browser canPlay media
+        return null;
+      } else {
+        return _video.seekable;
+      }
+    };
+
+    /**
      * Converts the desired seek time to a safe seek time based on the duration and platform.  If seeking
      * within OO.CONSTANTS.SEEK_TO_END_LIMIT of the end of the stream, seeks to the end of the stream.
      * @private
@@ -1068,14 +1084,7 @@ require("../../../html5-common/js/utils/environment.js");
         return null;
       }
 
-      // Safety against accessing seekable before SAFARI browser canPlay media
-      var range;
-      if (OO.isSafari && !canPlay) {
-        range = getSafeSeekRange(null);
-      } else {
-        range = getSafeSeekRange(_video.seekable);
-      }
-
+      var range = getSafeSeekRange(getSafeSeekableObject());
       if (range.start === 0 && range.end === 0) {
         return null;
       }
@@ -1137,13 +1146,7 @@ require("../../../html5-common/js/utils/environment.js");
         resolvedTime = Number(resolvedTime);
       }
 
-      // Safety against accessing seekable before SAFARI browser canPlay media
-      if (OO.isSafari && !canPlay) {
-        var seekable = getSafeSeekRange(null);
-      } else {
-        var seekable = getSafeSeekRange(event.target.seekable);
-      }
-
+      var seekable = getSafeSeekRange(getSafeSeekableObject());
       this.controller.notify(eventname,
                              { "currentTime": resolvedTime,
                                "duration": resolveDuration(event.target.duration),
