@@ -1198,7 +1198,7 @@ require("../../../html5-common/js/utils/environment.js");
         if(OO.isSafari && !OO.isIos && !_video.ended && Math.round(_video.currentTime) === Math.round(_video.duration))
         {
           this.controller.notify(this.controller.EVENTS.SEEKED);
-          this.controller.notify(this.controller.EVENTS.ENDED);
+          _.defer(raiseEndedEvent);
         }
       }
     }, this);
