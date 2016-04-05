@@ -517,14 +517,14 @@ require("../../../html5-common/js/utils/environment.js");
             }
           }
 
-          _.delay(function() {
+          _.delay(function(captionMode) {
             if (OO.isFirefox && _video.textTracks && _video.textTracks[0]) {
               _video.textTracks[0].mode = captionMode;
               for (var i=0; i < _video.textTracks[0].cues.length; i++) {
                 _video.textTracks[0].cues[i].line = 15;
               }
             }
-          }, 100);
+          }, 100, captionMode);
         }
       }
     };
