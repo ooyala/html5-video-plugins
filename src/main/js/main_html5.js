@@ -321,7 +321,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.load = function(rewind) {
       if (loaded && !rewind) return;
-      if (!!rewind) {  // consider adding loaded &&
+      if (!!rewind && !OO.isEdge) {  // consider adding loaded &&
         try {
           if (OO.isIos && OO.iosMajorVersion == 8) {
             // On iOS, wait for durationChange before setting currenttime
@@ -336,9 +336,15 @@ require("../../../html5-common/js/utils/environment.js");
           _video.pause();
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
-          console.log('VTC_OO: Failed to rewind video, probably ok; continuing');
+          OO.log('VTC_OO: Failed to rewind video, probably ok; continuing');
         }
+      } else if (!!rewind && OO.isEdge) {
+        // PBW-4555: Edge browser will always go back to time 0 on load.  Setting time to 0 here would
+        // cause the raw video element to enter seeking state.  If we call load while seeking on Edge,
+        // then seeking no longer works until the video stream url is changed.
+        currentTime = 0;
       }
+
       _video.load();
       loaded = true;
     };
@@ -583,6 +589,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var onLoadedMetadata = _.bind(function() {
       dequeueSeek();
+      loaded = true;
     }, this);
 
     /**
