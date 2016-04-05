@@ -533,7 +533,8 @@ require("../../../html5-common/js/utils/environment.js");
      * Sets the closed captions mode on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptionsMode
-     * @param {string} mode The mode to set the text tracks element. One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
+     * @param {string} mode The mode to set the text tracks element.
+     * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
     this.setClosedCaptionsMode = function(mode) {
       if (_video.textTracks) {
