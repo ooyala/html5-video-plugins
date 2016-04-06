@@ -494,17 +494,18 @@ require("../../../html5-common/js/utils/environment.js");
       $(_video).find('.' + TRACK_CLASS).remove();
       if (language == null) return;
 
+      var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
+
       // The textTrack added by QuickTime will not be removed by removing track element
       // But the textTrack that we added by adding track element will be removed by removing track element.
       // This first check is to check for live CC
       if (OO.isSafari && _video.textTracks.length !== 0 && language == "CC") {
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].kind === "captions") {
-            var mode = (!!params && params.mode) || 'showing';
-            _video.textTracks[i].mode = mode;
+            _video.textTracks[i].mode = captionMode;
             _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
           } else {
-           _video.textTracks[i].mode = 'disabled';
+           _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
           }
         }
       } else {
@@ -513,23 +514,23 @@ require("../../../html5-common/js/utils/environment.js");
           var captions = closedCaptions[captionsFormat][language];
           var label = captions.name;
           var src = captions.url;
-          var mode = (!!params && params.mode) || 'showing';
 
           $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
           if (_video.textTracks && _video.textTracks[0]) {
-            _video.textTracks[0].mode = mode;
-            if (mode != "showing") {
+            _video.textTracks[0].mode = captionMode;
+            if (captionMode == OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN) {
               _video.textTracks[0].oncuechange = onClosedCaptionCueChange;
             }
           }
 
-          _.delay(function() {
-            if (OO.isFirefox) {
+          _.delay(function(captionMode) {
+            if (OO.isFirefox && _video.textTracks && _video.textTracks[0]) {
+              _video.textTracks[0].mode = captionMode;
               for (var i=0; i < _video.textTracks[0].cues.length; i++) {
                 _video.textTracks[0].cues[i].line = 15;
               }
             }
-          }, 100);
+          }, 100, captionMode);
         }
       }
     };
@@ -538,7 +539,8 @@ require("../../../html5-common/js/utils/environment.js");
      * Sets the closed captions mode on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptionsMode
-     * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
+     * @param {string} mode The mode to set the text tracks element.
+     * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
     this.setClosedCaptionsMode = function(mode) {
       if (_video.textTracks) {
@@ -546,7 +548,7 @@ require("../../../html5-common/js/utils/environment.js");
           _video.textTracks[i].mode = mode;
         }
       }
-      if (mode == "disabled") {
+      if (mode == OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
         raiseClosedCaptionCueChanged("");
       }
     };
