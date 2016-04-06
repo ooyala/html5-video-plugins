@@ -354,13 +354,20 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set the closed captions mode', function(){
+    OO.CONSTANTS = {
+      CLOSED_CAPTIONS: {
+        SHOWING: "showing",
+        HIDDEN: "hidden",
+        DISABLED: "disabled"
+      }
+    };
     //Mock textTracks
-    element.textTracks = [{ mode: "disabled" }];
-    expect(element.textTracks[0].mode).to.eql("disabled");
-    wrapper.setClosedCaptionsMode("showing");
-    expect(element.textTracks[0].mode).to.eql("showing");
-    wrapper.setClosedCaptionsMode("hidden");
-    expect(element.textTracks[0].mode).to.eql("hidden");
+    element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED }];
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+    wrapper.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+    wrapper.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
   });
 
   it('should set the crossorigin attribute', function(){
