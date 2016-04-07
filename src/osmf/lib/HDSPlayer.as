@@ -332,6 +332,7 @@ package
     {
       _playheadTimer.stop();
       _resource = null;
+      _playCompleted=true;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
     
@@ -831,10 +832,18 @@ package
      * @method HDSPlayer#onGetCurrentTime
      * @param {Event} event The event passed from the external interface.
      */
-    public function onGetCurrentTime(event:Event):void
+     public function onGetCurrentTime(event:Event):void
     {
       var eventObject:Object = new Object();
+      if(_playCompleted==true)
+      {
+        eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.duration.toString();
+        _playCompleted=false;
+      }
+      else
+      {
       eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
+      }
       dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
     }
     
