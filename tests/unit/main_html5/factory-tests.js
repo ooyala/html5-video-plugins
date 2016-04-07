@@ -10,9 +10,22 @@ describe('main_html5 factory tests', function () {
   var pluginFactory;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
+  // override video element canPlayType to return true always
+  var oldCreateElement = document.createElement;
+  document.createElement = _.bind(function(type) {
+    if (type === "video") {
+      return { canPlayType: function() { return true; }};
+    } else {
+      return oldCreateElement(type);
+    }
+  }, this);
+
   // Load file under test
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
+
+  // restore document.createElement
+  document.createElement = oldCreateElement;
 
   var vtc = { EVENTS: { CAN_PLAY: "can_play" },
                         notify: function(){} };
@@ -22,7 +35,8 @@ describe('main_html5 factory tests', function () {
   });
 
   it('should provide a list of supported encodings', function(){
-    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.MP4, OO.VIDEO.ENCODING.WEBM]);
+    // This is controlled by document.createElement("video").canPlayType(type);
+    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.MP4, OO.VIDEO.ENCODING.WEBM, OO.VIDEO.ENCODING.HLS]);
   });
 
   it('should provide a list of supported features', function(){
@@ -94,12 +108,6 @@ describe('main_html5 factory tests', function () {
   it('should remove list of encodings on destroy', function(){
     pluginFactory.destroy();
     expect(pluginFactory.encodings).to.eql([]);
-  });
-
-  it('should set ready to false on destroy', function(){
-    // destroy done in pervious test.  The proper way to test this would be to re-create the plugin
-    // before each test but this requires use of the require.cache function which is not available in jest.
-    expect(pluginFactory.ready).to.be(false);
   });
 
   it('should not create elements after destroy is called', function(){

@@ -17,7 +17,6 @@ require("../../../html5-common/js/utils/environment.js");
    * @class OoyalaVideoFactory
    * @classdesc Factory for creating video player objects that use HTML5 video tags
    * @property {string} name The name of the plugin
-   * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
    * @property {object} features An array of supported features (ex. OO.VIDEO.FEATURE.CLOSED_CAPTIONS)
    * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
@@ -25,23 +24,38 @@ require("../../../html5-common/js/utils/environment.js");
   var OoyalaVideoFactory = function() {
     this.name = pluginName;
 
-    // This module defaults to ready because no setup or external loading is required
-    this.ready = true;
-
     this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
                       OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     // Determine supported encodings
     var getSupportedEncodings = function() {
+      var list = [];
       var videoElement = document.createElement("video");
-      var list = [OO.VIDEO.ENCODING.MP4];
-      if (!OO.isSafari && !OO.isIE && !OO.isEdge) {
-        list.push(OO.VIDEO.ENCODING.WEBM);
-      }
-      if (!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
-          !!videoElement.canPlayType("application/x-mpegURL")) {
-        list.push(OO.VIDEO.ENCODING.HLS);
+
+      if (typeof videoElement.canPlayType === "function") {
+        if (!!videoElement.canPlayType("video/mp4")) {
+          list.push(OO.VIDEO.ENCODING.MP4);
+        }
+
+        if (!!videoElement.canPlayType("video/webm")) {
+          list.push(OO.VIDEO.ENCODING.WEBM);
+        }
+
+        if ((!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
+             !!videoElement.canPlayType("application/x-mpegURL")) &&
+            !OO.isSmartTV && !OO.isRimDevice && !OO.isAndroid &&
+            (!OO.isMacOs || OO.isMacOsLionOrLater)) {
+          // 2012 models of Samsung and LG smart TV's do not support HLS even if reported
+          // Mac OS must be lion or later
+          // We do not yet officially support HLS on android chrome; blocking it until it's ready
+          list.push(OO.VIDEO.ENCODING.HLS);
+        }
+
+        // Sony OperaTV supports HLS but doesn't properly report it so we are forcing it here
+        if (window.navigator.userAgent.match(/SonyCEBrowser/)) {
+          list.push(OO.VIDEO.ENCODING.HLS);
+        }
       }
 
       return list;
@@ -101,7 +115,6 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoFactory#destroy
      */
     this.destroy = function() {
-      this.ready = false;
       this.encodings = [];
       this.create = function() {};
     };
@@ -153,6 +166,7 @@ require("../../../html5-common/js/utils/environment.js");
     var initialTime = { value: 0, reached: true };
     var canSeek = true;
     var isPriming = false;
+    var lastCueText = null;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -296,6 +310,7 @@ require("../../../html5-common/js/utils/environment.js");
       canSeek = true;
       isPriming = false;
       stopUnderflowWatcher();
+      lastCueText = null;
     }, this);
 
     /**
@@ -324,6 +339,7 @@ require("../../../html5-common/js/utils/environment.js");
           console.log('VTC_OO: Failed to rewind video, probably ok; continuing');
         }
       }
+      canPlay = false;
       _video.load();
       loaded = true;
     };
@@ -473,16 +489,18 @@ require("../../../html5-common/js/utils/environment.js");
       $(_video).find('.' + TRACK_CLASS).remove();
       if (language == null) return;
 
+      var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
+
       // The textTrack added by QuickTime will not be removed by removing track element
       // But the textTrack that we added by adding track element will be removed by removing track element.
       // This first check is to check for live CC
       if (OO.isSafari && _video.textTracks.length !== 0 && language == "CC") {
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].kind === "captions") {
-            var mode = (!!params && params.mode) || 'showing';
-            _video.textTracks[i].mode = mode;
+            _video.textTracks[i].mode = captionMode;
+            _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
           } else {
-           _video.textTracks[i].mode = 'disabled';
+           _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
           }
         }
       } else {
@@ -491,18 +509,23 @@ require("../../../html5-common/js/utils/environment.js");
           var captions = closedCaptions[captionsFormat][language];
           var label = captions.name;
           var src = captions.url;
-          var mode = (!!params && params.mode) || 'showing';
 
           $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
+          if (_video.textTracks && _video.textTracks[0]) {
+            _video.textTracks[0].mode = captionMode;
+            if (captionMode == OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN) {
+              _video.textTracks[0].oncuechange = onClosedCaptionCueChange;
+            }
+          }
 
-          _.delay(function() {
-            _video.textTracks[0].mode = mode;
-            if (OO.isFirefox) {
+          _.delay(function(captionMode) {
+            if (OO.isFirefox && _video.textTracks && _video.textTracks[0]) {
+              _video.textTracks[0].mode = captionMode;
               for (var i=0; i < _video.textTracks[0].cues.length; i++) {
                 _video.textTracks[0].cues[i].line = 15;
               }
             }
-          }, 100);
+          }, 100, captionMode);
         }
       }
     };
@@ -511,13 +534,17 @@ require("../../../html5-common/js/utils/environment.js");
      * Sets the closed captions mode on the video element.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptionsMode
-     * @param {string} mode The mode to set the text tracks element. One of ("disabled", "hidden", "showing").
+     * @param {string} mode The mode to set the text tracks element.
+     * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
     this.setClosedCaptionsMode = function(mode) {
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
           _video.textTracks[i].mode = mode;
         }
+      }
+      if (mode == OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
+        raiseClosedCaptionCueChanged("");
       }
     };
 
@@ -559,6 +586,61 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var onLoadedMetadata = _.bind(function() {
       dequeueSeek();
+    }, this);
+
+    /**
+     * Callback for when a closed caption track cue has changed.
+     * @private
+     * @method OoyalaVideoWrapper#onClosedCaptionCueChange
+     * @param {object} event The event from the cue change
+     */
+    var onClosedCaptionCueChange = _.bind(function(event) {
+      var cueText = "";
+      if (event && event.currentTarget && event.currentTarget.activeCues) {
+        for (var i = 0; i < event.currentTarget.activeCues.length; i++) {
+          if (event.currentTarget.activeCues[i].text) {
+            cueText += event.currentTarget.activeCues[i].text + " ";
+          }
+        }
+      }
+      raiseClosedCaptionCueChanged(cueText);
+    }, this);
+
+    /**
+     * Workaround for Firefox only.
+     * Check for active closed caption cues and relay them to the controller.
+     * @private
+     * @method OoyalaVideoWrapper#checkForClosedCaptionsCueChange
+     */
+    var checkForClosedCaptionsCueChange = _.bind(function() {
+      var cueText = "";
+      if (_video.textTracks) {
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          if (_video.textTracks[i].activeCues) {
+            for (var j = 0; j < _video.textTracks[i].activeCues.length; j++) {
+              if (_video.textTracks[i].activeCues[j].text) {
+                cueText += _video.textTracks[i].activeCues[j].text + " ";
+              }
+            }
+            break;
+          }
+        }
+      }
+      raiseClosedCaptionCueChanged(cueText);
+    }, this);
+
+    /**
+     * Notify the controller with new closed caption cue text.
+     * @private
+     * @method OoyalaVideoWrapper#raiseClosedCaptionCueChanged
+     * @param {string} cueText The text of the new closed caption cue. Empty string signifies no active cue.
+     */
+    var raiseClosedCaptionCueChanged = _.bind(function(cueText) {
+      cueText = cueText.trim();
+      if (cueText != lastCueText) {
+        lastCueText = cueText;
+        this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueText);
+      }
     }, this);
 
     /**
@@ -779,6 +861,11 @@ require("../../../html5-common/js/utils/environment.js");
       // iPad safari has video centering issue. Unfortunately, HTML5 does not have bitrate change event.
       setVideoCentering();
 
+      //Workaround for Firefox because it doesn't support the oncuechange event on a text track
+      if (OO.isFirefox) {
+        checkForClosedCaptionsCueChange();
+      }
+
       forceEndOnTimeupdateIfRequired(event);
     }, this);
 
@@ -952,6 +1039,22 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
+     * Gets the seekable object in a way that is safe for all browsers.  This fixes an issue where Safari
+     * HLS videos become unseekable if 'seekable' is queried before the stream has raised 'canPlay'.
+     * @private
+     * @method OoyalaVideoWrapper#getSafeSeekableObject
+     * @returns {object?} Either the video seekable object or null
+     */
+    var getSafeSeekableObject = function() {
+      if (OO.isSafari && !canPlay) {
+        // Safety against accessing seekable before SAFARI browser canPlay media
+        return null;
+      } else {
+        return _video.seekable;
+      }
+    };
+
+    /**
      * Converts the desired seek time to a safe seek time based on the duration and platform.  If seeking
      * within OO.CONSTANTS.SEEK_TO_END_LIMIT of the end of the stream, seeks to the end of the stream.
      * @private
@@ -988,7 +1091,7 @@ require("../../../html5-common/js/utils/environment.js");
         return null;
       }
 
-      var range = getSafeSeekRange(_video.seekable);
+      var range = getSafeSeekRange(getSafeSeekableObject());
       if (range.start === 0 && range.end === 0) {
         return null;
       }
@@ -1050,13 +1153,7 @@ require("../../../html5-common/js/utils/environment.js");
         resolvedTime = Number(resolvedTime);
       }
 
-      // Safety against accessing seekable before SAFARI browser canPlay media
-      if (OO.isSafari && !canPlay) {
-        var seekable = getSafeSeekRange(null);
-      } else {
-        var seekable = getSafeSeekRange(event.target.seekable);
-      }
-
+      var seekable = getSafeSeekRange(getSafeSeekableObject());
       this.controller.notify(eventname,
                              { "currentTime": resolvedTime,
                                "duration": resolveDuration(event.target.duration),

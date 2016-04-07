@@ -27,6 +27,7 @@ describe('main_html5 wrapper tests', function () {
   afterEach(function() {
     OO.isSafari = false;
     OO.isAndroid = false;
+    OO.isFirefox = false;
     if (wrapper) { wrapper.destroy(); }
   });
 
@@ -187,6 +188,126 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING]);
   });
 
+  it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack', function(){
+    vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
+    var closedCaptions = {
+      closed_captions_vtt: {
+        en: {
+          name: "English",
+          url: "http://ooyala.com"
+        }
+      }
+    };
+    var event = {
+      currentTarget: {
+        activeCues: [{
+          text: "This is cue text."
+        }]
+      }
+    };
+    element.textTracks = [{
+      oncuechange: null
+    }];
+    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
+    element.textTracks[0].oncuechange(event);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, event.currentTarget.activeCues[0].text]);
+  });
+
+  it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack with all active cues', function(){
+    vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
+    var closedCaptions = {
+      closed_captions_vtt: {
+        en: {
+          name: "English",
+          url: "http://ooyala.com"
+        }
+      }
+    };
+    var event = {
+      currentTarget: {
+        activeCues: [{
+          text: "This is cue text."
+        }, {
+          text: "This is more text."
+        }]
+      }
+    };
+    element.textTracks = [{
+      oncuechange: null
+    }];
+    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
+    element.textTracks[0].oncuechange(event);
+    expect(vtc.notifyParameters).to.eql([
+      vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED,
+      event.currentTarget.activeCues[0].text + " " + event.currentTarget.activeCues[1].text
+    ]);
+  });
+
+  it('should notify CLOSED_CAPTION_CUE_CHANGED from setClosedCaptionsMode if mode is disabled', function(){
+    vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
+    wrapper.setClosedCaptionsMode("disabled");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, ""]);
+  });
+
+  it('should notify CLOSED_CAPTION_CUE_CHANGED on \'timeupdate\' event in Firefox', function(){
+    vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
+    element.textTracks = [{
+      activeCues: [{
+        text: "This is cue text."
+      }]
+    }];
+    OO.isFirefox = true;
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, element.textTracks[0].activeCues[0].text]);
+  });
+
+  it('should notify CLOSED_CAPTION_CUE_CHANGED on \'timeupdate\' event in Firefox with all active cues', function(){
+    vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
+    element.textTracks = [{
+      activeCues: [{
+        text: "This is cue text."
+      }, {
+        text: "This is more text."
+      }]
+    }];
+    OO.isFirefox = true;
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters).to.eql([
+      vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED,
+      element.textTracks[0].activeCues[0].text + " " + element.textTracks[0].activeCues[1].text
+    ]);
+  });
+
+  it('should notify CLOSED_CAPTION_CUE_CHANGED with an empty string on \'timeupdate\' event in Firefox if there are no active cues', function(){
+    vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
+    element.textTracks = [{
+      activeCues: [{
+        text: "This is cue text."
+      }]
+    }];
+    OO.isFirefox = true;
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, element.textTracks[0].activeCues[0].text]);
+    element.textTracks = null;
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, ""]);
+  });
+
+  it('should not notify CLOSED_CAPTION_CUE_CHANGED on \'timeupdate\' if the cue text has not changed', function(){
+    vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
+    vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
+    element.textTracks = [{
+      activeCues: [{
+        text: "This is cue text."
+      }]
+    }];
+    OO.isFirefox = true;
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, element.textTracks[0].activeCues[0].text]);
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
+  });
+
   it('should notify WAITING on video \'waiting\' event', function(){
     vtc.interface.EVENTS.WAITING = "waiting";
     element.currentSrc = "url";
@@ -341,12 +462,12 @@ describe('main_html5 wrapper tests', function () {
 
   // TODO: When we have platform testing support, test for iOS behavior for ended event raised when ended != true
 
-  it('should not block seekable on video initialization in safari', function(){
+  it('should block seekable from playheads until video initialization in safari', function(){
     OO.isSafari = true;
     vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
     element.currentTime = 3;
     element.duration = 10;
-    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "start").andReturn(2);
     spyOn(element.seekable, "end").andReturn(10);
     element.seekable.length = 1;
     $(element).triggerHandler("durationchange");
@@ -357,6 +478,8 @@ describe('main_html5 wrapper tests', function () {
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
       }]);
+    expect(element.seekable.start.wasCalled).to.be(false);
+    expect(element.seekable.end.wasCalled).to.be(false);
 
     $(element).triggerHandler("canplay");
     $(element).triggerHandler("durationchange");
@@ -365,8 +488,46 @@ describe('main_html5 wrapper tests', function () {
         "currentTime" : 3,
         "duration" : 10,
         "buffer" : 0,
-        "seekRange" : {"start": 0, "end" : 10}
+        "seekRange" : {"start": 2, "end" : 10}
       }]);
+    expect(element.seekable.start.wasCalled).to.be(true);
+    expect(element.seekable.end.wasCalled).to.be(true);
+  });
+
+  it('should reblock seekable from playheads upon load until video initialization in safari', function(){
+    OO.isSafari = true;
+    vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
+    element.currentTime = 3;
+    element.duration = 10;
+    spyOn(element.seekable, "start").andReturn(2);
+    spyOn(element.seekable, "end").andReturn(10);
+    element.seekable.length = 1;
+
+    $(element).triggerHandler("canplay");
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
+      {
+        "currentTime" : 3,
+        "duration" : 10,
+        "buffer" : 0,
+        "seekRange" : {"start": 2, "end" : 10}
+      }]);
+    expect(element.seekable.start.wasCalled).to.be(true);
+    expect(element.seekable.end.wasCalled).to.be(true);
+
+    element.seekable.start.reset();
+    element.seekable.end.reset();
+    wrapper.load();
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
+      {
+        "currentTime" : 3,
+        "duration" : 10,
+        "buffer" : 0,
+        "seekRange" : {"start": 0, "end" : 0}
+      }]);
+    expect(element.seekable.start.wasCalled).to.be(false);
+    expect(element.seekable.end.wasCalled).to.be(false);
   });
 
   it('should notify DURATION_CHANGE on video \'durationchange\' event', function(){
@@ -382,7 +543,6 @@ describe('main_html5 wrapper tests', function () {
         "seekRange" : {"start": 0, "end" : 0}
       }]);
   });
-
 
   it('should notify DURATION_CHANGE on video \'durationchange\' event with buffer range and seek range', function(){
     vtc.interface.EVENTS.DURATION_CHANGE = "durationChange";
