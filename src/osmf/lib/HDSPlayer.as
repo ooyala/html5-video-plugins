@@ -293,7 +293,7 @@ package
             _initialTime = 0;
           }
           dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING,null));
-          if(_playCompleted == true)
+          if (_playCompleted == true)
           {
             _playCompleted = false;
           }
@@ -840,16 +840,16 @@ package
     public function onGetCurrentTime(event:Event):void
     {
       var eventObject:Object = new Object();
-      if(_playCompleted==true)
+      if (_playCompleted == true)
       {
         eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.duration.toString();
-        _playCompleted=false;
+        _playCompleted = false;
       }
       else
       {
-      eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
+        eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
       }
-      dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
+        dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
     }
     
     /**
