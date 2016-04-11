@@ -83,8 +83,12 @@ require("../../../html5-common/js/utils/environment.js");
         height: parentContainer.height()
       };
 
+      if (!playerId) {
+        playerId = getRandomString();
+      }
+
       var element = new OoyalaVideoWrapper(domId, video[0], dimension, playerId);
-      if (currentInstances[playerId] && currentInstances[_playerId] >= 0) {
+      if (currentInstances[playerId] && currentInstances[playerId] >= 0) {
         currentInstances[playerId]++;
       } else {
         currentInstances[playerId] = 1;
@@ -141,7 +145,7 @@ require("../../../html5-common/js/utils/environment.js");
     this.disableNativeSeek = false;
 
     var _video = video;
-    var _playerId = playerId
+    var _playerId = playerId;
     var _currentUrl = '';
     var videoEnded = false;
     var listeners = {};
@@ -462,7 +466,7 @@ require("../../../html5-common/js/utils/environment.js");
       _video.src = '';
       unsubscribeAllEvents();
       $(_video).remove();
-      if (currentInstances[_playerId] && currentInstances[_playerId] > 0) {
+      if (_playerId && currentInstances[_playerId] && currentInstances[_playerId] > 0) {
         currentInstances[_playerId]--;
       }
       if (watchHidden) {
@@ -867,16 +871,6 @@ require("../../../html5-common/js/utils/environment.js");
     // Helper methods
     /************************************************************************************/
 
-    /**
-     * Generates a random string.
-     * @private
-     * @method OoyalaVideoWrapper#getRandomString
-     * @returns {string} A random string
-     */
-    var getRandomString = function() {
-      return Math.random().toString(36).substring(7);
-    };
-
      /**
      * Fix issue with iPad safari browser not properly centering the video
      * @private
@@ -1176,6 +1170,16 @@ require("../../../html5-common/js/utils/environment.js");
       waitingEventRaised = false;
       watcherTime = -1;
     }, this);
+  };
+
+  /**
+   * Generates a random string.
+   * @private
+   * @method getRandomString
+   * @returns {string} A random string
+   */
+  var getRandomString = function() {
+    return Math.random().toString(36).substring(7);
   };
 
   /**
