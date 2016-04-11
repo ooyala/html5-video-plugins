@@ -18,8 +18,8 @@ require("../../../html5-common/js/utils/constants.js");
   var pluginPath;
   var filename = "osmf_flash.*\.js";
   var scripts = document.getElementsByTagName('script');
-  for (var index in scripts) {
-    var match = scripts[index].src.match(filename);
+  for (var i = 0; i < scripts.length; i++) {
+    var match = scripts[i].src.match(filename);
     if (match && match.length > 0) {
       pluginPath = match.input.match(/.*\//)[0];
       break;
