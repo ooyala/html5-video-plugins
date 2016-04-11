@@ -11,7 +11,7 @@ require("../../../html5-common/js/utils/environment.js");
 
 (function(_, $) {
   var pluginName = "ooyalaHtml5VideoTech";
-  var currentInstances = 0;
+  var currentInstances = {};
 
   /**
    * @class OoyalaVideoFactory
@@ -70,10 +70,13 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {string} domId The dom id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
+     * @param {string} playerId An id that represents the player instance
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, domId, controller, css) {
-      if (this.maxSupportedElements > 0 && currentInstances >= this.maxSupportedElements) {
+    this.create = function(parentContainer, domId, controller, css, playerId) {
+      // If the current player has reached max supported elements, do not create a new one
+      if (this.maxSupportedElements > 0 && playerId &&
+          currentInstances[playerId] >= this.maxSupportedElements) {
         return;
       }
 
@@ -96,8 +99,16 @@ require("../../../html5-common/js/utils/environment.js");
         height: parentContainer.height()
       };
 
-      var element = new OoyalaVideoWrapper(domId, video[0], dimension);
-      currentInstances++;
+      if (!playerId) {
+        playerId = getRandomString();
+      }
+
+      var element = new OoyalaVideoWrapper(domId, video[0], dimension, playerId);
+      if (currentInstances[playerId] && currentInstances[playerId] >= 0) {
+        currentInstances[playerId]++;
+      } else {
+        currentInstances[playerId] = 1;
+      }
       element.controller = controller;
       controller.notify(controller.EVENTS.CAN_PLAY);
 
@@ -142,12 +153,14 @@ require("../../../html5-common/js/utils/environment.js");
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
+   * @property {string} playerId An id representing the unique player instance
    */
-  var OoyalaVideoWrapper = function(domId, video, dimension) {
+  var OoyalaVideoWrapper = function(domId, video, dimension, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
 
     var _video = video;
+    var _playerId = playerId;
     var _currentUrl = '';
     var videoEnded = false;
     var listeners = {};
@@ -479,7 +492,9 @@ require("../../../html5-common/js/utils/environment.js");
       _video.src = '';
       unsubscribeAllEvents();
       $(_video).remove();
-      currentInstances--;
+      if (_playerId && currentInstances[_playerId] && currentInstances[_playerId] > 0) {
+        currentInstances[_playerId]--;
+      }
       if (watchHidden) {
         document.removeEventListener("visibilitychange", watchHidden);
       }
@@ -954,16 +969,6 @@ require("../../../html5-common/js/utils/environment.js");
     // Helper methods
     /************************************************************************************/
 
-    /**
-     * Generates a random string.
-     * @private
-     * @method OoyalaVideoWrapper#getRandomString
-     * @returns {string} A random string
-     */
-    var getRandomString = function() {
-      return Math.random().toString(36).substring(7);
-    };
-
      /**
      * Fix issue with iPad safari browser not properly centering the video
      * @private
@@ -1273,6 +1278,16 @@ require("../../../html5-common/js/utils/environment.js");
       waitingEventRaised = false;
       watcherTime = -1;
     }, this);
+  };
+
+  /**
+   * Generates a random string.
+   * @private
+   * @method getRandomString
+   * @returns {string} A random string
+   */
+  var getRandomString = function() {
+    return Math.random().toString(36).substring(7);
   };
 
   /**
