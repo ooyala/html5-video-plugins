@@ -59,6 +59,43 @@ describe('main_html5 factory tests', function () {
     expect(elementWrapper).to.be.ok();
   });
 
+  it('should not create an element when max elements reached', function(){
+    pluginFactory.maxSupportedElements = 1;
+    var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
+    var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player1");
+    expect(elementWrapper).to.be.ok();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player1");
+    expect(elementWrapper).to.not.be.ok();
+    pluginFactory.maxSupportedElements = 2;
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player2");
+    expect(elementWrapper).to.be.ok();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player2");
+    expect(elementWrapper).to.be.ok();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player2");
+    expect(elementWrapper).to.not.be.ok();
+  });
+
+  it('should create an element when max elements not reached because elements destroyed', function(){
+    pluginFactory.maxSupportedElements = 1;
+    var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
+    var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player3");
+    expect(elementWrapper).to.be.ok();
+    var elementWrapper1 = pluginFactory.create($("<div>"), "test", controller, {}, "player3");
+    expect(elementWrapper1).to.not.be.ok();
+    elementWrapper.destroy();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player3");
+    expect(elementWrapper).to.be.ok();
+  });
+
+  it('should create elements when max elements not because no playerId specified', function(){
+    pluginFactory.maxSupportedElements = 1;
+    var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
+    var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {});
+    expect(elementWrapper).to.be.ok();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {});
+    expect(elementWrapper).to.be.ok();
+  });
+
   it('should create an element wrapper with provided contoller property', function(){
     var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
     var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {});
