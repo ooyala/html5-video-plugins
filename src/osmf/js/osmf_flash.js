@@ -261,7 +261,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @public
      * @method OoyalaFlashVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
-     * @param {string} encoding The encoding of video stream 
+     * @param {string} encoding The encoding of video stream
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
@@ -309,7 +309,7 @@ require("../../../html5-common/js/utils/constants.js");
      * Sets the closed captions mode of the video playback.
      * @public
      * @method OoyalaFlashVideoWrapper#setClosedCaptionsMode
-     * @param {string} mode Mode of the captions(disabled/showing) 
+     * @param {string} mode Mode of the captions(disabled/showing)
      */
 
     this.setClosedCaptionsMode = function(mode){
@@ -438,7 +438,7 @@ require("../../../html5-common/js/utils/constants.js");
       this.setVideoUrl('');
 
       // Unsubscribe all events
-      
+
       this.unsubscribeAllEvents();
 
       // Pass destroy to flash plugin.
@@ -592,7 +592,7 @@ require("../../../html5-common/js/utils/constants.js");
       newController.notify(newControllerr.EVENTS.FULLSCREEN_CHANGED,
                              { "isFullScreen" : false, "paused" : event.target.paused });
     };
-  
+
     var raiseBitrateChanged = function(event) {
       var vtcBitrate = {
           id: event.eventObject.id,
