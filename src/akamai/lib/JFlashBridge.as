@@ -4,6 +4,7 @@ package
   import flash.events.TimerEvent;
   import flash.external.ExternalInterface;
   import flash.utils.Timer;
+  import Logger;
 
   public class JFlashBridge
   {
@@ -30,7 +31,7 @@ package
       if (ExternalInterface.available)
       {
         objectName = getSWFObjectName();
-        ExternalInterface.call("console.log","external interface is available"+objectName);
+        Logger.log("external interface is available"+objectName, "JFlashBridge");
         var eventData : Object = new Object();
         eventData.eventtype = "JSREADY";
         eventData.eventObject = null;
@@ -44,7 +45,7 @@ package
           } 
           else 
           {
-            trace("JavaScript is not ready yet, creating timer.");
+            Logger.log("JavaScript is not ready yet, creating timer.", "JFlashBridge");
             var readyTimer:Timer = new Timer(100, 0);
             readyTimer.addEventListener(TimerEvent.TIMER, onReadyTimer);
             readyTimer.start();
@@ -52,16 +53,16 @@ package
         }
         catch (error:SecurityError)
         {
-          trace("A SecurityError occurred: " + error.message);
+          Logger.log("A SecurityError occurred: " + error.message, "JFlashBridge");
         }
         catch (error:Error)
         {
-          trace("An Error occurred: " + error.message);
+          Logger.log("An Error occurred: " + error.message, "JFlashBridge");
         }
       }
       else
       {
-        trace("JavaScript external interface is not available.");
+        Logger.log("JavaScript external interface is not available.", "JFlashBridge");
       }
     }
 
@@ -144,7 +145,7 @@ package
     private function onReadyTimer(event:TimerEvent):void
     {
       var isReady:Boolean = checkReady();
-      trace("JavaScript ready status: ", isReady);
+      Logger.log("JavaScript ready status: " + isReady, "JFlashBridge");
       if (isReady) 
       {
         Timer(event.target).stop();

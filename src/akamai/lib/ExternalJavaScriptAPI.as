@@ -17,7 +17,6 @@ package
     private var _akamaiHDPlayer:AkamaiHDPlayer = null;
     private var _jsBridge:JFlashBridge = null;
     private var _dynamicEvent:DynamicEvent = null;
-    private var _logger:Logger = new Logger();
 
     /**
      * Constructor
@@ -46,7 +45,7 @@ package
         }
         catch (error:Error)
         {
-          _logger.sendToDebugger(error.message, "ExternalJavaScriptAPI","error");
+          Logger.log(error.message, "ExternalJavaScriptAPI","error");
         }
       }
       else
@@ -103,7 +102,7 @@ package
       //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       //_akamaiHDPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
-      _logger.sendToDebugger("events added", "registerListeners");
+      Logger.log("events added", "registerListeners");
     }
 
     /**
@@ -152,7 +151,7 @@ package
       var eventData : Object = new Object();
       eventData.eventtype = event.type;
       eventData.eventObject = event.eventObject;
-      _logger.sendToDebugger(eventData.eventtype, "onFlashEvent", "log");
+      Logger.log(eventData.eventtype, "onFlashEvent");
       sendToJavaScript(eventData);
     }
 
@@ -294,7 +293,7 @@ package
      */
     private function onCallback(data:String):void
     {
-      _logger.sendToDebugger(data, "swf onCallback", "log");
+      Logger.log(data, "swf onCallback");
       var eventData : Object = new Object();
       eventData.eventtype = data;
       eventData.eventObject = null;
@@ -309,7 +308,7 @@ package
      */
     private function jSBound(data:String):Object
     {
-      _logger.sendToDebugger(data, "swf jSBound", "log");
+      Logger.log(data, "swf jSBound");
       onCallback(data);
       return data;
     }
@@ -344,7 +343,7 @@ package
         var end:int = value.lastIndexOf(")");
         eventArgs = (String)(value.slice(start + 1, end));
         value = (value.slice(0, start));
-        _logger.sendToDebugger(eventArgs, "receivedFromJavaScript args", "log");
+        Logger.log(eventArgs, "receivedFromJavaScript args");
       }
       var jsEvent:DynamicEvent = new DynamicEvent(value);
       if (eventArgs != "")
@@ -356,7 +355,7 @@ package
         jsEvent.args = dataObj;
       }
       dispatchEvent(jsEvent);
-      _logger.sendToDebugger(jsEvent.toString(), "receivedFromJavaScript event", "log");
+      Logger.log(jsEvent.toString(), "receivedFromJavaScript event");
     }
 
    /**

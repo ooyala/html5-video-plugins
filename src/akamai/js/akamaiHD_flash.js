@@ -7,7 +7,7 @@ require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
 (function(_, $) {
-  var pluginName = "ooyalaFlashVideoTech";
+  var pluginName = "ooyalaAkamaiHDFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
   var cssFromContainer;
 
@@ -15,35 +15,27 @@ require("../../../html5-common/js/utils/constants.js");
    * Config variables for paths to flash resources.
    */
 
-  var pluginPath;
-  var filename = "akamaiHD_flash.*\.js";
-  var scripts = document.getElementsByTagName('script');
-  for (var index in scripts) {
-    var match = scripts[index].src.match(filename);
-    if (match && match.length > 0) {
-      pluginPath = match.input.match(/.*\//)[0];
-      break;
-    }
-  }
+  var scriptsList = document.currentScript;
+  var akamaiPath = scriptsList.src;
+  var pluginPath = akamaiPath.slice(0, 1 + akamaiPath.lastIndexOf("/"));
+
   if (!pluginPath) {
     console.error("Can't get path to script", filename);
     return;
   }
   pluginPath += "akamaiHD_flash.swf";
   var flexPath = "playerProductInstall.swf";
-  this.ready = false;
+
   /**
-   * @class OoyalaFlashVideoFactory
+   * @class OoyalaAkamaiHDFlashVideoFactory
    * @classdesc Factory for creating video player objects that use Flash in an HTML5 wrapper.
    * @property {string} name The name of the plugin
    * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
    */
 
-  var OoyalaFlashVideoFactory = function() {
+  var OoyalaAkamaiHDFlashVideoFactory = function() {
     this.name = pluginName;
-    // This module defaults to ready because no setup or external loading is required
-    this.ready = true;
     /**
      * Checks whether flash player is available
      * @public
@@ -97,9 +89,9 @@ require("../../../html5-common/js/utils/constants.js");
     this.features = [ ];
 
     /**
-     * Creates a video player instance using OoyalaFlashVideoWrapper.
+     * Creates a video player instance using OoyalaAkamaiHDFlashVideoWrapper.
      * @public
-     * @method OoyalaFlashVideoFactory#create
+     * @method OoyalaAkamaiHDFlashVideoFactory#create
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
      * @param {string} id The id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
@@ -112,20 +104,17 @@ require("../../../html5-common/js/utils/constants.js");
       parentContainer.append(video);
       cssFromContainer = css;
 
-      element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer);
+      element = new OoyalaAkamaiHDFlashVideoWrapper(id, video[0], parentContainer);
       element.controller = controller;
-      // TODO: Wait for loadstart before calling this?
-      element.subscribeAllEvents();
       return element;
     };
 
     /**
      * Destroys the video technology factory.
      * @public
-     * @method OoyalaFlashVideoFactory#destroy
+     * @method OoyalaAkamaiHDFlashVideoFactory#destroy
      */
     this.destroy = function() {
-      this.ready = false;
       this.encodings = [];
       this.create = function() {};
     };
@@ -134,13 +123,13 @@ require("../../../html5-common/js/utils/constants.js");
      * Represents the max number of support instances of video elements that can be supported on the
      * current platform. -1 implies no limit.
      * @public
-     * @property OoyalaFlashVideoFactory#maxSupportedElements
+     * @property OoyalaAkamaiHDFlashVideoFactory#maxSupportedElements
      */
     this.maxSupportedElements = -1;
   };
 
   /**
-   * @class OoyalaFlashVideoWrapper
+   * @class OoyalaAkamaiHDFlashVideoWrapper
    * @classdesc Player object that wraps the video element.
    * @param {string} playerId The id of the video player element
    * @param {object} video The core video object to wrap
@@ -150,11 +139,10 @@ require("../../../html5-common/js/utils/constants.js");
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer) {
+  var OoyalaAkamaiHDFlashVideoWrapper = function(playerId, video, parentContainer) {
 
     parentContainer = "container";
     var videoItem = video;
-    var listeners = {};
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -186,7 +174,7 @@ require("../../../html5-common/js/utils/constants.js");
       pluginPath, playerId,
       "100%", "100%",
       flashMinimumVersion, flexPath,
-      flashvars, params, attributes, this.subscribeAllEvents);
+      flashvars, params, attributes, null);
 
     JFlashBridge.bind(playerId, this);
 
@@ -197,57 +185,10 @@ require("../../../html5-common/js/utils/constants.js");
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
     /************************************************************************************/
-
-    /**
-     * Subscribes to all events raised by the video element.
-     * This is called by the Factory during creation.
-     * @public
-     * @method OoyalaFlashVideoWrapper#subscribeAllEvents
-     */
-    this.subscribeAllEvents = function() {
-      listeners = { "play": _.bind(raisePlayEvent, this),
-                    "playing": _.bind(raisePlayingEvent, this),
-                    "ended": _.bind(raiseEndedEvent, this),
-                    "error": _.bind(raiseErrorEvent, this),
-                    "seeking": _.bind(raiseSeekingEvent, this),
-                    "seeked": _.bind(raiseSeekedEvent, this),
-                    "pause": _.bind(raisePauseEvent, this),
-                    "ratechange": _.bind(raiseRatechangeEvent, this),
-                    "stalled": _.bind(raiseStalledEvent, this),
-                    "volumechange": _.bind(raiseVolumeEvent, this),
-                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
-                    "waiting": _.bind(raiseWaitingEvent, this),
-                    "timeupdate": _.bind(raiseTimeUpdate, this),
-                    "durationchange": _.bind(raiseDurationChange, this),
-                    "loadstart": _.bind(onLoadStart, this),
-                    "loadedmetadata": _.bind(onLoadedMetadata, this),
-                    "progress": _.bind(raiseProgress, this),
-                    "canplaythrough": _.bind(raiseCanPlayThrough, this),
-                    "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
-                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
-                    "totalavailablebitrates": _.bind(raiseBitratesAvailable, this),
-                    "changedbitrate": _.bind(raiseBitrateChanged, this),
-                    "sizeChanged": _.bind(raiseSizeChanged, this),
-                    "fullscreenChanged": _.bind(raiseSizeChanged, this)
-                  };
-      _.each(listeners, function(v, i) {
-        $(videoItem).on(i, v); }, this);
-    };
-
-    /**
-     * Unsubscribes all events from the video element.
-     * This should be called by the destroy function.
-     * @public
-     * @method OoyalaFlashVideoWrapper#unsubscribeAllEvents
-     */
-    this.unsubscribeAllEvents = function() {
-      _.each(listeners, function(v, i) { $(videoItem).off(i, v); }, this);
-    };
-
     /**
      * Sets the url of the video.
      * @public
-     * @method OoyalaFlashVideoWrapper#setVideoUrl
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
      * @param {string} encoding The encoding of video stream 
      * @returns {boolean} True or false indicating success
@@ -258,7 +199,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Sets the closed captions on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#setClosedCaptions
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setClosedCaptions
      * @param {string} language Selected language of captions
      * @param {object} closedCaptions The captions object
      * @param {object} params The parameters object
@@ -269,7 +210,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Sets the closed captions mode of the video playback.
      * @public
-     * @method OoyalaFlashVideoWrapper#setClosedCaptionsMode
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setClosedCaptionsMode
      * @param {string} mode Mode of the captions(disabled/showing) 
      */
 
@@ -280,7 +221,7 @@ require("../../../html5-common/js/utils/constants.js");
      * Sets the stream to play back based on given stream ID. Plugin must support the
      * BITRATE_CONTROL feature to have this method called.
      * @public
-     * @method OoyalaFlashVideoWrapper#setBitrate
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setBitrate
      * @param {string} id The ID of the stream to switch to. This ID will be the ID property from one
      *   of the stream objects passed with the BITRATES_AVAILABLE VTC event.
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
@@ -291,7 +232,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Loads the current stream url in the video element; the element should be left paused.
      * @public
-     * @method OoyalaFlashVideoWrapper#load
+     * @method OoyalaAkamaiHDFlashVideoWrapper#load
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
@@ -300,7 +241,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Sets the initial time of the video playback.
      * @public
-     * @method OoyalaFlashVideoWrapper#setInitialTime
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setInitialTime
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
@@ -309,7 +250,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Triggers playback on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#play
+     * @method OoyalaAkamaiHDFlashVideoWrapper#play
      */
     this.play = function() {
     };
@@ -317,7 +258,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Triggers a pause on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#pause
+     * @method OoyalaAkamaiHDFlashVideoWrapper#pause
      */
     this.pause = function() {
     };
@@ -325,7 +266,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Triggers a seek on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#seek
+     * @method OoyalaAkamaiHDFlashVideoWrapper#seek
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
@@ -334,7 +275,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Triggers a volume change on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#setVolume
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setVolume
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
@@ -343,7 +284,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Gets the current time position of the video.
      * @public
-     * @method OoyalaFlashVideoWrapper#getCurrentTime
+     * @method OoyalaAkamaiHDFlashVideoWrapper#getCurrentTime
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
@@ -352,7 +293,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Applies the given css to the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#applyCss
+     * @method OoyalaAkamaiHDFlashVideoWrapper#applyCss
      * @param {object} css The css to apply in key value pairs
      */
     this.applyCss = function(css) {
@@ -361,7 +302,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Destroys the individual video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#destroy
+     * @method OoyalaAkamaiHDFlashVideoWrapper#destroy
      */
     this.destroy = function() {
     };
@@ -395,7 +336,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Stores the url of the video when load is started.
      * @private
-     * @method OoyalaFlashVideoWrapper#onLoadStart
+     * @method OoyalaAkamaiHDFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
     };
@@ -488,13 +429,13 @@ require("../../../html5-common/js/utils/constants.js");
   /**
    * Generates a random string.
    * @private
-   * @method OoyalaFlashVideoWrapper#getRandomString
+   * @method OoyalaAkamaiHDFlashVideoWrapper#getRandomString
    * @returns {string} A random string
    */
   var getRandomString = function() {
     return Math.random().toString(36).substring(7);
   };
-  OO.Video.plugin(new OoyalaFlashVideoFactory());
+  OO.Video.plugin(new OoyalaAkamaiHDFlashVideoFactory());
 }(OO._, OO.$));
 
 /**
@@ -505,17 +446,17 @@ var JFlashBridge = {
   items: {},
 
   bind: function(id, klass) {
-      console.log('[AKAMAIHD]:JFlashBridge: Bind: ', id, klass);
+      OO.log('[Akamai HD]:JFlashBridge: Bind: ', id, klass);
       this.items[id] = klass;
   },
 
   unbind: function(id) {
-     console.log('[AKAMAIHD]:JFlashBridge: Unbind: ', id);
+     OO.log('[Akamai HD]:JFlashBridge: Unbind: ', id);
      delete this.items[id];
   },
 
   call: function() {
-    console.log('[AKAMAIHD]:JFlashBridge: Call: ', arguments);
+    OO.log('[Akamai HD]:JFlashBridge: Call: ', arguments);
     var klass = this.items[arguments[0]];
     if (klass) {
       var method = klass[arguments[1]];
@@ -524,19 +465,19 @@ var JFlashBridge = {
         method.apply(klass, Array.prototype.slice.call(arguments, 2));
       }
       else
-        console.log('[AKAMAIHD]:JFlashBridge: No method: ', arguments[1]);
+        OO.log('[Akamai HD]:JFlashBridge: No method: ', arguments[1]);
     }
     else
-      console.log('[AKAMAIHD]:JFlashBridge: No binding: ', arguments);
+      OO.log('[Akamai HD]:JFlashBridge: No binding: ', arguments);
   },
 
   getSWF: function(movieName) {
     if (navigator.appName.indexOf("Microsoft") != -1) {
-      console.log("get swf returns some value",document.getElementsByName(movieName)[0]);
+      OO.log("get swf returns some value",document.getElementsByName(movieName)[0]);
       return document.getElementsByName(movieName)[0];
     }
     else{
-      console.log("get swf returns some other value",document.getElementsByName(movieName)[0]);
+      OO.log("get swf returns some other value",document.getElementsByName(movieName)[0]);
       return document.getElementsByName(movieName)[0];
     }
   }

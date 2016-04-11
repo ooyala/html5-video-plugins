@@ -37,7 +37,6 @@ package
     private var _netStream:AkamaiHTTPNetStream;
     private var _akamaiVideoSurface:AkamaiVideoSurface;
     private var _playheadTimer:Timer = null;
-    private var _logger:Logger = new Logger();
 
     /**
      * Constructor
@@ -64,7 +63,7 @@ package
       _streamController.mediaPlayer.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                      onPlayerStateChange);
       _streamController.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
-      _logger.sendToDebugger("events added", "registerListeners");
+      Logger.log("events added", "registerListeners");
     }
     
     /**
@@ -97,7 +96,7 @@ package
      */
     public function initMediaPlayer():void
     {
-      _logger.sendToDebugger("initMediaPlayer()", "initMediaPlayer");
+      Logger.log("initMediaPlayer()", "initMediaPlayer");
       
       /* Creates a timer to keep track of the TIME_UPDATE event.
       The triggering value can be changed as per the specifications. */
@@ -121,7 +120,7 @@ package
      */
     private function onNetStreamReady(event:AkamaiHDSEvent):void
     {
-      _logger.sendToDebugger("onNetStreamReady" , "onNetStreamReady");
+      Logger.log("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
       _akamaiVideoSurface.attachNetStream(_netStream);
     }
@@ -145,7 +144,7 @@ package
      */
     private function onPlayerStateChange(event:MediaPlayerStateChangeEvent):void
     {
-      _logger.sendToDebugger("akamaiHD state changed: " + event.state, "onPlayerStateChange");
+      Logger.log("akamaiHD state changed: " + event.state, "onPlayerStateChange");
       
       switch(event.state)
       {
@@ -215,7 +214,7 @@ package
         default:
           break;
       }
-      _logger.sendToDebugger("Error: " + event.error["errorID"], " " + event.error.detail);
+      Logger.log("Error: " + event.error["errorID"], " " + event.error.detail);
     }
     
     /**
