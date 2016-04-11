@@ -27,6 +27,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   afterEach(function() {
+    OO.isEdge = false;
     OO.isAndroid = false;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     if (wrapper) { wrapper.destroy(); }
@@ -98,6 +99,22 @@ describe('main_html5 wrapper tests', function () {
     expect(element.load.callCount).to.eql(1);
   });
 
+  it('should not call load when already loaded and not rewinding', function(){
+    spyOn(element, "load");
+    $(element).triggerHandler("loadedmetadata");
+    expect(element.load.wasCalled).to.be(false);
+    wrapper.load(false);
+    expect(element.load.wasCalled).to.be(false);
+  });
+
+  it('should call load when already loaded if rewinding', function(){
+    spyOn(element, "load");
+    $(element).triggerHandler("loadedmetadata");
+    expect(element.load.wasCalled).to.be(false);
+    wrapper.load(true);
+    expect(element.load.wasCalled).to.be(true);
+  });
+
   it('should call pause stream when rewinding', function(){
     spyOn(element, "pause");
     expect(element.pause.callCount).to.eql(0);
@@ -133,6 +150,19 @@ describe('main_html5 wrapper tests', function () {
     expect(element.load.callCount).to.eql(1);
     wrapper.load(true);
     expect(element.load.callCount).to.eql(2);
+  });
+
+  it('should not set currentTime or pause on Edge when loading with rewinding', function(){
+    OO.isEdge = true;
+    spyOn(element, "pause");
+    spyOn(element, "load");
+    element.currentTime = 10;
+    expect(element.pause.callCount).to.eql(0);
+    expect(element.load.callCount).to.eql(0);
+    wrapper.load(true);
+    expect(element.pause.callCount).to.eql(0);
+    expect(element.load.callCount).to.eql(1);
+    expect(element.currentTime).to.eql(10);
   });
 
   it('should act on initialTime if has not played', function(){

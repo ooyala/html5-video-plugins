@@ -51,6 +51,7 @@ package
     private var _playheadTimer:Timer = null;
     private var _seekTrait:SeekTrait = null;
     private var _playerState:String = "";
+    private var _playCompleted:Boolean = false;
     private var _playQueue:Boolean = false;
     private var _initialPlay:Boolean = true;
     private var _selectedCaptionLanguage:String = "";
@@ -292,6 +293,10 @@ package
             _initialTime = 0;
           }
           dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING,null));
+          if(_playCompleted == true)
+          {
+            _playCompleted = false;
+          }
           break;
         case MediaPlayerState.PAUSED:
           dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
@@ -332,7 +337,7 @@ package
     {
       _playheadTimer.stop();
       _resource = null;
-      _playCompleted=true;
+      _playCompleted = true;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
     
@@ -832,7 +837,7 @@ package
      * @method HDSPlayer#onGetCurrentTime
      * @param {Event} event The event passed from the external interface.
      */
-     public function onGetCurrentTime(event:Event):void
+    public function onGetCurrentTime(event:Event):void
     {
       var eventObject:Object = new Object();
       if(_playCompleted==true)
