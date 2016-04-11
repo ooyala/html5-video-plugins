@@ -321,28 +321,31 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.load = function(rewind) {
       if (loaded && !rewind) return;
-      if (!!rewind && !OO.isEdge) {  // consider adding loaded &&
-        try {
-          if (OO.isIos && OO.iosMajorVersion == 8) {
-            // On iOS, wait for durationChange before setting currenttime
-            $(_video).on("durationchange", _.bind(function() {
-                                                               _video.currentTime = 0;
-                                                               currentTime = 0;
-                                                             }, this));
-          } else {
-            _video.currentTime = 0;
-            currentTime = 0;
+      if (!!rewind) {
+        if (OO.isEdge) {
+          // PBW-4555: Edge browser will always go back to time 0 on load.  Setting time to 0 here would
+          // cause the raw video element to enter seeking state.  Additionally, if we call load while seeking
+          // on Edge, then seeking no longer works until the video stream url is changed.  Protect against
+          // seeking issues using loaded.  Lastly edge always preloads.
+          currentTime = 0;
+        } else {
+          try {
+            if (OO.isIos && OO.iosMajorVersion == 8) {
+              // On iOS, wait for durationChange before setting currenttime
+              $(_video).on("durationchange", _.bind(function() {
+                                                                 _video.currentTime = 0;
+                                                                 currentTime = 0;
+                                                               }, this));
+            } else {
+              _video.currentTime = 0;
+              currentTime = 0;
+            }
+            _video.pause();
+          } catch (ex) {
+            // error because currentTime does not exist because stream hasn't been retrieved yet
+            OO.log('VTC_OO: Failed to rewind video, probably ok; continuing');
           }
-          _video.pause();
-        } catch (ex) {
-          // error because currentTime does not exist because stream hasn't been retrieved yet
-          OO.log('VTC_OO: Failed to rewind video, probably ok; continuing');
         }
-      } else if (!!rewind && OO.isEdge) {
-        // PBW-4555: Edge browser will always go back to time 0 on load.  Setting time to 0 here would
-        // cause the raw video element to enter seeking state.  If we call load while seeking on Edge,
-        // then seeking no longer works until the video stream url is changed.
-        currentTime = 0;
       }
       canPlay = false;
       _video.load();
