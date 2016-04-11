@@ -74,7 +74,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, domId, controller, css, playerId) {
-      if (this.maxSupportedElements > 0 && currentInstances[playerId] >= this.maxSupportedElements) {
+      // If the current player has reached max supported elements, do not create a new one
+      if (this.maxSupportedElements > 0 && playerId &&
+          currentInstances[playerId] >= this.maxSupportedElements) {
         return;
       }
 
