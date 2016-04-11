@@ -185,7 +185,12 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks = [{ kind: "captions" }];
     vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
     $(element).triggerHandler("playing");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING]);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['CC'],
+      locale: {
+        CC: 'In-Stream'
+      }
+    }]);
   });
 
   it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack', function(){
@@ -239,7 +244,7 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks[0].oncuechange(event);
     expect(vtc.notifyParameters).to.eql([
       vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED,
-      event.currentTarget.activeCues[0].text + " " + event.currentTarget.activeCues[1].text
+      event.currentTarget.activeCues[0].text + "\n" + event.currentTarget.activeCues[1].text
     ]);
   });
 
@@ -274,7 +279,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters).to.eql([
       vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED,
-      element.textTracks[0].activeCues[0].text + " " + element.textTracks[0].activeCues[1].text
+      element.textTracks[0].activeCues[0].text + "\n" + element.textTracks[0].activeCues[1].text
     ]);
   });
 
