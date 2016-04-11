@@ -167,6 +167,7 @@ require("../../../html5-common/js/utils/constants.js");
     var seekRange_end;
     var buffer;
     var seekRange_start;
+    var javascriptCommandQueue = [];
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -209,7 +210,18 @@ require("../../../html5-common/js/utils/constants.js");
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
     /************************************************************************************/
-
+    
+    // Return if the Dom and JavaScript are ready.
+    // We cannot predict the presence of jQuery, so use a core javascript technique here.
+    isReady = _.bind(function() {
+      if (document.readyState === "complete") {
+        if(_flashVideoObject == undefined) {
+          _flashVideoObject = JFlashBridge.getSWF(playerId);
+        } 
+        return true;
+      }
+    },this);
+    
     /**
      * Subscribes to all events raised by the video element.
      * This is called by the Factory during creation.
@@ -459,11 +471,19 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Calls a Flash method
     this.callToFlash = function (data,dataObj) {
-      if (_flashVideoObject.sendToActionScript) {
-        dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
-        return _flashVideoObject.sendToActionScript(data,dataObj);
-      } else {
-        actionscriptCommandQueue.push([data,dataObj]);
+      if(_flashVideoObject == undefined) { 
+        javascriptCommandQueue.push([data,dataObj]);
+      }
+      else
+      {      
+        if (_flashVideoObject.sendToActionScript) {
+          dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
+          return _flashVideoObject.sendToActionScript(data,dataObj);
+        } 
+        else 
+        {
+          actionscriptCommandQueue.push([data,dataObj]);
+        }
       }
     };
 
@@ -667,7 +687,12 @@ require("../../../html5-common/js/utils/constants.js");
 
       switch (eventtitle)
       {
-       case "JSREADY":
+       case "JSREADY":    
+        if(javascriptCommandQueue.length != 0) {
+          for(var i = 0; i < javascriptCommandQueue.length; i++) {
+            this.callToFlash(javascriptCommandQueue[i][0], javascriptCommandQueue[i][1]);
+          }    
+        }
         for (i = 0; i < actionscriptCommandQueue.length; i++) {
           this.callToFlash(actionscriptCommandQueue[i][0],actionscriptCommandQueue[i][1]);
         }
@@ -799,14 +824,6 @@ var JFlashBridge = {
     }
   }
 };
-
-// Return if the Dom and JavaScript are ready.
-// We cannot predict the presence of jQuery, so use a core javascript technique here.
-isReady = _.bind(function() {
-  if (document.readyState === "complete") {
-    return true;
-  }
-},this);
 
 /*! SWFObject v2.2 <http://code.google.com/p/swfobject/>
   is released under the MIT License <http://www.opensource.org/licenses/mit-license.php>
