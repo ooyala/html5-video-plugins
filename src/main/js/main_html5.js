@@ -650,7 +650,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#checkForClosedCaptions
      */
     var checkForClosedCaptions = _.bind(function() {
-      if (firstPlay && _video.textTracks && _video.textTracks.length > 0) {
+      if (_video.textTracks && _video.textTracks.length > 0) {
         var languages = [];
         for (var i = 0; i < _video.textTracks.length; i++) {
           if (_video.textTracks[i].kind === "captions") {
