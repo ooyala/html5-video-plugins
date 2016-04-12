@@ -293,10 +293,6 @@ package
             _initialTime = 0;
           }
           dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING,null));
-          if (_playCompleted == true)
-          {
-            _playCompleted = false;
-          }
           break;
         case MediaPlayerState.PAUSED:
           dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
@@ -436,6 +432,7 @@ package
       if (_playerState == MediaPlayerState.READY || _playerState == MediaPlayerState.PAUSED 
           || _playerState == MediaPlayerState.BUFFERING)
       {
+        _playCompleted = false;
         _mediaPlayerSprite.mediaPlayer.play();
       }
       else
@@ -849,7 +846,7 @@ package
       {
         eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
       }
-        dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
+      dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
     }
     
     /**
