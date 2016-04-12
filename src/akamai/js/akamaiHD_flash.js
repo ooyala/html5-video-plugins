@@ -15,9 +15,16 @@ require("../../../html5-common/js/utils/constants.js");
    * Config variables for paths to flash resources.
    */
 
-  var scriptsList = document.currentScript;
-  var akamaiPath = scriptsList.src;
-  var pluginPath = akamaiPath.slice(0, 1 + akamaiPath.lastIndexOf("/"));
+  var pluginPath;
+  var filename = "akamaiHD_flash.*\.js";
+  var scripts = document.getElementsByTagName('script');
+  for (var index in scripts) {
+    var match = scripts[index].src.match(filename);
+    if (match && match.length > 0) {
+      pluginPath = match.input.match(/.*\//)[0];
+      break;
+    }
+  }
 
   if (!pluginPath) {
     console.error("Can't get path to script", filename);
