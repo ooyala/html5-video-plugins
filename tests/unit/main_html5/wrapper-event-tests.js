@@ -193,6 +193,28 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
+  it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event with all available cc', function(){
+    vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
+    var closedCaptions = {
+      closed_captions_vtt: {
+        en: {
+          name: "English",
+          url: "http://ooyala.com"
+        }
+      }
+    };
+    element.textTracks = [{ kind: "captions" }];
+    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['en', 'CC'],
+      locale: {
+        en: 'English',
+        CC: 'In-Stream'
+      }
+    }]);
+  });
+
   it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack', function(){
     vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
     var closedCaptions = {
