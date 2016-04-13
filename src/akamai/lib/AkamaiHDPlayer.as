@@ -400,6 +400,8 @@ package
      */
     public function onDestroy():void
     {
+      unregisterListeners();
+      removeChild(_akamaiVideoSurface); 
     }
   }
 }

@@ -311,6 +311,21 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#destroy
      */
     this.destroy = function() {
+      // Pause the video
+      this.pause();
+      
+      // Reset the source
+      this.setVideoUrl('');
+
+      // Pass destroy to flash plugin.
+      this.callToFlash("destroy");
+
+      // Remove the element
+      $('#'+playerId).replaceWith('');
+      _flashVideoObject = null;
+
+      // return unbound object.
+      return JFlashBridge.unbind(playerId);
     };
 
     // Returns the SWF instance
