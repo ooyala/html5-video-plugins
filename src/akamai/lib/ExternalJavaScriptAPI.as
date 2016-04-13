@@ -283,6 +283,8 @@ package
     */
     private function onDestroy(event:Event):void
     {
+      _akamaiHDPlayer.onDestroy();
+      destroy();
     }
 
     /**
@@ -365,6 +367,7 @@ package
      */
     private function destroy():void
     {
+      unregisterListeners();
     }
 
     private function timerHandler(event:TimerEvent):void
