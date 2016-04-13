@@ -149,6 +149,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     parentContainer = "container";
     var videoItem = video;
+    var loaded = false;
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -242,6 +243,16 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
+      if (loaded && !rewind) return;
+      if (!!rewind) {
+        try {
+          this.callToFlash("load("+rewind+")");
+          loaded = true;
+        } catch (ex) {
+          // error because currentTime does not exist because stream hasn't been retrieved yet
+          OO.log("[Akamai HD]: Load URL", "Failed to rewind video, probably ok; continuing");
+        }
+      }
     };
 
     /**
@@ -259,6 +270,10 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#play
      */
     this.play = function() {
+      if (!loaded) {
+        this.load(true);
+      }
+      loaded = true;
     };
 
     /**

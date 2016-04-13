@@ -223,6 +223,7 @@ package
     */
     private function onLoadVideo(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onLoadVideo(event);
     }
 
     /**
