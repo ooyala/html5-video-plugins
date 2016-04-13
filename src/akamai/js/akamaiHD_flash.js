@@ -25,7 +25,7 @@ require("../../../html5-common/js/utils/constants.js");
       break;
     }
   }
-
+  
   if (!pluginPath) {
     console.error("Can't get path to script", filename);
     return;
@@ -37,7 +37,6 @@ require("../../../html5-common/js/utils/constants.js");
    * @class OoyalaAkamaiHDFlashVideoFactory
    * @classdesc Factory for creating video player objects that use Flash in an HTML5 wrapper.
    * @property {string} name The name of the plugin
-   * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
    */
 
@@ -106,7 +105,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, id, controller, css) {
-      var video = $("<video>");
+      var video = $("<object>");
       video.attr("id", id);
       parentContainer.append(video);
       cssFromContainer = css;
@@ -640,7 +639,7 @@ var swfobject = function() {
   }
 
   function addDomLoadEvent(fn) {
-    console.log("dom Load event");
+    OO.log("[Akamai HD : addDomLoadEvent]","dom Load event");
 
     if (isDomLoaded) {
       fn();

@@ -45,7 +45,7 @@ package
         }
         catch (error:Error)
         {
-          Logger.log(error.message, "ExternalJavaScriptAPI","error");
+          Logger.log(error.message, "ExternalJavaScriptAPI : error");
         }
       }
       else
