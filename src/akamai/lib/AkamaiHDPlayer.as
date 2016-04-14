@@ -285,7 +285,10 @@ package
      */
     public function onLoadVideo(event:DynamicEvent):void
     {
+      _akamaiVideoSurface.width = stage.stageWidth;
+      _akamaiVideoSurface.height = stage.stageHeight;
 
+      _streamController.mediaPlayer.autoPlay = false;
     }
     
     /**

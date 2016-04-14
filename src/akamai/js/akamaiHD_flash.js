@@ -149,6 +149,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     parentContainer = "container";
     var videoItem = video;
+    var loaded = false;
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -200,6 +201,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
+      /* Should be set to false if stream URL changes */
+      loaded = false;
     };
 
     /**
@@ -242,6 +245,9 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
+      if (loaded && !rewind) return;
+      this.callToFlash("load("+rewind+")");
+      loaded = true;
     };
 
     /**
@@ -259,6 +265,10 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#play
      */
     this.play = function() {
+      if (!loaded) {
+        this.load(true);
+      }
+      loaded = true;
     };
 
     /**
