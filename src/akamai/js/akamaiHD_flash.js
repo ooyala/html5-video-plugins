@@ -244,15 +244,8 @@ require("../../../html5-common/js/utils/constants.js");
      */
     this.load = function(rewind) {
       if (loaded && !rewind) return;
-      if (!!rewind) {
-        try {
-          this.callToFlash("load("+rewind+")");
-          loaded = true;
-        } catch (ex) {
-          // error because currentTime does not exist because stream hasn't been retrieved yet
-          OO.log("[Akamai HD]: Load URL", "Failed to rewind video, probably ok; continuing");
-        }
-      }
+      this.callToFlash("load("+rewind+")");
+      loaded = true;
     };
 
     /**
