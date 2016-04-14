@@ -305,12 +305,6 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
-          _bitrateIdArray.length = 0;
-          for(var i:int = 0; i < getStreamsCount(); i++)
-          {
-            _bitrateIdArray.push((_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
-          }
-
           totalBitratesAvailable();
           if (_playQueue)
           {
@@ -884,12 +878,14 @@ package
      */
     public function  totalBitratesAvailable():void
     { 
-      var eventObject:Object=new Object();
+      if (_bitrateIdArray.length > 0 ) return;
+      var eventObject:Object = new Object();
       var id:String;
       if (getStreamsCount() > 0)
       {
-        for (var i:int = 0; i < _bitrateIdArray.length; i++)
+        for (var i:int = 0; i < getStreamsCount(); i++)
         {
+          _bitrateIdArray.push((_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
           id = _bitrateIdArray[i];
           var bitrateObject = new Object();
           bitrateObject.id = id;
