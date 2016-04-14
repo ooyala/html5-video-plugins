@@ -201,6 +201,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
+      /* Should be set to false if stream URL changes */
+      loaded = false;
     };
 
     /**
