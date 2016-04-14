@@ -180,6 +180,7 @@ require("../../../html5-common/js/utils/environment.js");
     var canSeek = true;
     var isPriming = false;
     var lastCueText = null;
+    var availableClosedCaptions = {};
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -508,50 +509,64 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} closedCaptions The closedCaptions object
      * @param {object} params The params to set with closed captions
      */
-    this.setClosedCaptions = function(language, closedCaptions, params) {
+    this.setClosedCaptions = _.bind(function(language, closedCaptions, params) {
+      //Remove and disable current captions before setting new ones.
       $(_video).find('.' + TRACK_CLASS).remove();
+      this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
       if (language == null) return;
 
       var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
 
-      // The textTrack added by QuickTime will not be removed by removing track element
-      // But the textTrack that we added by adding track element will be removed by removing track element.
-      // This first check is to check for live CC
-      if (OO.isSafari && _video.textTracks.length !== 0 && language == "CC") {
-        for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].kind === "captions") {
-            _video.textTracks[i].mode = captionMode;
-            _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
-          } else {
-           _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+      //Add the new closed captions if they are valid.
+      var captionsFormat = "closed_captions_vtt";
+      if (closedCaptions && closedCaptions[captionsFormat]) {
+        _.each(closedCaptions[captionsFormat], function(captions, languageKey) {
+          var captionInfo = {
+            label: captions.name,
+            src: captions.url,
+            language: languageKey,
+            inStream: false
           }
-        }
-      } else {
-        var captionsFormat = "closed_captions_vtt";
-        if (closedCaptions && closedCaptions[captionsFormat] && closedCaptions[captionsFormat][language]) {
-          var captions = closedCaptions[captionsFormat][language];
-          var label = captions.name;
-          var src = captions.url;
+          addClosedCaptions(captionInfo);
+        });
+      }
 
-          $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + label + "' src='" + src + "' srclang='" + language + "' default>");
+      //Set the closed captions based on the language and our available closed captions
+      if (availableClosedCaptions[language]) {
+        var captions = availableClosedCaptions[language];
+        //If the captions are in-stream, we just need to enable them; Otherwise we must add them to the video ourselves.
+        if (captions.inStream == true && _video.textTracks) {
+          for (var i = 0; i < _video.textTracks.length; i++) {
+            if (_video.textTracks[i].kind === "captions") {
+              _video.textTracks[i].mode = captionMode;
+              _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
+            } else {
+             _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+            }
+          }
+        } else if (!captions.inStream) {
+          $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
           if (_video.textTracks && _video.textTracks[0]) {
             _video.textTracks[0].mode = captionMode;
+            //We only want to let the controller know of cue change if we aren't rendering cc from the plugin.
             if (captionMode == OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN) {
               _video.textTracks[0].oncuechange = onClosedCaptionCueChange;
             }
           }
-
+          //Sometimes there is a delay before the textTracks are accessible. This is a workaround.
           _.delay(function(captionMode) {
-            if (OO.isFirefox && _video.textTracks && _video.textTracks[0]) {
+            if (_video.textTracks && _video.textTracks[0]) {
               _video.textTracks[0].mode = captionMode;
-              for (var i=0; i < _video.textTracks[0].cues.length; i++) {
-                _video.textTracks[0].cues[i].line = 15;
+              if (OO.isFirefox) {
+                for (var i=0; i < _video.textTracks[0].cues.length; i++) {
+                  _video.textTracks[0].cues[i].line = 15;
+                }
               }
             }
           }, 100, captionMode);
         }
       }
-    };
+    }, this);
 
     /**
      * Sets the closed captions mode on the video element.
@@ -623,7 +638,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (event && event.currentTarget && event.currentTarget.activeCues) {
         for (var i = 0; i < event.currentTarget.activeCues.length; i++) {
           if (event.currentTarget.activeCues[i].text) {
-            cueText += event.currentTarget.activeCues[i].text + " ";
+            cueText += event.currentTarget.activeCues[i].text + "\n";
           }
         }
       }
@@ -643,7 +658,7 @@ require("../../../html5-common/js/utils/environment.js");
           if (_video.textTracks[i].activeCues) {
             for (var j = 0; j < _video.textTracks[i].activeCues.length; j++) {
               if (_video.textTracks[i].activeCues[j].text) {
-                cueText += _video.textTracks[i].activeCues[j].text + " ";
+                cueText += _video.textTracks[i].activeCues[j].text + "\n";
               }
             }
             break;
@@ -651,6 +666,60 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
       raiseClosedCaptionCueChanged(cueText);
+    }, this);
+
+    /**
+     * Check for in-stream and in manifest closed captions.
+     * @private
+     * @method OoyalaVideoWrapper#checkForClosedCaptions
+     */
+    var checkForClosedCaptions = _.bind(function() {
+      if (_video.textTracks && _video.textTracks.length > 0) {
+        var languages = [];
+        for (var i = 0; i < _video.textTracks.length; i++) {
+          if (_video.textTracks[i].kind === "captions") {
+            var captionInfo = {
+              language: "CC",
+              inStream: true,
+              label: "In-Stream"
+            };
+            //Don't overwrite other closed captions of this language. They have priority.
+            if (availableClosedCaptions[captionInfo.language] == null) {
+              addClosedCaptions(captionInfo);
+            }
+          }
+        }
+      }
+    }, this);
+
+    /**
+     * Add new closed captions and relay them to the controller.
+     * @private
+     * @method OoyalaVideoWrapper#addClosedCaptions
+     */
+    var addClosedCaptions = _.bind(function(captionInfo) {
+      //Don't add captions if argument is null or we already have added these captions.
+      if (captionInfo == null || captionInfo.language == null || (availableClosedCaptions[captionInfo.language] &&
+        availableClosedCaptions[captionInfo.language].src == captionInfo.src)) return;
+      availableClosedCaptions[captionInfo.language] = captionInfo;
+      raiseCaptionsFoundOnPlaying();
+    }, this);
+
+    /**
+     * Notify the controller with new available closed captions.
+     * @private
+     * @method OoyalaVideoWrapper#raiseCaptionsFoundOnPlaying
+     */
+    var raiseCaptionsFoundOnPlaying = _.bind(function() {
+      var closedCaptionInfo = {
+        languages: [],
+        locale: {}
+      }
+      _.each(availableClosedCaptions, function(value, key) {
+        closedCaptionInfo.languages.push(key);
+        closedCaptionInfo.locale[key] = value.label;
+      });
+      this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
     }, this);
 
     /**
@@ -758,18 +827,9 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       this.controller.notify(this.controller.EVENTS.PLAYING);
-
       startUnderflowWatcher();
+      checkForClosedCaptions();
 
-      //Check for live closed captions and notify controller
-      if (firstPlay && _video.textTracks && _video.textTracks.length > 0) {
-        var languages = [];
-        for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].kind === "captions") {
-            this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING);
-          }
-        }
-      }
       firstPlay = false;
       canSeek = true;
       isSeeking = false;

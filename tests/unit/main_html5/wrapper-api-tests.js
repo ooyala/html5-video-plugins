@@ -380,6 +380,13 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set closed captions', function(){
+    OO.CONSTANTS = {
+      CLOSED_CAPTIONS: {
+        SHOWING: "showing",
+        HIDDEN: "hidden",
+        DISABLED: "disabled"
+      }
+    };
     var language = "en";
     var closedCaptions = {
       closed_captions_vtt: {
@@ -404,6 +411,13 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should remove closed captions if language is null', function(){
+    OO.CONSTANTS = {
+      CLOSED_CAPTIONS: {
+        SHOWING: "showing",
+        HIDDEN: "hidden",
+        DISABLED: "disabled"
+      }
+    };
     var language = "en";
     var closedCaptions = {
       closed_captions_vtt: {
