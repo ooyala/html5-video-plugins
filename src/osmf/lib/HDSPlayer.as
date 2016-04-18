@@ -887,7 +887,7 @@ package
         {
           _bitrateIdArray.push((_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
           id = _bitrateIdArray[i];
-          var bitrateObject = new Object();
+          var bitrateObject:Object = new Object();
           bitrateObject.id = id;
           bitrateObject.height = 0;
           bitrateObject.width = 0;
