@@ -325,7 +325,6 @@ package
     private function onPlayComplete(event:TimeEvent):void
     {
       _playheadTimer.stop();
-      _resource = null;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
     
@@ -985,6 +984,7 @@ package
     public function onDestroy():void
     {
       unregisterListeners();
+      _resource = null;
       removeChild(_mediaPlayerSprite); 
     }
 
