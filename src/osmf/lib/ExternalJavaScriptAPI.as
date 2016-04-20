@@ -113,6 +113,7 @@ package
       _hdsPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
+      _hdsPlayer.addEventListener(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED, onFlashEvent);
       SendToDebugger("events added", "registerListeners");
     }
 
@@ -161,6 +162,7 @@ package
       _hdsPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
+      _hdsPlayer.removeEventListener(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED, onFlashEvent);
     }
 
     /**

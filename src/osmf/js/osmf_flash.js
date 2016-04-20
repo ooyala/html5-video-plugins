@@ -651,6 +651,11 @@ require("../../../html5-common/js/utils/constants.js");
       }
     };
 
+    var raiseHiddenCaption = function(event) {
+      var captionText = event.eventObject.text;
+      newController.notify(newController.EVENTS.CLOSED_CAPTION_CUE_CHANGED,captionText);
+    }
+
     // Receives a callback from Flash
     onCallback = _.bind(function(data) {
       // console.log("[OSMF]:onCallback: ", data);
@@ -760,6 +765,9 @@ require("../../../html5-common/js/utils/constants.js");
         break;
        case "SIZE_CHANGED":
          raiseSizeChanged(data);
+         break;
+       case "CLOSED_CAPTION_CUE_CHANGED":
+         raiseHiddenCaption(data);
          break;
        case "ERROR":
         raiseErrorEvent(data);
