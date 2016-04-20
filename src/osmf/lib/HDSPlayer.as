@@ -802,7 +802,7 @@ package
             break;
           }
         }
-        if(!_hiddenCaptionFlag)
+        if(!_hiddenCaptionFlag &&  _previousCaption != "" )
         {
           eventObject.text = "" ;
           _previousCaption = "" ;
