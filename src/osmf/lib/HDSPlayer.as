@@ -53,6 +53,7 @@ package
     private var _playerState:String = "";
     private var _playCompleted:Boolean = false;
     private var _playQueue:Boolean = false;
+    private var _seekToEnd:Boolean = false;
     private var _initialPlay:Boolean = true;
     private var _selectedCaptionLanguage:String = "";
     private var _captionObject:Object = new Object();
@@ -476,6 +477,10 @@ package
         _initialTime = time;
         return;
       }
+      if (time == _mediaPlayerSprite.mediaPlayer.duration)
+      {
+        _seekToEnd = true;
+      }
       _seekTrait = _mediaPlayerSprite.mediaPlayer.media.getTrait(MediaTraitType.SEEK) as SeekTrait;
       if (_mediaPlayerSprite.mediaPlayer.canSeek &&
         (_mediaPlayerSprite.mediaPlayer.canSeekTo(time)))
@@ -837,9 +842,10 @@ package
     public function onGetCurrentTime(event:Event):void
     {
       var eventObject:Object = new Object();
-      if (_playCompleted == true)
+      if (_seekToEnd == true)
       {
         eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.duration.toString();
+        _seekToEnd = false;
       }
       else
       {
