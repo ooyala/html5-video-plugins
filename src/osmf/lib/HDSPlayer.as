@@ -51,7 +51,6 @@ package
     private var _playheadTimer:Timer = null;
     private var _seekTrait:SeekTrait = null;
     private var _playerState:String = "";
-    private var _playCompleted:Boolean = false;
     private var _playQueue:Boolean = false;
     private var _seekToEnd:Boolean = false;
     private var _initialPlay:Boolean = true;
@@ -334,7 +333,6 @@ package
     {
       _playheadTimer.stop();
       _resource = null;
-      _playCompleted = true;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
     
@@ -433,7 +431,6 @@ package
       if (_playerState == MediaPlayerState.READY || _playerState == MediaPlayerState.PAUSED 
           || _playerState == MediaPlayerState.BUFFERING)
       {
-        _playCompleted = false;
         _mediaPlayerSprite.mediaPlayer.play();
       }
       else
