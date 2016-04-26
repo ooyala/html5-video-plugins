@@ -311,7 +311,7 @@ package
           {
             _bitrateIdArray.push((_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
           }
-
+          _seekToEnd=false;
           totalBitratesAvailable();
           if (_playQueue)
           {
@@ -842,7 +842,6 @@ package
       if (_seekToEnd == true)
       {
         eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.duration.toString();
-        _seekToEnd = false;
       }
       else
       {
