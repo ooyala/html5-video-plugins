@@ -163,6 +163,7 @@ package
      */
     private function onVideoPlay(event:Event):void
     {
+      _akamaiHDPlayer.onVideoPlay(event);
     }
 
    /**
@@ -213,6 +214,7 @@ package
     */
     private function onSetVideoURL(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onSetVideoURL(event);
     }
 
    /**
@@ -226,7 +228,7 @@ package
       _akamaiHDPlayer.onLoadVideo(event);
     }
 
-    /**
+   /**
     * Sets the closed captions for the video playback
     * @private
     * @method ExternalJavaScriptAPI#onSetVideoClosedCaptions
