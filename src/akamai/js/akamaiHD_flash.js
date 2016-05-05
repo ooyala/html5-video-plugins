@@ -330,6 +330,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+      this.callToFlash("changeVolume("+volume+")");
     };
 
     /**
@@ -444,6 +445,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseVolumeEvent = function(event) {
+      newController.notify(newController.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
     };
 
     var raiseWaitingEvent = function() {
