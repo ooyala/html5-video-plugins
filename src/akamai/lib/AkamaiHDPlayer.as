@@ -39,6 +39,8 @@ package
     private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
     private var _playQueue:Boolean = false;
+    private var _bitrateArray:Array = new Array();
+    private var _bitrateIdArray:Array = new Array();
 
     /**
      * Constructor
@@ -167,6 +169,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          totalBitratesAvailable();
           break;
         case MediaPlayerState.UNINITIALIZED:
           break;
@@ -421,7 +424,26 @@ package
      * @method AkamaiHDPlayer#totalBitratesAvailable
      */
     public function  totalBitratesAvailable():void
-    { 
+    {
+      if (_bitrateIdArray.length > 0 ) return;
+      var eventObject:Object = new Object();
+      var id:String;
+      if (getStreamsCount() > 0)
+      {
+        for (var i:int = 0; i < getStreamsCount(); i++)
+        {
+          _bitrateIdArray.push((_streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
+          id = _bitrateIdArray[i];
+          var bitrateObject:Object = new Object();
+          bitrateObject.id = id;
+          bitrateObject.height = 0;
+          bitrateObject.width = 0;
+          bitrateObject.bitrate = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
+          _bitrateArray[id] = [ bitrateObject, i];
+          eventObject[i] = bitrateObject;
+        }
+        dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
+      } 
     }
 
     /**
@@ -444,6 +466,16 @@ package
     {
     }
     
+    /**
+     * Returns the total number of streams
+     * @private
+     * @method AkamaiHDPlayer#getStreamsCount
+     */
+    private function getStreamsCount():int
+    {
+      return _streamController.mediaPlayer.numDynamicStreams;
+    } 
+
     /**
      * Unregisters events and removes media player child.
      * @public
