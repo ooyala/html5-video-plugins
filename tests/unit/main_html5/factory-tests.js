@@ -10,9 +10,22 @@ describe('main_html5 factory tests', function () {
   var pluginFactory;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
+  // override video element canPlayType to return true always
+  var oldCreateElement = document.createElement;
+  document.createElement = _.bind(function(type) {
+    if (type === "video") {
+      return { canPlayType: function() { return true; }};
+    } else {
+      return oldCreateElement(type);
+    }
+  }, this);
+
   // Load file under test
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
+
+  // restore document.createElement
+  document.createElement = oldCreateElement;
 
   var vtc = { EVENTS: { CAN_PLAY: "can_play" },
                         notify: function(){} };
@@ -22,7 +35,8 @@ describe('main_html5 factory tests', function () {
   });
 
   it('should provide a list of supported encodings', function(){
-    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.MP4, OO.VIDEO.ENCODING.WEBM]);
+    // This is controlled by document.createElement("video").canPlayType(type);
+    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.MP4, OO.VIDEO.ENCODING.WEBM, OO.VIDEO.ENCODING.HLS]);
   });
 
   it('should provide a list of supported features', function(){
@@ -42,6 +56,43 @@ describe('main_html5 factory tests', function () {
 
   it('should be able to create an element', function(){
     var elementWrapper = pluginFactory.create($("<div>"), "test", vtc, {});
+    expect(elementWrapper).to.be.ok();
+  });
+
+  it('should not create an element when max elements reached', function(){
+    pluginFactory.maxSupportedElements = 1;
+    var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
+    var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player1");
+    expect(elementWrapper).to.be.ok();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player1");
+    expect(elementWrapper).to.not.be.ok();
+    pluginFactory.maxSupportedElements = 2;
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player2");
+    expect(elementWrapper).to.be.ok();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player2");
+    expect(elementWrapper).to.be.ok();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player2");
+    expect(elementWrapper).to.not.be.ok();
+  });
+
+  it('should create an element when max elements not reached because elements destroyed', function(){
+    pluginFactory.maxSupportedElements = 1;
+    var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
+    var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player3");
+    expect(elementWrapper).to.be.ok();
+    var elementWrapper1 = pluginFactory.create($("<div>"), "test", controller, {}, "player3");
+    expect(elementWrapper1).to.not.be.ok();
+    elementWrapper.destroy();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player3");
+    expect(elementWrapper).to.be.ok();
+  });
+
+  it('should create elements when max elements not because no playerId specified', function(){
+    pluginFactory.maxSupportedElements = 1;
+    var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
+    var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {});
+    expect(elementWrapper).to.be.ok();
+    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {});
     expect(elementWrapper).to.be.ok();
   });
 
@@ -94,12 +145,6 @@ describe('main_html5 factory tests', function () {
   it('should remove list of encodings on destroy', function(){
     pluginFactory.destroy();
     expect(pluginFactory.encodings).to.eql([]);
-  });
-
-  it('should set ready to false on destroy', function(){
-    // destroy done in pervious test.  The proper way to test this would be to re-create the plugin
-    // before each test but this requires use of the require.cache function which is not available in jest.
-    expect(pluginFactory.ready).to.be(false);
   });
 
   it('should not create elements after destroy is called', function(){

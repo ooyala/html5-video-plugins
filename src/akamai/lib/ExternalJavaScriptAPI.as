@@ -1,7 +1,8 @@
 package
 {
   import DynamicEvent;
-  import HDSPlayer;
+  import AkamaiHDPlayer;
+  import Logger;
 
   import flash.events.Event;
   import flash.events.TimerEvent;
@@ -13,17 +14,17 @@ package
 
   public class ExternalJavaScriptAPI extends UIComponent
   {
-    private var _hdsPlayer:HDSPlayer = null;
-    public var jsBridge:JFlashBridge;
+    private var _akamaiHDPlayer:AkamaiHDPlayer = null;
+    private var _jsBridge:JFlashBridge = null;
     private var _dynamicEvent:DynamicEvent = null;
 
     /**
      * Constructor
      * @public
      */
-    public function ExternalJavaScriptAPI(hdsPlayer:HDSPlayer)
+    public function ExternalJavaScriptAPI(akamaiHDPlayer:AkamaiHDPlayer)
     {
-      _hdsPlayer = hdsPlayer;
+      _akamaiHDPlayer = akamaiHDPlayer;
       if (ExternalInterface.available)
       {
         super();
@@ -44,7 +45,7 @@ package
         }
         catch (error:Error)
         {
-          SendToDebugger(error.message, "ExternalJavaScriptAPI","error");
+          Logger.log(error.message, "ExternalJavaScriptAPI : error");
         }
       }
       else
@@ -60,11 +61,11 @@ package
     */
     private function init():void
     {
-      _hdsPlayer.initMediaPlayer();
+      _akamaiHDPlayer.initMediaPlayer();
       registerListeners();
-      jsBridge = new JFlashBridge();
-      jsBridge.addMethod("someMethod", someMethod);
-      jsBridge.initialize();
+      _jsBridge = new JFlashBridge();
+      _jsBridge.addMethod("jSBound", jSBound);
+      _jsBridge.initialize();
     }
 
     /**
@@ -84,37 +85,24 @@ package
       addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       addEventListener("setTargetBitrate", onSetTargetBitrate);
-      /*addEventListener("rateChange", onRateChanged);
-      addEventListener("stalled", onStalled);
-      addEventListener("progress", onProgress);
-      addEventListener("videoEnd", onVideoEnd );
-      addEventListener("error", onErrorCode);
-      addEventListener("durationChanged", onDurationChanged);
-      addEventListener("waiting", onWaiting);
-      addEventListener("timeUpdate", onTimeUpdate);
-      addEventListener("canPlayThrough", onCanPlayThrough);
-      addEventListener("playing", onPlaying);
-      addEventListener("seeking", onSeeking);*/
-      addEventListener("replay", onReplay);
       addEventListener("setInitialTime", onSetInitialTime);
       addEventListener("getCurrentTime", onGetCurrentTime);
       addEventListener("destroy", onDestroy);
-      _hdsPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.PLAYING, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.ENDED, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.ERROR, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.SEEKED, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.PAUSED, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.BUFFERING, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.BUFFERED, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
-      _hdsPlayer.addEventListener(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED, onFlashEvent);
-      SendToDebugger("events added", "registerListeners");
+      _akamaiHDPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.PLAYING, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.ENDED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.ERROR, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.SEEKED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.PAUSED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.BUFFERING, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.BUFFERED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
+      //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
+      //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      //_akamaiHDPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
+      Logger.log("events added", "registerListeners");
     }
 
     /**
@@ -134,35 +122,22 @@ package
       removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       removeEventListener("setTargetBitrate", onSetTargetBitrate);
-      /*removeEventListener("rateChange", onRateChanged);
-      removeEventListener("stalled", onStalled);
-      removeEventListener("progress", onProgress);
-      removeEventListener("videoEnd", onVideoEnd );
-      removeEventListener("error", onErrorCode);
-      removeEventListener("durationChanged", onDurationChanged);
-      removeEventListener("waiting", onWaiting);
-      removeEventListener("timeUpdate", onTimeUpdate);
-      removeEventListener("canPlayThrough", onCanPlayThrough);
-      removeEventListener("playing", onPlaying);
-      removeEventListener("seeking", onSeeking);*/
-      removeEventListener("replay", onReplay);
       removeEventListener("setInitialTime", onSetInitialTime);
       removeEventListener("getCurrentTime", onGetCurrentTime);
       removeEventListener("destroy", onDestroy);
-      _hdsPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.PLAYING, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.ENDED, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.ERROR, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.SEEKED, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.PAUSED, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.BUFFERING, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
-      _hdsPlayer.removeEventListener(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAYING, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.ENDED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.ERROR, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.SEEKED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.PAUSED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.BUFFERING, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
+      //_akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
+      //_akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      //_akamaiHDPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
     }
 
     /**
@@ -176,7 +151,7 @@ package
       var eventData : Object = new Object();
       eventData.eventtype = event.type;
       eventData.eventObject = event.eventObject;
-      SendToDebugger(eventData.eventtype, "onFlashEvent", "log");
+      Logger.log(eventData.eventtype, "onFlashEvent");
       sendToJavaScript(eventData);
     }
 
@@ -188,7 +163,6 @@ package
      */
     private function onVideoPlay(event:Event):void
     {
-      _hdsPlayer.onVideoPlay(event);
     }
 
    /**
@@ -199,7 +173,6 @@ package
     */
     private function onVideoPause(event:Event):void
     {
-      _hdsPlayer.onVideoPause(event);
     }
 
    /**
@@ -210,7 +183,6 @@ package
     */
     private function onVideoSeek(event:DynamicEvent):void
     {
-      _hdsPlayer.onVideoSeek(event);
     }
 
    /**
@@ -221,7 +193,6 @@ package
     */
     private function onChangeVolume(event:DynamicEvent):void
     {
-      _hdsPlayer.onChangeVolume(event);
     }
 
    /**
@@ -232,7 +203,6 @@ package
     */
     private function onPlayheadTimeChanged(event:TimerEvent = null):void
     {
-      _hdsPlayer.onPlayheadTimeChanged(event);
     }
 
    /**
@@ -243,7 +213,6 @@ package
     */
     private function onSetVideoURL(event:DynamicEvent):void
     {
-      _hdsPlayer.onSetVideoURL(event);
     }
 
    /**
@@ -254,7 +223,7 @@ package
     */
     private function onLoadVideo(event:DynamicEvent):void
     {
-      _hdsPlayer.onLoadVideo(event);
+      _akamaiHDPlayer.onLoadVideo(event);
     }
 
     /**
@@ -265,7 +234,6 @@ package
     */
     private function onSetVideoClosedCaptions(event:DynamicEvent):void
     {
-      _hdsPlayer.onSetVideoClosedCaptions(event);
     }
    
    /**
@@ -276,18 +244,6 @@ package
     */
     private function onSetVideoClosedCaptionsMode(event:DynamicEvent):void
     {
-      _hdsPlayer.onSetVideoClosedCaptionsMode(event);
-    }
-
-   /**
-    * Initiates replay functionality through the player
-    * @private
-    * @method ExternalJavaScriptAPI#onReplay
-    * @param {Event} event
-    */
-    private function onReplay(event:Event):void
-    {
-      _hdsPlayer.onReplay(event);
     }
 
    /**
@@ -298,7 +254,6 @@ package
     */
     private function onSetInitialTime(event:DynamicEvent):void
     {
-      _hdsPlayer.onSetInitialTime(event);
     }
 
     /**
@@ -309,7 +264,6 @@ package
     */
     private function onSetTargetBitrate(event:DynamicEvent):void
     {
-      _hdsPlayer.onSetTargetBitrate(event);
     }
     
    /**
@@ -320,7 +274,6 @@ package
     */
     private function onGetCurrentTime(event:Event):void
     {
-      _hdsPlayer.onGetCurrentTime(event);
     }
 
    /**
@@ -331,26 +284,34 @@ package
     */
     private function onDestroy(event:Event):void
     {
-      _hdsPlayer.onDestroy();
+      _akamaiHDPlayer.onDestroy();
       destroy();
     }
 
-    // This is an internal callback that passes data to
-    // the JavaScript application
+    /**
+     * This is an internal callback that passes data to
+     * the JavaScript application
+     * @method ExternalJavaScriptAPI#onCallback
+     * @param {String} data
+     */
     private function onCallback(data:String):void
     {
-      SendToDebugger(data, "swf onCallback", "log");
+      Logger.log(data, "swf onCallback");
       var eventData : Object = new Object();
       eventData.eventtype = data;
       eventData.eventObject = null;
-      jsBridge.call("onCallback", eventData);
+      _jsBridge.call("onCallback", eventData);
     }
 
-    // This method is bound to the ExternalInterface to
-    // receive data from the JavaScript application
-    private function someMethod(data:String):Object
+    /**
+     * This method is bound to the ExternalInterface to
+     * receive data from the JavaScript application
+     * @method ExternalJavaScriptAPI#jSBound
+     * @param {String} data
+     */
+    private function jSBound(data:String):Object
     {
-      SendToDebugger(data, "swf someMethod", "log");
+      Logger.log(data, "swf jSBound");
       onCallback(data);
       return data;
     }
@@ -364,7 +325,7 @@ package
     */
     private function sendToJavaScript(value:Object):Boolean
     {
-      var messageSent:Boolean = jsBridge.call("onCallback", value);
+      var messageSent:Boolean = _jsBridge.call("onCallback", value);
       return messageSent;
     }
 
@@ -385,7 +346,7 @@ package
         var end:int = value.lastIndexOf(")");
         eventArgs = (String)(value.slice(start + 1, end));
         value = (value.slice(0, start));
-        SendToDebugger(eventArgs, "receivedFromJavaScript args", "log");
+        Logger.log(eventArgs, "receivedFromJavaScript args");
       }
       var jsEvent:DynamicEvent = new DynamicEvent(value);
       if (eventArgs != "")
@@ -397,29 +358,8 @@ package
         jsEvent.args = dataObj;
       }
       dispatchEvent(jsEvent);
-      SendToDebugger(jsEvent.toString(), "receivedFromJavaScript event", "log");
+      Logger.log(jsEvent.toString(), "receivedFromJavaScript event");
     }
-
-   /**
-    * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
-    * @private
-    * @method HDSPlayer#SendToDebugger
-    * @param {string} value The value to be passed to the browser console.
-    * @param {string} referrer The fuction or process which passed the value.
-    * @param {string} channelBranch It can be info, debug, warn, error or log.
-    * @returns {boolean} True or false indicating success
-    */
-    private function SendToDebugger(value:String, referrer:String = null,
-                                    channelBranch:String = "log"):Boolean
-    {
-      // channelBranch = info, debug, warn, error, log
-      var channel:String = "OO." + channelBranch;
-      if (referrer) referrer = "[" + referrer + "]";
-      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
-                                                        referrer + ": " + value);
-      return debugMessage;
-    }
-
 
    /**
      * Unregisters events and resets all the private variables to defualt value.
@@ -430,74 +370,6 @@ package
     {
       unregisterListeners();
     }
-   /**
-    * Sends the error code
-    * @private
-    * @method ExternalJavaScriptAPI#onErrorCode
-    * @param {DynamicEvent} event
-    */
-    /*private function onErrorCode(event:DynamicEvent):void
-    {
-      _hdsPlayer.onErrorCode(event);
-      var eventLog:String = event.toString();
-      SendToDebugger(eventLog, "onErrorCode", "error");
-    }
-
-   /**
-    * Initiates video end functionality through the player
-    * @private
-    * @method ExternalJavaScriptAPI#onVideoEnd
-    * @param {Event} event
-    */
-    /*private function onVideoEnd(event:Event):void
-    {
-      _hdsPlayer.onVideoEnd(event);
-    }
-
-    private function onRateChanged(event:Event):void
-    {
-      _hdsPlayer.onRateChanged(event);
-    }
-
-    private function onStalled(event:Event):void
-    {
-      _hdsPlayer.onStalled(event);
-    }
-
-    private function onProgress(event:Event):void
-    {
-      _hdsPlayer.onProgress(event);
-    }
-
-    private function onDurationChanged(event:Event):void
-    {
-      _hdsPlayer.onDurationChanged(event);
-    }
-
-    private function onWaiting(event:Event):void
-    {
-      _hdsPlayer.onWaiting(event);
-    }
-
-    private function onTimeUpdate(event:Event):void
-    {
-      _hdsPlayer.onTimeUpdate(event);
-    }
-
-    private function onCanPlayThrough(event:Event):void
-    {
-      _hdsPlayer.onCanPlayThrough(event);
-    }
-
-    private function onPlaying(event:Event):void
-    {
-      _hdsPlayer.onPlaying(event);
-    }
-
-    private function onSeeking(event:Event):void
-    {
-      _hdsPlayer.onSeeking(event);
-    }*/
 
     private function timerHandler(event:TimerEvent):void
     {

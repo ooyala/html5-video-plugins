@@ -1,5 +1,5 @@
 /*
- * OSMF flash video plugin
+ * Akamai HD flash video plugin
  */
 
 require("../../../html5-common/js/utils/InitModules/InitOO.js");
@@ -7,7 +7,7 @@ require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
 (function(_, $) {
-  var pluginName = "ooyalaFlashVideoTech";
+  var pluginName = "ooyalaAkamaiHDFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
   var cssFromContainer;
 
@@ -16,34 +16,32 @@ require("../../../html5-common/js/utils/constants.js");
    */
 
   var pluginPath;
-  var filename = "osmf_flash.*\.js";
+  var filename = "akamaiHD_flash.*\.js";
   var scripts = document.getElementsByTagName('script');
-  for (var i = 0; i < scripts.length; i++) {
-    var match = scripts[i].src.match(filename);
+  for (var index in scripts) {
+    var match = scripts[index].src.match(filename);
     if (match && match.length > 0) {
       pluginPath = match.input.match(/.*\//)[0];
       break;
     }
   }
+  
   if (!pluginPath) {
     console.error("Can't get path to script", filename);
     return;
   }
-  pluginPath += "osmf_flash.swf";
+  pluginPath += "akamaiHD_flash.swf";
   var flexPath = "playerProductInstall.swf";
-  this.ready=false;
+
   /**
-   * @class OoyalaFlashVideoFactory
+   * @class OoyalaAkamaiHDFlashVideoFactory
    * @classdesc Factory for creating video player objects that use Flash in an HTML5 wrapper.
    * @property {string} name The name of the plugin
-   * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
    */
 
-  var OoyalaFlashVideoFactory = function() {
+  var OoyalaAkamaiHDFlashVideoFactory = function() {
     this.name = pluginName;
-    // This module defaults to ready because no setup or external loading is required
-    this.ready = true;
     /**
      * Checks whether flash player is available
      * @public
@@ -89,18 +87,17 @@ require("../../../html5-common/js/utils/constants.js");
         return [];
       }
       else {
-        return [ OO.VIDEO.ENCODING.HDS ];
+        return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS ];
       }
     }
     this.encodings = testForFlash();
     this.technology = OO.VIDEO.TECHNOLOGY.FLASH;
-    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-                      OO.VIDEO.FEATURE.BITRATE_CONTROL ];
+    this.features = [ ];
 
     /**
-     * Creates a video player instance using OoyalaFlashVideoWrapper.
+     * Creates a video player instance using OoyalaAkamaiHDFlashVideoWrapper.
      * @public
-     * @method OoyalaFlashVideoFactory#create
+     * @method OoyalaAkamaiHDFlashVideoFactory#create
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
      * @param {string} id The id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
@@ -108,25 +105,22 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, id, controller, css) {
-      var video = $("<video>");
+      var video = $("<object>");
       video.attr("id", id);
       parentContainer.append(video);
       cssFromContainer = css;
 
-      element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer);
+      element = new OoyalaAkamaiHDFlashVideoWrapper(id, video[0], parentContainer);
       element.controller = controller;
-      // TODO: Wait for loadstart before calling this?
-      element.subscribeAllEvents();
       return element;
     };
 
     /**
      * Destroys the video technology factory.
      * @public
-     * @method OoyalaFlashVideoFactory#destroy
+     * @method OoyalaAkamaiHDFlashVideoFactory#destroy
      */
     this.destroy = function() {
-      this.ready = false;
       this.encodings = [];
       this.create = function() {};
     };
@@ -135,13 +129,13 @@ require("../../../html5-common/js/utils/constants.js");
      * Represents the max number of support instances of video elements that can be supported on the
      * current platform. -1 implies no limit.
      * @public
-     * @property OoyalaFlashVideoFactory#maxSupportedElements
+     * @property OoyalaAkamaiHDFlashVideoFactory#maxSupportedElements
      */
     this.maxSupportedElements = -1;
   };
 
   /**
-   * @class OoyalaFlashVideoWrapper
+   * @class OoyalaAkamaiHDFlashVideoWrapper
    * @classdesc Player object that wraps the video element.
    * @param {string} playerId The id of the video player element
    * @param {object} video The core video object to wrap
@@ -151,23 +145,11 @@ require("../../../html5-common/js/utils/constants.js");
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer) {
+  var OoyalaAkamaiHDFlashVideoWrapper = function(playerId, video, parentContainer) {
 
     parentContainer = "container";
-    var _video = video;
-    var listeners = {};
-    var _currentUrl = '';
-    var videoEnded = false;
+    var videoItem = video;
     var loaded = false;
-    var hasPlayed = false;
-    var firstPlay = true;
-    var newController;
-    var currentTime;
-    var totalTime;
-    var seekRange_end;
-    var buffer;
-    var seekRange_start;
-    var javascriptCommandQueue = [];
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -189,7 +171,7 @@ require("../../../html5-common/js/utils/constants.js");
     attributes.style = 'position:absolute;';
     // Combine the css object into a string for swfobject.
     if (cssFromContainer.length) {
-      for(i in cssFromContainer) {
+      for (i in cssFromContainer) {
         attributes.style += i + ":" + cssFromContainer[i] + "; ";
       }
     }
@@ -199,266 +181,158 @@ require("../../../html5-common/js/utils/constants.js");
       pluginPath, playerId,
       "100%", "100%",
       flashMinimumVersion, flexPath,
-      flashvars, params, attributes, this.subscribeAllEvents);
+      flashvars, params, attributes, null);
 
     JFlashBridge.bind(playerId, this);
 
-    var _flashVideoObject = JFlashBridge.getSWF(playerId);
-    var _readyToPlay = false; // should be set to true on canplay event
+    var flashVideoObject = JFlashBridge.getSWF(playerId);
+    var readyToPlay = false; // should be set to true on canplay event
     var actionscriptCommandQueue = [];
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
     /************************************************************************************/
-    
-    // Return if the Dom and JavaScript are ready.
-    // We cannot predict the presence of jQuery, so use a core javascript technique here.
-    isReady = _.bind(function() {
-      if (document.readyState === "complete") {
-        if(_flashVideoObject == undefined) {
-          _flashVideoObject = JFlashBridge.getSWF(playerId);
-        } 
-        return true;
-      }
-    },this);
-    
-    /**
-     * Subscribes to all events raised by the video element.
-     * This is called by the Factory during creation.
-     * @public
-     * @method OoyalaFlashVideoWrapper#subscribeAllEvents
-     */
-    this.subscribeAllEvents = function() {
-      listeners = { "play": _.bind(raisePlayEvent, this),
-                    "playing": _.bind(raisePlayingEvent, this),
-                    "ended": _.bind(raiseEndedEvent, this),
-                    "error": _.bind(raiseErrorEvent, this),
-                    "seeking": _.bind(raiseSeekingEvent, this),
-                    "seeked": _.bind(raiseSeekedEvent, this),
-                    "pause": _.bind(raisePauseEvent, this),
-                    "ratechange": _.bind(raiseRatechangeEvent, this),
-                    "stalled": _.bind(raiseStalledEvent, this),
-                    "volumechange": _.bind(raiseVolumeEvent, this),
-                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
-                    "waiting": _.bind(raiseWaitingEvent, this),
-                    "timeupdate": _.bind(raiseTimeUpdate, this),
-                    "durationchange": _.bind(raiseDurationChange, this),
-                    "loadstart": _.bind(onLoadStart, this),
-                    "loadedmetadata": _.bind(onLoadedMetadata, this),
-                    "progress": _.bind(raiseProgress, this),
-                    "canplaythrough": _.bind(raiseCanPlayThrough, this),
-                    "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
-                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this),
-                    "totalavailablebitrates": _.bind(raiseBitratesAvailable, this),
-                    "changedbitrate": _.bind(raiseBitrateChanged, this),
-                    "sizeChanged": _.bind(raiseSizeChanged, this),
-                    "fullscreenChanged": _.bind(raiseSizeChanged, this)
-                  };
-      _.each(listeners, function(v, i) {
-        $(_video).on(i, v); }, this);
-    };
-
-    /**
-     * Unsubscribes all events from the video element.
-     * This should be called by the destroy function.
-     * @public
-     * @method OoyalaFlashVideoWrapper#unsubscribeAllEvents
-     */
-    this.unsubscribeAllEvents = function() {
-      _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
-    };
-
     /**
      * Sets the url of the video.
      * @public
-     * @method OoyalaFlashVideoWrapper#setVideoUrl
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
-     * @param {string} encoding The encoding of video stream
+     * @param {string} encoding The encoding of video stream 
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
-      var urlChanged = false;
-           newController = this.controller;
-
-      if (_currentUrl.replace(/[\?&]_=[^&]+$/,'') != url) {
-        _currentUrl = url || "";
-
-        // bust the chrome caching bug
-        if (_currentUrl.length > 0) {
-          _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
-        }
-        _readyToPlay = false;
-        urlChanged = true;
-        hasPlayed = false;
-        loaded = false;
-        firstPlay = true;
-        url = "setVideoUrl("+_currentUrl+")";
-      }
-      if (_.isEmpty(_currentUrl)) {
-      //if (!_currentUrl) {
-        this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
-      }
-      else {
-        this.callToFlash(url);
-      }
-      return urlChanged;
+      /* Should be set to false if stream URL changes */
+      loaded = false;
     };
 
     /**
      * Sets the closed captions on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#setClosedCaptions
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setClosedCaptions
      * @param {string} language Selected language of captions
      * @param {object} closedCaptions The captions object
      * @param {object} params The parameters object
      */
     this.setClosedCaptions = function(language,closedCaptions,params){
-       var parameters = {language:language, closedCaptions:closedCaptions, params:params};
-        this.callToFlash("setVideoClosedCaptions()" , parameters);
-     };
+    };
 
     /**
      * Sets the closed captions mode of the video playback.
      * @public
-     * @method OoyalaFlashVideoWrapper#setClosedCaptionsMode
-     * @param {string} mode Mode of the captions(disabled/showing)
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setClosedCaptionsMode
+     * @param {string} mode Mode of the captions(disabled/showing) 
      */
 
     this.setClosedCaptionsMode = function(mode){
-      this.callToFlash("setVideoClosedCaptionsMode("+mode+")");
     };
 
     /**
      * Sets the stream to play back based on given stream ID. Plugin must support the
      * BITRATE_CONTROL feature to have this method called.
      * @public
-     * @method OoyalaFlashVideoWrapper#setBitrate
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setBitrate
      * @param {string} id The ID of the stream to switch to. This ID will be the ID property from one
      *   of the stream objects passed with the BITRATES_AVAILABLE VTC event.
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
      */
     this.setBitrate = function(id) {
-      this.callToFlash("setTargetBitrate("+id+")");
     };
 
     /**
      * Loads the current stream url in the video element; the element should be left paused.
      * @public
-     * @method OoyalaFlashVideoWrapper#load
+     * @method OoyalaAkamaiHDFlashVideoWrapper#load
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
       if (loaded && !rewind) return;
-      if (!!rewind) {
-        try {
-          this.callToFlash("load("+rewind+")");
-          loaded = true;
-        } catch (ex) {
-          // error because currentTime does not exist because stream hasn't been retrieved yet
-          console.log('[OSMF]: Failed to rewind video, probably ok; continuing');
-        }
-      }
-
+      this.callToFlash("load("+rewind+")");
+      loaded = true;
     };
 
     /**
      * Sets the initial time of the video playback.
      * @public
-     * @method OoyalaFlashVideoWrapper#setInitialTime
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setInitialTime
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
-      if (!hasPlayed) {
-        this.seek(initialTime);
-      }
     };
 
     /**
      * Triggers playback on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#play
+     * @method OoyalaAkamaiHDFlashVideoWrapper#play
      */
     this.play = function() {
       if (!loaded) {
         this.load(true);
       }
-      this.callToFlash("videoPlay");
       loaded = true;
-      hasPlayed = true;
-      videoEnded = false;
     };
 
     /**
      * Triggers a pause on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#pause
+     * @method OoyalaAkamaiHDFlashVideoWrapper#pause
      */
     this.pause = function() {
-      this.callToFlash("videoPause");
     };
 
     /**
      * Triggers a seek on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#seek
+     * @method OoyalaAkamaiHDFlashVideoWrapper#seek
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      this.callToFlash("videoSeek("+time+")");
     };
 
     /**
      * Triggers a volume change on the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#setVolume
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setVolume
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      this.callToFlash("changeVolume("+volume+")");
     };
 
     /**
      * Gets the current time position of the video.
      * @public
-     * @method OoyalaFlashVideoWrapper#getCurrentTime
+     * @method OoyalaAkamaiHDFlashVideoWrapper#getCurrentTime
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
-      this.callToFlash("getCurrentTime");
-      return currentTime;
     }
 
     /**
      * Applies the given css to the video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#applyCss
+     * @method OoyalaAkamaiHDFlashVideoWrapper#applyCss
      * @param {object} css The css to apply in key value pairs
      */
     this.applyCss = function(css) {
-      $(_video).css(css);
     };
 
     /**
      * Destroys the individual video element.
      * @public
-     * @method OoyalaFlashVideoWrapper#destroy
+     * @method OoyalaAkamaiHDFlashVideoWrapper#destroy
      */
     this.destroy = function() {
       // Pause the video
       this.pause();
+      
       // Reset the source
       this.setVideoUrl('');
-
-      // Unsubscribe all events
-
-      this.unsubscribeAllEvents();
 
       // Pass destroy to flash plugin.
       this.callToFlash("destroy");
 
       // Remove the element
       $('#'+playerId).replaceWith('');
-      _flashVideoObject=null;
+      _flashVideoObject = null;
 
       // return unbound object.
       return JFlashBridge.unbind(playerId);
@@ -471,32 +345,20 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Calls a Flash method
     this.callToFlash = function (data,dataObj) {
-      if(_flashVideoObject == undefined) { 
-        javascriptCommandQueue.push([data,dataObj]);
-      }
-      else
-      {      
-        if (_flashVideoObject.sendToActionScript) {
-          dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
-          return _flashVideoObject.sendToActionScript(data,dataObj);
-        } 
-        else 
-        {
-          actionscriptCommandQueue.push([data,dataObj]);
-        }
+      if (flashVideoObject.sendToActionScript) {
+        dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
+        return flashVideoObject.sendToActionScript(data,dataObj);
+      } else {
+        actionscriptCommandQueue.push([data,dataObj]);
       }
     };
 
 
     // Receives a callback from Flash - Not used.
     this.sendToJavaScript = function(data) {
-      OO.log('[OSMF]:sendToJavaScript: Call: ', data);
+      OO.log('[Akamai HD]:sendToJavaScript: Call: ', data);
       return true;
     };
-
-    // **********************************************************************************/
-    // Example callback methods
-    // **********************************************************************************/
 
     // **********************************************************************************/
     // Event callback methods
@@ -505,71 +367,51 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Stores the url of the video when load is started.
      * @private
-     * @method OoyalaFlashVideoWrapper#onLoadStart
+     * @method OoyalaAkamaiHDFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
-      firstPlay = true;
-      _currentUrl = this.callToFlash("getUrl");
     };
 
     var onLoadedMetadata = function() {
-      dequeueSeek();
     };
 
     var raisePlayEvent = function(event) {
-      newController.notify(newController.EVENTS.PLAY, { url: event.eventObject.url });
     };
 
     var raisePlayingEvent = function() {
-      newController.notify(newController.EVENTS.PLAYING);
     };
 
     var raiseEndedEvent = function() {
-      if (videoEnded) { return; } // no double firing ended event.
-      videoEnded = true;
-      newController.notify(newController.EVENTS.ENDED);
     };
 
     var raiseErrorEvent = function(event) {
-      var code = event.eventObject.errorCode ? event.eventObject.errorCode : -1;
-      newController.notify(newController.EVENTS.ERROR, { "errorcode" : code });
     };
 
     var raiseSeekingEvent = function() {
-      newController.notify(newController.EVENTS.SEEKING);
     };
 
     var raiseSeekedEvent = function() {
-      newController.notify(newController.EVENTS.SEEKED);
     };
 
     var raisePauseEvent = function() {
-      newController.notify(newController.EVENTS.PAUSED);
     };
 
     var raiseRatechangeEvent = function() {
-      newController.notify(newController.EVENTS.RATE_CHANGE);
     };
 
     var raiseStalledEvent = function() {
-      newController.notify(newController.EVENTS.STALLED);
     };
 
     var raiseVolumeEvent = function(event) {
-      newController.notify(newController.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
     };
 
     var raiseWaitingEvent = function() {
-      videoEnded = false;
-      newController.notify(newController.EVENTS.WAITING);
     };
 
     var raiseTimeUpdate = function(event) {
-      raisePlayhead(newController.EVENTS.TIME_UPDATE, event);
     };
 
     var raiseDurationChange = function(event) {
-      raisePlayhead(newController.EVENTS.DURATION_CHANGE, event);
     };
 
     /**
@@ -578,11 +420,6 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaVideoWrapper#raisePlayhead
      */
     var raisePlayhead = _.bind(function(eventname, event) {
-      newController.notify(eventname,
-                             { "currentTime" : currentTime,
-                               "duration" : totalTime,
-                               "buffer" : buffer,
-                               "seekRange" : { "begin" : seekRange_start, "end" : seekRange_end } });
     }, this);
 
     /**
@@ -592,188 +429,28 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} event The event from the video
      */
     var raiseProgress = function(event) {
-      newController.notify(newController.EVENTS.PROGRESS,
-                             { "currentTime": currentTime,
-                               "duration": totalTime,
-                               "buffer": buffer,
-                               "seekRange": { "begin": seekRange_start, "end": seekRange_end } });
     };
 
     var raiseCanPlayThrough = function() {
-      newController.notify(newController.EVENTS.BUFFERED);
     };
 
     var raiseFullScreenBegin = function(event) {
-      newController.notify(newController.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen" : true, "paused" : event.target.paused });
     };
 
     var raiseFullScreenEnd = function(event) {
-      newController.notify(newControllerr.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen" : false, "paused" : event.target.paused });
     };
-
+  
     var raiseBitrateChanged = function(event) {
-      var vtcBitrate = {
-          id: event.eventObject.id,
-          width: event.eventObject.width,
-          height: event.eventObject.height,
-          bitrate: event.eventObject.bitrate
-      }
-      newController.notify(newController.EVENTS.BITRATE_CHANGED,vtcBitrate);
     };
 
     var raiseBitratesAvailable = function(event) {
-      var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
-      for (var i in event.eventObject) {
-        var vtcBitrate = {
-          id: event.eventObject[i].id,
-          width: event.eventObject[i].width,
-          height: event.eventObject[i].height,
-          bitrate: event.eventObject[i].bitrate
-        }
-        vtcBitrates.push(vtcBitrate);
-      }
-      newController.notify(newController.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
     };
 
     var raiseSizeChanged = function(event) {
-      var assetDimension = {
-        width: event.eventObject.width,
-        height: event.eventObject.height,
-      }
-      //notify VTC about the asset's dimentions
-      if (firstPlay) {
-        newController.notify(this.controller.EVENTS.ASSET_DIMENSION,assetDimension);
-        firstPlay = false;
-      } else {
-        newController.notify(this.controller.EVENTS.SIZE_CHANGED,assetDimension);
-      }
     };
-
-    var raiseHiddenCaption = function(event) {
-      var captionText = event.eventObject.text;
-      newController.notify(newController.EVENTS.CLOSED_CAPTION_CUE_CHANGED,captionText);
-    }
 
     // Receives a callback from Flash
     onCallback = _.bind(function(data) {
-      // console.log("[OSMF]:onCallback: ", data);
-      var eventtitle =" ";
-
-      for(var key in data) {
-        if (key == "eventtype") {
-             eventtitle = data[key];
-        }
-        else if (key =="eventObject") {
-              eventData = data[key];
-        }
-      }
-      if (eventData != null) {
-        for (var item in eventData)
-        {
-          if (item == "currentTime") {
-                currentTime = eventData[item];
-          }
-          else if (item == "buffer") {
-                buffer = eventData[item];
-          }
-          else if (item == "duration") {
-                totalTime =eventData[item];
-          }
-          else if (item == "seekRange_start") {
-                seekRange_start = eventData[item];
-          }
-          else if (item == "seekRange_end") {
-                seekRange_end = eventData[item];
-          }
-        }
-      }
-
-      switch (eventtitle)
-      {
-       case "JSREADY":    
-        if(javascriptCommandQueue.length != 0) {
-          for(var i = 0; i < javascriptCommandQueue.length; i++) {
-            this.callToFlash(javascriptCommandQueue[i][0], javascriptCommandQueue[i][1]);
-          }    
-        }
-        for (i = 0; i < actionscriptCommandQueue.length; i++) {
-          this.callToFlash(actionscriptCommandQueue[i][0],actionscriptCommandQueue[i][1]);
-        }
-        break;
-       case "PAUSED":
-        raisePauseEvent();
-        break;
-       case "BUFFERING":
-        //this.controller.notify(this.controller.EVENTS.BUFFERING);
-        newController.notify(newController.EVENTS.BUFFERING);
-        break;
-       case "PLAY":
-        raisePlayEvent(data);
-        break;
-       case "PLAYING":
-        raisePlayingEvent();
-        break;
-       case "ENDED":
-        raiseEndedEvent();
-        break;
-       case "SEEKING":
-        raiseSeekingEvent();
-        break;
-       case "SEEKED":
-        raiseSeekedEvent();
-        break;
-       case "PAUSED":
-        raisePauseEvent();
-        break;
-       case "RATE_CHANGE":
-        raiseRatechangeEvent();
-        break;
-       case "STALLED":
-        raiseStalledEvent();
-        break;
-       case "VOLUME_CHANGED":
-        raiseVolumeEvent(data);
-        break;
-       case "WAITING":
-        raiseWaitingEvent();
-        break;
-       case "TIME_UPDATE":
-        raiseTimeUpdate(data);
-        break;
-       case "DURATION_CHANGE":
-        raiseDurationChange();
-        break;
-       case "PROGRESS":
-        raiseProgress(data);
-        break;
-       case "BUFFERED":
-        raiseCanPlayThrough();
-        break;
-       case "FULLSCREEN_CHANGED":
-        raiseFullScreenBegin(data);
-        break;
-       case "FULLSCREEN_CHANGED_END":
-        raiseFullScreenEnd(data);
-        break;
-       case "BITRATES_AVAILABLE":
-        raiseBitratesAvailable(data);
-        break;
-       case "BITRATE_CHANGED":
-        raiseBitrateChanged(data);
-        break;
-       case "SIZE_CHANGED":
-         raiseSizeChanged(data);
-         break;
-       case "CLOSED_CAPTION_CUE_CHANGED":
-         raiseHiddenCaption(data);
-         break;
-       case "ERROR":
-        raiseErrorEvent(data);
-        break;
-      }
-      return true;
     }, this);
   };
   /************************************************************************************/
@@ -783,30 +460,34 @@ require("../../../html5-common/js/utils/constants.js");
   /**
    * Generates a random string.
    * @private
-   * @method OoyalaFlashVideoWrapper#getRandomString
+   * @method OoyalaAkamaiHDFlashVideoWrapper#getRandomString
    * @returns {string} A random string
    */
   var getRandomString = function() {
     return Math.random().toString(36).substring(7);
   };
-  OO.Video.plugin(new OoyalaFlashVideoFactory());
+  OO.Video.plugin(new OoyalaAkamaiHDFlashVideoFactory());
 }(OO._, OO.$));
 
+/**
+ * @class JFlashBridge
+ * @classdesc Acts as a connecting bridge between Javascript plugin and the flash plugin.
+ */    
 var JFlashBridge = {
   items: {},
 
   bind: function(id, klass) {
-      OO.log('[OSMF]:JFlashBridge: Bind: ', id, klass);
+      OO.log('[Akamai HD]:JFlashBridge: Bind: ', id, klass);
       this.items[id] = klass;
   },
 
   unbind: function(id) {
-     OO.log('[OSMF]:JFlashBridge: Unbind: ', id);
+     OO.log('[Akamai HD]:JFlashBridge: Unbind: ', id);
      delete this.items[id];
   },
 
   call: function() {
-    OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
+    OO.log('[Akamai HD]:JFlashBridge: Call: ', arguments);
     var klass = this.items[arguments[0]];
     if (klass) {
       var method = klass[arguments[1]];
@@ -815,10 +496,10 @@ var JFlashBridge = {
         method.apply(klass, Array.prototype.slice.call(arguments, 2));
       }
       else
-        OO.log('[OSMF]:JFlashBridge: No method: ', arguments[1]);
+        OO.log('[Akamai HD]:JFlashBridge: No method: ', arguments[1]);
     }
     else
-      OO.log('[OSMF]:JFlashBridge: No binding: ', arguments);
+      OO.log('[Akamai HD]:JFlashBridge: No binding: ', arguments);
   },
 
   getSWF: function(movieName) {
@@ -833,16 +514,23 @@ var JFlashBridge = {
   }
 };
 
+// Return if the Dom and JavaScript are ready.
+// We cannot predict the presence of jQuery, so use a core javascript technique here.
+isReady = _.bind(function() {
+  if (document.readyState === "complete") {
+    return true;
+  }
+},this);
+
 /*! SWFObject v2.2 <http://code.google.com/p/swfobject/>
   is released under the MIT License <http://www.opensource.org/licenses/mit-license.php>
 */
-  /**
-   * @class swfobject
-   * @classdesc Establishes the connection between player and the plugin
-   */
+/**
+ * @class swfobject
+ * @classdesc Establishes the connection between player and the plugin
+ */
 
 var swfobject = function() {
-
   var UNDEF = "undefined",
     OBJECT = "object",
     SHOCKWAVE_FLASH = "Shockwave Flash",
@@ -976,7 +664,7 @@ var swfobject = function() {
   }
 
   function addDomLoadEvent(fn) {
-    OO.log("dom Load event");
+    OO.log("[Akamai HD : addDomLoadEvent]","dom Load event");
 
     if (isDomLoaded) {
       fn();
