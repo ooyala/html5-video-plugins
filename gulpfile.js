@@ -13,7 +13,8 @@ var gulp = require('gulp'),
 
 var path = {
   mainJs: './src/main/js/main_html5.js',
-  flashJs: './src/osmf/js/osmf_flash.js'
+  flashOSMFJs: './src/osmf/js/osmf_flash.js',
+  flashAkamaiJs: './src/akamai/js/akamaiHD_flash.js'
 };
 
 var main_html5_fn = function() {
@@ -21,7 +22,11 @@ var main_html5_fn = function() {
 }
 
 var osmf_fn = function() {
-  uglify_fn(path.flashJs);
+  uglify_fn(path.flashOSMFJs);
+}
+
+var akamai_fn = function() {
+  uglify_fn(path.flashAkamaiJs);
 }
 
 var uglify_fn = function(srcFile) {
@@ -54,15 +59,28 @@ gulp.task('init_module', function(callback) {
   });
 });
 
-gulp.task('build_flash', function(callback) {
-  exec("ant -file build_flash.xml", function(err) {
-    if (err) console.log("Error occured in building osmf plugin : " + err);
-    else osmf_fn();
-    callback();
-  });
+gulp.task('build_flash_osmf', function(callback) {
+    exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-CCswc", function(err) {
+      if (err) console.log("Error occured in building the CC : " + err);
+      else{
+        exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-osmf", function(err) { 
+          if (err) console.log("Error occured in building osmf plugin : " + err);
+          else {osmf_fn();}
+          callback();
+        });
+      }
+    });
 });
 
-gulp.task('build', ['init_module', 'build_flash'], function() {
+gulp.task('build_flash_akamai', function(callback) {
+    exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-akamai", function(err) {
+      if (err) console.log("Error occured in building akamai plugin : " + err);
+      else {akamai_fn();}
+      callback();
+    });
+});
+
+gulp.task('build', ['init_module', 'build_flash_osmf', 'build_flash_akamai'], function() {
   main_html5_fn();
 });
 

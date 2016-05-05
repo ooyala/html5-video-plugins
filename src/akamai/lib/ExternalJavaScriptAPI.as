@@ -174,6 +174,7 @@ package
     */
     private function onVideoPause(event:Event):void
     {
+      _akamaiHDPlayer.onVideoPause(event);
     }
 
    /**

@@ -18,7 +18,6 @@ import flash.external.ExternalInterface;
      * @method ExternalJavaScriptAPI#log
      * @param {string} value The value to be passed to the browser console.
      * @param {string} referrer The fuction or process which passed the value.
-     * @param {string} channelBranch It can be info, debug, warn, error or log.
      * @returns {boolean} True or false indicating success
      */
      public static function log(value:String, referrer:String = null):Boolean

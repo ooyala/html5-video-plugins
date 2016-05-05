@@ -155,9 +155,10 @@ package
       switch(event.state)
       {
         case MediaPlayerState.PLAYING:
-          dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING, null));
+          dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING,null));
           break;
         case MediaPlayerState.PAUSED:
+          dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
           break;
         case MediaPlayerState.BUFFERING:
           break;
@@ -268,6 +269,14 @@ package
      */
     public function onVideoPause(event:Event):void
     {
+      if (_streamController.canPause)
+      {
+        _streamController.pause();
+      }
+      else
+      {
+        Logger.log("Error in pausing video: Player State: ", "onVideoPause");
+      }
     }
     
     /**

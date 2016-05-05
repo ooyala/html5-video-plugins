@@ -39,7 +39,6 @@ require("../../../html5-common/js/utils/constants.js");
    * @class OoyalaAkamaiHDFlashVideoFactory
    * @classdesc Factory for creating video player objects that use Flash in an HTML5 wrapper.
    * @property {string} name The name of the plugin
-   * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. m3u8, mp4)
    */
 
@@ -101,14 +100,14 @@ require("../../../html5-common/js/utils/constants.js");
      * Creates a video player instance using OoyalaAkamaiHDFlashVideoWrapper.
      * @public
      * @method OoyalaAkamaiHDFlashVideoFactory#create
-     * @param {video} parentContainer The jquery div that should act as the parent for the video element
+     * @param {object} parentContainer The jquery div that should act as the parent for the video element
      * @param {string} id The id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, id, controller, css) {
-      var video = $("<video>");
+      var video = $("<object>");
       video.attr("id", id);
       parentContainer.append(video);
       cssFromContainer = css;
@@ -312,6 +311,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#pause
      */
     this.pause = function() {
+      this.callToFlash("videoPause");
     };
 
     /**
@@ -358,7 +358,6 @@ require("../../../html5-common/js/utils/constants.js");
     this.destroy = function() {
       // Pause the video
       this.pause();
-      
       // Reset the source
       this.setVideoUrl('');
 
@@ -430,7 +429,12 @@ require("../../../html5-common/js/utils/constants.js");
     var raiseSeekedEvent = function() {
     };
 
+    var raiseBufferingEvent = function() {
+      newController.notify(newController.EVENTS.BUFFERING);
+    };
+
     var raisePauseEvent = function() {
+      newController.notify(newController.EVENTS.PAUSED);
     };
 
     var raiseRatechangeEvent = function() {
@@ -486,9 +490,9 @@ require("../../../html5-common/js/utils/constants.js");
     var raiseSizeChanged = function(event) {
     };
 
-    // Receives a callback from Flash
+    // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
-      console.log("[AKAMIHD]:onCallback: ", data);
+      OO.log("[AKAMIHD]:onCallback: ", data);
       var eventtitle =" ";
 
       for(var key in data) {
@@ -509,7 +513,7 @@ require("../../../html5-common/js/utils/constants.js");
                 buffer = eventData[item];
           }
           else if (item == "duration") {
-                totalTime =eventData[item];
+                totalTime = eventData[item];
           }
           else if (item == "seekRange_start") {
                 seekRange_start = eventData[item];
@@ -531,7 +535,7 @@ require("../../../html5-common/js/utils/constants.js");
         raisePauseEvent();
         break;
        case "BUFFERING":
-        newController.notify(newController.EVENTS.BUFFERING);
+        raiseBufferingEvent();
         break;
        case "PLAY":
         raisePlayEvent(data);
