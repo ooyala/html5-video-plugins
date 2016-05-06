@@ -19,6 +19,7 @@ package
     public static const TIME_UPDATE:String = "TIME_UPDATE";
     public static const VOLUME_CHANGED:String = "VOLUME_CHANGED";
     public static const CURRENT_TIME:String = "CURRENT_TIME";
+    public static const BITRATES_AVAILABLE:String = "BITRATES_AVAILABLE";
     private var _eventObject:Object;
 
    /**

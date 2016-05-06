@@ -36,7 +36,11 @@ package
     private var _streamController:AkamaiStreamController;
     private var _netStream:AkamaiHTTPNetStream;
     private var _akamaiVideoSurface:AkamaiVideoSurface;
+    private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
+    private var _playQueue:Boolean = false;
+    private var _bitrateArray:Array = new Array();
+    private var _bitrateIdArray:Array = new Array();
 
     /**
      * Constructor
@@ -123,9 +127,13 @@ package
       Logger.log("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
       _akamaiVideoSurface.attachNetStream(_netStream);
+      if (_playQueue)
+      {
+        _playQueue = false;
+        _streamController.resume();
+      }
     }
-
-
+    
     /**
      * Adds the display object to the streamcontroller.
      * @private
@@ -135,7 +143,7 @@ package
     {
       _streamController.displayObject = this;
     }
-    
+  
     /**
      * Event listner for MediaPlayerStateChangeEvent
      * @private
@@ -149,8 +157,10 @@ package
       switch(event.state)
       {
         case MediaPlayerState.PLAYING:
+          dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING,null));
           break;
         case MediaPlayerState.PAUSED:
+          dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
           break;
         case MediaPlayerState.BUFFERING:
           break;
@@ -159,6 +169,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          totalBitratesAvailable();
           break;
         case MediaPlayerState.UNINITIALIZED:
           break;
@@ -235,6 +246,22 @@ package
      */
     public function onVideoPlay(event:Event):void
     {
+      var eventObject:Object = new Object();
+      eventObject.url = _akamaiStreamURL;
+      dispatchEvent(new DynamicEvent(DynamicEvent.PLAY,eventObject));
+      
+      //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
+      _playQueue = false;
+
+      if ( _streamController.netStream == null )
+      {
+        _playQueue = true;
+        _streamController.play(_akamaiStreamURL);
+      }
+      else
+      {
+        _streamController.resume();
+      }
     }
     
     /**
@@ -245,6 +272,14 @@ package
      */
     public function onVideoPause(event:Event):void
     {
+      if (_streamController.canPause)
+      {
+        _streamController.pause();
+      }
+      else
+      {
+        Logger.log("Error in pausing video: Player State: ", "onVideoPause");
+      }
     }
     
     /**
@@ -265,6 +300,21 @@ package
      */
     public function onChangeVolume(event:DynamicEvent):void
     {
+      var volume:Number = (Number)(event.args);
+      _streamController.volume = volume;
+      //Dispatches the VOLUME_CHANGED event only when the change occures properly.
+      if (_streamController.volume == volume)
+      {
+        var eventObject:Object = new Object();
+        eventObject.volume = _streamController.volume;
+        dispatchEvent(new DynamicEvent(DynamicEvent.VOLUME_CHANGED,(eventObject)));
+      }
+      else
+      {
+        Logger.log("Error in changing volume: " +_streamController.volume,"onChangeVolume");
+        return;
+      }
+      Logger.log("Set Volume to: " + volume, "onChangeVolume");
     }
     
     /**
@@ -275,6 +325,7 @@ package
      */
     public function onSetVideoURL(event:DynamicEvent):void
     {
+      _akamaiStreamURL = (String)(event.args);
     }
     
     /**
@@ -373,7 +424,26 @@ package
      * @method AkamaiHDPlayer#totalBitratesAvailable
      */
     public function  totalBitratesAvailable():void
-    { 
+    {
+      if (_bitrateIdArray.length > 0 ) return;
+      var eventObject:Object = new Object();
+      var id:String;
+      if (getStreamsCount() > 0)
+      {
+        for (var i:int = 0; i < getStreamsCount(); i++)
+        {
+          _bitrateIdArray.push((_streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
+          id = _bitrateIdArray[i];
+          var bitrateObject:Object = new Object();
+          bitrateObject.id = id;
+          bitrateObject.height = 0;
+          bitrateObject.width = 0;
+          bitrateObject.bitrate = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
+          _bitrateArray[id] = [ bitrateObject, i];
+          eventObject[i] = bitrateObject;
+        }
+        dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
+      } 
     }
 
     /**
@@ -396,6 +466,16 @@ package
     {
     }
     
+    /**
+     * Returns the total number of streams
+     * @private
+     * @method AkamaiHDPlayer#getStreamsCount
+     */
+    private function getStreamsCount():int
+    {
+      return _streamController.mediaPlayer.numDynamicStreams;
+    } 
+
     /**
      * Unregisters events and removes media player child.
      * @public

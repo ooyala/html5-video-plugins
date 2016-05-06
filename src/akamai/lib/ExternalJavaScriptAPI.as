@@ -100,7 +100,7 @@ package
       _akamaiHDPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
       //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
-      //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       //_akamaiHDPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
       Logger.log("events added", "registerListeners");
     }
@@ -136,7 +136,7 @@ package
       _akamaiHDPlayer.removeEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
       //_akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
-      //_akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       //_akamaiHDPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
     }
 
@@ -163,6 +163,7 @@ package
      */
     private function onVideoPlay(event:Event):void
     {
+      _akamaiHDPlayer.onVideoPlay(event);
     }
 
    /**
@@ -173,6 +174,7 @@ package
     */
     private function onVideoPause(event:Event):void
     {
+      _akamaiHDPlayer.onVideoPause(event);
     }
 
    /**
@@ -193,6 +195,7 @@ package
     */
     private function onChangeVolume(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onChangeVolume(event);
     }
 
    /**
@@ -213,6 +216,7 @@ package
     */
     private function onSetVideoURL(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onSetVideoURL(event);
     }
 
    /**
@@ -226,7 +230,7 @@ package
       _akamaiHDPlayer.onLoadVideo(event);
     }
 
-    /**
+   /**
     * Sets the closed captions for the video playback
     * @private
     * @method ExternalJavaScriptAPI#onSetVideoClosedCaptions
