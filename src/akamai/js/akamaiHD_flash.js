@@ -204,12 +204,13 @@ require("../../../html5-common/js/utils/constants.js");
      */
     this.setVideoUrl = function(url, encoding) {
       var urlChanged = false;
-      controller = this.controller;
+      newController=this.controller;
 
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
 
+        // bust the chrome caching bug
         if (currentUrl.length > 0) 
         {
           currentUrl = currentUrl + (/\?/.test(currentUrl) ? "&" : "?") + "_=" + getRandomString();
@@ -220,7 +221,8 @@ require("../../../html5-common/js/utils/constants.js");
       }
       if (_.isEmpty(currentUrl)) 
       {
-        controller.notify(controller.EVENTS.ERROR, { errorcode: 0 }); 
+        this.callToFlash("setVideoUrl("+""+")");
+        this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); 
       }
       else 
       {
@@ -394,6 +396,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
+      currentUrl = this.callToFlash("getUrl");
     };
 
     var onLoadedMetadata = function() {

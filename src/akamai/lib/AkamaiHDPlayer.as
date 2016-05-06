@@ -277,7 +277,10 @@ package
     public function onSetVideoURL(event:DynamicEvent):void
     {
       _akamaiStreamURL = (String)(event.args);
-      Logger.log("Set Video URL: " + _akamaiStreamURL, "onSetVideoURL");
+      if(_akamaiStreamURL == "null")
+      {
+        _streamController.unloadMedia();
+      }
     }
     
     /**
