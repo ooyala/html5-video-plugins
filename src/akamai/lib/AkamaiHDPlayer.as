@@ -36,7 +36,9 @@ package
     private var _streamController:AkamaiStreamController;
     private var _netStream:AkamaiHTTPNetStream;
     private var _akamaiVideoSurface:AkamaiVideoSurface;
+    private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
+    private var _playQueue:Boolean = false;
 
     /**
      * Constructor
@@ -123,9 +125,13 @@ package
       Logger.log("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
       _akamaiVideoSurface.attachNetStream(_netStream);
+      if (_playQueue)
+      {
+        _playQueue = false;
+        _streamController.resume();
+      }
     }
-
-
+    
     /**
      * Adds the display object to the streamcontroller.
      * @private
@@ -135,7 +141,7 @@ package
     {
       _streamController.displayObject = this;
     }
-    
+  
     /**
      * Event listner for MediaPlayerStateChangeEvent
      * @private
@@ -149,6 +155,7 @@ package
       switch(event.state)
       {
         case MediaPlayerState.PLAYING:
+          dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING, null));
           break;
         case MediaPlayerState.PAUSED:
           break;
@@ -235,6 +242,22 @@ package
      */
     public function onVideoPlay(event:Event):void
     {
+      var eventObject:Object = new Object();
+      eventObject.url = _akamaiStreamURL;
+      dispatchEvent(new DynamicEvent(DynamicEvent.PLAY,eventObject));
+      
+      //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
+      _playQueue = false;
+
+      if ( _streamController.netStream == null )
+      {
+        _playQueue = true;
+        _streamController.play(_akamaiStreamURL);
+      }
+      else
+      {
+        _streamController.resume();
+      }
     }
     
     /**
@@ -275,6 +298,7 @@ package
      */
     public function onSetVideoURL(event:DynamicEvent):void
     {
+      _akamaiStreamURL = (String)(event.args);
     }
     
     /**
