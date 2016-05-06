@@ -213,6 +213,7 @@ package
     */
     private function onSetVideoURL(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onSetVideoURL(event);
     }
 
    /**

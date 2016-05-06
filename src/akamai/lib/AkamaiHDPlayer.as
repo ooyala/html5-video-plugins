@@ -36,6 +36,7 @@ package
     private var _streamController:AkamaiStreamController;
     private var _netStream:AkamaiHTTPNetStream;
     private var _akamaiVideoSurface:AkamaiVideoSurface;
+    private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
 
     /**
@@ -275,6 +276,11 @@ package
      */
     public function onSetVideoURL(event:DynamicEvent):void
     {
+      _akamaiStreamURL = (String)(event.args);
+      if(_akamaiStreamURL == "null")
+      {
+        _streamController.unloadMedia();
+      }
     }
     
     /**
