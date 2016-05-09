@@ -153,6 +153,13 @@ require("../../../html5-common/js/utils/constants.js");
     var videoItem = video;
     var currentUrl = '';
     var loaded = false;
+    var urlChanged = false;
+    var newController;
+    var currentTime;
+    var buffer;
+    var totalTime;
+    var seekRange_start;
+    var seekRange_end;
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -204,9 +211,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
-      var urlChanged = false;
       newController=this.controller;
-
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -526,9 +531,10 @@ require("../../../html5-common/js/utils/constants.js");
 
       switch (eventtitle)
       {
-       case "JSREADY":
-        for (i = 0; i < actionscriptCommandQueue.length; i++) {
-          this.callToFlash(actionscriptCommandQueue[i][0],actionscriptCommandQueue[i][1]);
+        case "JSREADY":
+        while(0 < actionscriptCommandQueue.length) {
+          this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
+          actionscriptCommandQueue.shift();
         }
         break;
        case "PAUSED":
