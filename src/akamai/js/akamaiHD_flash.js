@@ -532,7 +532,7 @@ require("../../../html5-common/js/utils/constants.js");
       switch (eventtitle)
       {
         case "JSREADY":
-        while(0 < actionscriptCommandQueue.length) {
+         while(0 < actionscriptCommandQueue.length) {
           this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
           actionscriptCommandQueue.shift();
         }
