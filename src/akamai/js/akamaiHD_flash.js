@@ -153,6 +153,13 @@ require("../../../html5-common/js/utils/constants.js");
     var videoItem = video;
     var currentUrl = '';
     var loaded = false;
+    var urlChanged = false;
+    var self=this;
+    var currentTime;
+    var buffer;
+    var totalTime;
+    var seekRange_start;
+    var seekRange_end;
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -204,9 +211,6 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
-      var urlChanged = false;
-      newController=this.controller;
-
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -220,13 +224,9 @@ require("../../../html5-common/js/utils/constants.js");
         loaded = false;
         url = "setVideoUrl("+currentUrl+")";
       }
-      if (_.isEmpty(currentUrl)) 
+      if (!_.isEmpty(currentUrl)) 
       {
-        this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); 
-      }
-      else 
-      {
-        this.callToFlash(url);
+         this.callToFlash(url);
       }
       return urlChanged;
     };
@@ -271,8 +271,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      if (loaded && !rewind) return;
-      if (!!rewind) {
+      if (loaded) return;
+      else {
         try {
           this.callToFlash("load("+rewind+")");
           loaded = true;
@@ -411,11 +411,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raisePlayEvent = function(event) {
-      newController.notify(newController.EVENTS.PLAY, { url: event.eventObject.url });
+      self.controller.notify(self.controller.EVENTS.PLAY, { url: event.eventObject.url });
     };
 
     var raisePlayingEvent = function() {
-      newController.notify(newController.EVENTS.PLAYING);
+      self.controller.notify(self.controller.EVENTS.PLAYING);
     };
 
     var raiseEndedEvent = function() {
@@ -431,11 +431,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseBufferingEvent = function() {
-      newController.notify(newController.EVENTS.BUFFERING);
+      self.controller.notify(self.controller.EVENTS.BUFFERING);
     };
 
     var raisePauseEvent = function() {
-      newController.notify(newController.EVENTS.PAUSED);
+      self.controller.notify(self.controller.EVENTS.PAUSED);
     };
 
     var raiseRatechangeEvent = function() {
@@ -445,7 +445,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseVolumeEvent = function(event) {
-      newController.notify(newController.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
+      self.controller.notify(self.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
     };
 
     var raiseWaitingEvent = function() {
@@ -497,7 +497,7 @@ require("../../../html5-common/js/utils/constants.js");
         }
         vtcBitrates.push(vtcBitrate);
       }
-      newController.notify(newController.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
+      self.controller.notify(self.controller.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
     };
 
     var raiseSizeChanged = function(event) {
@@ -505,43 +505,44 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
-      OO.log("[AKAMIHD]:onCallback: ", data);
+     OO.log("[AKAMIHD]:onCallback: ", data);
       var eventtitle =" ";
 
-      for(var key in data) {
+      for (var key in data) {
         if (key == "eventtype") {
-             eventtitle = data[key];
+          eventtitle = data[key];
         }
         else if (key =="eventObject") {
-              eventData = data[key];
+          eventData = data[key];
         }
       }
       if (eventData != null) {
         for (var item in eventData)
         {
           if (item == "currentTime") {
-                currentTime = eventData[item];
+            currentTime = eventData[item];
           }
           else if (item == "buffer") {
-                buffer = eventData[item];
+            buffer = eventData[item];
           }
           else if (item == "duration") {
-                totalTime = eventData[item];
+            totalTime = eventData[item];
           }
           else if (item == "seekRange_start") {
-                seekRange_start = eventData[item];
+            seekRange_start = eventData[item];
           }
           else if (item == "seekRange_end") {
-                seekRange_end = eventData[item];
+            seekRange_end = eventData[item];
           }
         }
       }
 
       switch (eventtitle)
       {
-       case "JSREADY":
-        for (i = 0; i < actionscriptCommandQueue.length; i++) {
-          this.callToFlash(actionscriptCommandQueue[i][0],actionscriptCommandQueue[i][1]);
+        case "JSREADY":
+         while(0 < actionscriptCommandQueue.length) {
+          this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
+          actionscriptCommandQueue.shift();
         }
         break;
        case "PAUSED":
