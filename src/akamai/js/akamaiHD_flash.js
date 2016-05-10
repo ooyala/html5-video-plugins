@@ -89,7 +89,7 @@ require("../../../html5-common/js/utils/constants.js");
         return [];
       }
       else {
-        return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS ];
+        return [ OO.VIDEO.ENCODING.HDS ];
       }
     }
     this.encodings = testForFlash();
@@ -154,7 +154,7 @@ require("../../../html5-common/js/utils/constants.js");
     var currentUrl = '';
     var loaded = false;
     var urlChanged = false;
-    var newController;
+    var self;
     var currentTime;
     var buffer;
     var totalTime;
@@ -211,7 +211,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
-      newController=this.controller;
+      self=this;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -276,8 +276,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      if (loaded && !rewind) return;
-      if (!!rewind) {
+      if (loaded) return;
+      else {
         try {
           this.callToFlash("load("+rewind+")");
           loaded = true;
@@ -415,11 +415,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raisePlayEvent = function(event) {
-      newController.notify(newController.EVENTS.PLAY, { url: event.eventObject.url });
+      self.controller.notify(self.controller.EVENTS.PLAY, { url: event.eventObject.url });
     };
 
     var raisePlayingEvent = function() {
-      newController.notify(newController.EVENTS.PLAYING);
+      self.controller.notify(self.controller.EVENTS.PLAYING);
     };
 
     var raiseEndedEvent = function() {
@@ -435,11 +435,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseBufferingEvent = function() {
-      newController.notify(newController.EVENTS.BUFFERING);
+      self.controller.notify(self.controller.EVENTS.BUFFERING);
     };
 
     var raisePauseEvent = function() {
-      newController.notify(newController.EVENTS.PAUSED);
+      self.controller.notify(self.controller.EVENTS.PAUSED);
     };
 
     var raiseRatechangeEvent = function() {
@@ -497,34 +497,34 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
-      OO.log("[AKAMIHD]:onCallback: ", data);
+     OO.log("[AKAMIHD]:onCallback: ", data);
       var eventtitle =" ";
 
-      for(var key in data) {
+      for (var key in data) {
         if (key == "eventtype") {
-             eventtitle = data[key];
+          eventtitle = data[key];
         }
         else if (key =="eventObject") {
-              eventData = data[key];
+          eventData = data[key];
         }
       }
       if (eventData != null) {
         for (var item in eventData)
         {
           if (item == "currentTime") {
-                currentTime = eventData[item];
+            currentTime = eventData[item];
           }
           else if (item == "buffer") {
-                buffer = eventData[item];
+            buffer = eventData[item];
           }
           else if (item == "duration") {
-                totalTime = eventData[item];
+            totalTime = eventData[item];
           }
           else if (item == "seekRange_start") {
-                seekRange_start = eventData[item];
+            seekRange_start = eventData[item];
           }
           else if (item == "seekRange_end") {
-                seekRange_end = eventData[item];
+            seekRange_end = eventData[item];
           }
         }
       }
