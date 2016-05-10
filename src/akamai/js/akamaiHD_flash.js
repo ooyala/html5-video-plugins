@@ -89,7 +89,7 @@ require("../../../html5-common/js/utils/constants.js");
         return [];
       }
       else {
-        return [ OO.VIDEO.ENCODING.HDS ];
+        return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS ];
       }
     }
     this.encodings = testForFlash();
