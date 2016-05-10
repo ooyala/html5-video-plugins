@@ -195,6 +195,7 @@ package
     */
     private function onChangeVolume(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onChangeVolume(event);
     }
 
    /**

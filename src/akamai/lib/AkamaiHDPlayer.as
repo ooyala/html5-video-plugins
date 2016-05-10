@@ -297,6 +297,21 @@ package
      */
     public function onChangeVolume(event:DynamicEvent):void
     {
+      var volume:Number = (Number)(event.args);
+      _streamController.volume = volume;
+      //Dispatches the VOLUME_CHANGED event only when the change occures properly.
+      if (_streamController.volume == volume)
+      {
+        var eventObject:Object = new Object();
+        eventObject.volume = _streamController.volume;
+        dispatchEvent(new DynamicEvent(DynamicEvent.VOLUME_CHANGED,(eventObject)));
+      }
+      else
+      {
+        Logger.log("Error in changing volume: " +_streamController.volume,"onChangeVolume");
+        return;
+      }
+      Logger.log("Set Volume to: " + volume, "onChangeVolume");
     }
     
     /**
