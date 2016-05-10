@@ -154,7 +154,7 @@ require("../../../html5-common/js/utils/constants.js");
     var currentUrl = '';
     var loaded = false;
     var urlChanged = false;
-    var self;
+    var self=this;
     var currentTime;
     var buffer;
     var totalTime;
@@ -211,7 +211,6 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
-      self=this;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -225,13 +224,9 @@ require("../../../html5-common/js/utils/constants.js");
         loaded = false;
         url = "setVideoUrl("+currentUrl+")";
       }
-      if (_.isEmpty(currentUrl)) 
+      if (!_.isEmpty(currentUrl)) 
       {
-        this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); 
-      }
-      else 
-      {
-        this.callToFlash(url);
+         this.callToFlash(url);
       }
       return urlChanged;
     };
