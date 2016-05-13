@@ -593,6 +593,9 @@ require("../../../html5-common/js/utils/constants.js");
        case "FULLSCREEN_CHANGED_END":
         raiseFullScreenEnd(data);
         break;
+       case "BITRATES_AVAILABLE":
+        raiseBitratesAvailable(data);
+        break;
        case "ERROR":
         raiseErrorEvent(data);
         break;
