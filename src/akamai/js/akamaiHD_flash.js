@@ -15,7 +15,9 @@ require("../../../html5-common/js/utils/constants.js");
    * Config variables for paths to flash resources.
    */
 
-  var pluginPath;
+  var scriptsList = document.currentScript;
+  var akamaiPath = scriptsList.src;
+  var pluginPath = akamaiPath.slice(0, 1 + akamaiPath.lastIndexOf("/"));
   var filename = "akamaiHD_flash.*\.js";
   var scripts = document.getElementsByTagName('script');
   for (var index in scripts) {
@@ -149,7 +151,15 @@ require("../../../html5-common/js/utils/constants.js");
 
     parentContainer = "container";
     var videoItem = video;
+    var currentUrl = '';
     var loaded = false;
+    var urlChanged = false;
+    var self=this;
+    var currentTime;
+    var buffer;
+    var totalTime;
+    var seekRange_start;
+    var seekRange_end;
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -201,8 +211,24 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
-      /* Should be set to false if stream URL changes */
-      loaded = false;
+      if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
+      {
+        currentUrl = url || "";
+
+        // bust the chrome caching bug
+        if (currentUrl.length > 0) 
+        {
+          currentUrl = currentUrl + (/\?/.test(currentUrl) ? "&" : "?") + "_=" + getRandomString();
+        }
+        urlChanged = true;
+        loaded = false;
+        url = "setVideoUrl("+currentUrl+")";
+      }
+      if (!_.isEmpty(currentUrl)) 
+      {
+         this.callToFlash(url);
+      }
+      return urlChanged;
     };
 
     /**
@@ -245,9 +271,16 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      if (loaded && !rewind) return;
-      this.callToFlash("load("+rewind+")");
-      loaded = true;
+      if (loaded) return;
+      else {
+        try {
+          this.callToFlash("load("+rewind+")");
+          loaded = true;
+        } catch (ex) {
+          // error because currentTime does not exist because stream hasn't been retrieved yet
+          console.log('[Akamai HD]: Failed to rewind video, probably ok; continuing');
+        }
+      }
     };
 
     /**
@@ -268,6 +301,7 @@ require("../../../html5-common/js/utils/constants.js");
       if (!loaded) {
         this.load(true);
       }
+      this.callToFlash("videoPlay");
       loaded = true;
     };
 
@@ -277,6 +311,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#pause
      */
     this.pause = function() {
+      this.callToFlash("videoPause");
     };
 
     /**
@@ -323,7 +358,6 @@ require("../../../html5-common/js/utils/constants.js");
     this.destroy = function() {
       // Pause the video
       this.pause();
-      
       // Reset the source
       this.setVideoUrl('');
 
@@ -376,9 +410,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raisePlayEvent = function(event) {
+      self.controller.notify(self.controller.EVENTS.PLAY, { url: event.eventObject.url });
     };
 
     var raisePlayingEvent = function() {
+      self.controller.notify(self.controller.EVENTS.PLAYING);
     };
 
     var raiseEndedEvent = function() {
@@ -393,7 +429,12 @@ require("../../../html5-common/js/utils/constants.js");
     var raiseSeekedEvent = function() {
     };
 
+    var raiseBufferingEvent = function() {
+      self.controller.notify(self.controller.EVENTS.BUFFERING);
+    };
+
     var raisePauseEvent = function() {
+      self.controller.notify(self.controller.EVENTS.PAUSED);
     };
 
     var raiseRatechangeEvent = function() {
@@ -449,8 +490,98 @@ require("../../../html5-common/js/utils/constants.js");
     var raiseSizeChanged = function(event) {
     };
 
-    // Receives a callback from Flash
+    // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
+     OO.log("[AKAMIHD]:onCallback: ", data);
+      var eventtitle =" ";
+
+      for (var key in data) {
+        if (key == "eventtype") {
+          eventtitle = data[key];
+        }
+        else if (key =="eventObject") {
+          eventData = data[key];
+        }
+      }
+      if (eventData != null) {
+        for (var item in eventData)
+        {
+          if (item == "currentTime") {
+            currentTime = eventData[item];
+          }
+          else if (item == "buffer") {
+            buffer = eventData[item];
+          }
+          else if (item == "duration") {
+            totalTime = eventData[item];
+          }
+          else if (item == "seekRange_start") {
+            seekRange_start = eventData[item];
+          }
+          else if (item == "seekRange_end") {
+            seekRange_end = eventData[item];
+          }
+        }
+      }
+
+      switch (eventtitle)
+      {
+        case "JSREADY":
+         while(0 < actionscriptCommandQueue.length) {
+          this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
+          actionscriptCommandQueue.shift();
+        }
+        break;
+       case "PAUSED":
+        raisePauseEvent();
+        break;
+       case "BUFFERING":
+        raiseBufferingEvent();
+        break;
+       case "PLAY":
+        raisePlayEvent(data);
+        break;
+       case "PLAYING":
+        raisePlayingEvent();
+        break;
+       case "ENDED":
+        raiseEndedEvent();
+        break;
+       case "SEEKING":
+        raiseSeekingEvent();
+        break;
+       case "SEEKED":
+        raiseSeekedEvent();
+        break;
+       case "PAUSED":
+        raisePauseEvent();
+        break;
+       case "VOLUME_CHANGED":
+        raiseVolumeEvent(data);
+        break;
+       case "TIME_UPDATE":
+        raiseTimeUpdate(data);
+        break;
+       case "DURATION_CHANGE":
+        raiseDurationChange();
+        break;
+       case "PROGRESS":
+        raiseProgress(data);
+        break;
+       case "BUFFERED":
+        raiseCanPlayThrough();
+        break;
+       case "FULLSCREEN_CHANGED":
+        raiseFullScreenBegin(data);
+        break;
+       case "FULLSCREEN_CHANGED_END":
+        raiseFullScreenEnd(data);
+        break;
+       case "ERROR":
+        raiseErrorEvent(data);
+        break;
+      }
+      return true;
     }, this);
   };
   /************************************************************************************/
