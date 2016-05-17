@@ -138,7 +138,7 @@ require("../../../html5-common/js/utils/environment.js");
     this.maxSupportedElements = (function() {
       var iosRequireSingleElement = OO.isIos;
       var androidRequireSingleElement = OO.isAndroid &&
-                                        (!Platform.isAndroid4Plus || OO.chromeMajorVersion < 40);
+                                        (!OO.isAndroid4Plus || OO.chromeMajorVersion < 40);
       return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : -1;
     })();
   };
@@ -1353,25 +1353,6 @@ require("../../../html5-common/js/utils/environment.js");
    */
   var getRandomString = function() {
     return Math.random().toString(36).substring(7);
-  };
-
-  /**
-   * @class Platform
-   * @classdesc Functions that provide platform information
-   * @private
-   */
-  var Platform = {
-    /**
-     * Checks if the player is running on an Android device of version 4 or later.
-     * @private
-     * @method Platform#isAndroid4Plus
-     * @returns {boolean} True if the player is running on an Android device of version 4 or later
-     */
-    isAndroid4Plus: (function(){
-      if (!window.navigator.appVersion.match(/Android/)) return false;
-      var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
-      return (_.first(device) || "").slice(-1) >= "4";
-    })(),
   };
 
   OO.Video.plugin(new OoyalaVideoFactory());
