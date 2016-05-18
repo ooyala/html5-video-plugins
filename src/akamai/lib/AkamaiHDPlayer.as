@@ -9,6 +9,7 @@ package
   import flash.events.Event;
   import flash.events.MouseEvent;
   import flash.events.TimerEvent;
+  import flash.events.NetStatusEvent;
   import flash.external.ExternalInterface;
   import flash.system.Security;
   import flash.utils.Timer;
@@ -39,6 +40,8 @@ package
     private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
     private var _playQueue:Boolean = false;
+    private var _initialPlay:Boolean = true;
+    private var _initalSeekTime:Number = 0;
 
     /**
      * Constructor
@@ -80,6 +83,7 @@ package
       _streamController.mediaPlayer.removeEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                         onPlayerStateChange);
       _streamController.mediaPlayer.removeEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
+      _netStream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
     }
     
     /**
@@ -124,6 +128,7 @@ package
     {
       Logger.log("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
+      _netStream.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
       _akamaiVideoSurface.attachNetStream(_netStream);
       if (_playQueue)
       {
@@ -132,6 +137,56 @@ package
       }
     }
     
+    /**
+     * Event listner for NetStatusEvent
+     * @private
+     * @method AkamaiHD3Player#onNetStatus
+     * @param {NetStatusEvent} event
+     */
+    private function onNetStatus(event:NetStatusEvent):void
+    {
+      if (event.info.code == "NetStream.Buffer.Full")
+      {
+        if (_initialPlay)
+        {
+          //Sets initial time to duration when it is greater than duration
+          if (_initalSeekTime > _streamController.mediaPlayer.duration)
+          {
+            _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
+          }
+          //Sets initial time to zero when it is less than zero
+          else if (_initalSeekTime < 0)
+          {
+            _initalSeekTime = 0;
+          }
+        }
+        if (_initalSeekTime != 0)
+        {
+          if (_streamController.mediaPlayer.canSeek &&
+              (_streamController.mediaPlayer.canSeekTo(_initalSeekTime)))
+          {
+            _streamController.seek(_initalSeekTime);
+          }
+          _initalSeekTime = 0;
+        }
+      }
+      else if (event.info.code == "NetStream.Seek.Notify")
+      {
+        if(_initialPlay == false)
+        {
+          dispatchEvent(new DynamicEvent(DynamicEvent.SEEKED,null));
+        }
+        else
+        {
+          _initialPlay = false;
+        }
+      }
+      else if (event.info.code == "NetStream.Seek.Failed")
+      {
+        Logger.log("Error:Seeking Operation failed", "onNetStatus");
+      }
+    }
+
     /**
      * Adds the display object to the streamcontroller.
      * @private
@@ -287,6 +342,23 @@ package
      */
     public function onVideoSeek(event:DynamicEvent):void
     {
+      var time:Number = (Number)(event.args);
+      if (_initialPlay) 
+      {
+        _initalSeekTime = time;
+        return;
+      }
+
+      if (_streamController.mediaPlayer.canSeek &&
+          (_streamController.mediaPlayer.canSeekTo(time)))
+      {
+        _streamController.seek(time);
+        Logger.log("Seek to: " + time, "onVideoSeek");
+      }
+      else
+      {
+        Logger.log("Error:Cannot seek to : " + time, "onVideoSeek");
+      }
     }
     
     /**
@@ -297,6 +369,21 @@ package
      */
     public function onChangeVolume(event:DynamicEvent):void
     {
+      var volume:Number = (Number)(event.args);
+      _streamController.volume = volume;
+      //Dispatches the VOLUME_CHANGED event only when the change occures properly.
+      if (_streamController.volume == volume)
+      {
+        var eventObject:Object = new Object();
+        eventObject.volume = _streamController.volume;
+        dispatchEvent(new DynamicEvent(DynamicEvent.VOLUME_CHANGED,(eventObject)));
+      }
+      else
+      {
+        Logger.log("Error in changing volume: " +_streamController.volume,"onChangeVolume");
+        return;
+      }
+      Logger.log("Set Volume to: " + volume, "onChangeVolume");
     }
     
     /**
@@ -367,16 +454,6 @@ package
      * @param {Event} event The event passed from the external interface.
      */
     public function onPlayheadUpdate(event:Event):void
-    {
-    }
-    
-    /**
-     * Sets the initial time from where the video should begin the play.
-     * @public
-     * @method AkamaiHDPlayer#onSetInitialTime
-     * @param {Event} event The event passed from the external interface.
-     */
-    public function onSetInitialTime(event:DynamicEvent):void
     {
     }
     

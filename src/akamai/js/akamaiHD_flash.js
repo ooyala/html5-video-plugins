@@ -153,6 +153,7 @@ require("../../../html5-common/js/utils/constants.js");
     var videoItem = video;
     var currentUrl = '';
     var loaded = false;
+    var hasPlayed = false;
     var urlChanged = false;
     var self=this;
     var currentTime;
@@ -211,6 +212,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
+      var urlChanged = false;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -221,6 +223,7 @@ require("../../../html5-common/js/utils/constants.js");
           currentUrl = currentUrl + (/\?/.test(currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
         urlChanged = true;
+        hasPlayed = false;
         loaded = false;
         url = "setVideoUrl("+currentUrl+")";
       }
@@ -290,6 +293,9 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
+      if (!hasPlayed) {
+        this.seek(initialTime);
+      }
     };
 
     /**
@@ -303,6 +309,7 @@ require("../../../html5-common/js/utils/constants.js");
       }
       this.callToFlash("videoPlay");
       loaded = true;
+      hasPlayed = true;
     };
 
     /**
@@ -321,6 +328,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      this.callToFlash("videoSeek("+time+")");
     };
 
     /**
@@ -330,6 +338,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+      this.callToFlash("changeVolume("+volume+")");
     };
 
     /**
@@ -404,6 +413,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
+      currentUrl = this.callToFlash("getUrl");
     };
 
     var onLoadedMetadata = function() {
@@ -424,9 +434,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseSeekingEvent = function() {
+      self.controller.notify(self.controller.EVENTS.SEEKING);
     };
 
     var raiseSeekedEvent = function() {
+      self.controller.notify(self.controller.EVENTS.SEEKING);    
     };
 
     var raiseBufferingEvent = function() {
@@ -444,6 +456,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseVolumeEvent = function(event) {
+      self.controller.notify(self.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume })
     };
 
     var raiseWaitingEvent = function() {
@@ -556,8 +569,17 @@ require("../../../html5-common/js/utils/constants.js");
        case "PAUSED":
         raisePauseEvent();
         break;
+       case "RATE_CHANGE":
+        raiseRatechangeEvent();
+        break;
+       case "STALLED":
+        raiseStalledEvent();
+        break;
        case "VOLUME_CHANGED":
         raiseVolumeEvent(data);
+        break;
+       case "WAITING":
+        raiseWaitingEvent();
         break;
        case "TIME_UPDATE":
         raiseTimeUpdate(data);

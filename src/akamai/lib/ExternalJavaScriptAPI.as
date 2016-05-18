@@ -85,7 +85,6 @@ package
       addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       addEventListener("setTargetBitrate", onSetTargetBitrate);
-      addEventListener("setInitialTime", onSetInitialTime);
       addEventListener("getCurrentTime", onGetCurrentTime);
       addEventListener("destroy", onDestroy);
       _akamaiHDPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
@@ -122,7 +121,6 @@ package
       removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       removeEventListener("setTargetBitrate", onSetTargetBitrate);
-      removeEventListener("setInitialTime", onSetInitialTime);
       removeEventListener("getCurrentTime", onGetCurrentTime);
       removeEventListener("destroy", onDestroy);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);
@@ -185,6 +183,7 @@ package
     */
     private function onVideoSeek(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onVideoSeek(event);
     }
 
    /**
@@ -195,6 +194,7 @@ package
     */
     private function onChangeVolume(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onChangeVolume(event);
     }
 
    /**
@@ -246,16 +246,6 @@ package
     * @param {Event} event
     */
     private function onSetVideoClosedCaptionsMode(event:DynamicEvent):void
-    {
-    }
-
-   /**
-    * Passes the initial time to the player, from which the playback is to be started.
-    * @private
-    * @method ExternalJavaScriptAPI#onSetInitialTime
-    * @param {DynamicEvent} event
-    */
-    private function onSetInitialTime(event:DynamicEvent):void
     {
     }
 
