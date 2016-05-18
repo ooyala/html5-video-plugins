@@ -446,6 +446,11 @@ require("../../../html5-common/js/utils/environment.js");
 
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
       _video.volume = resolvedVolume;
+
+      // If no video is assigned yet, the volumeChange event is not raised although it takes effect
+      if (_video.currentSrc === "" || _video.currentSrc === null) {
+        raiseVolumeEvent({ target: { volume: resolvedVolume }});
+      }
     };
 
     /**
