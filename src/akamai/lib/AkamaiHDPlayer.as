@@ -90,6 +90,24 @@ package
     private function bufferingChangeHandler(e:BufferEvent):void
     {
     }
+
+    /**
+     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
+     * @private
+     * @method AkamaiHDPlayer#SendToDebugger
+     * @param {string} value The value to be passed to the browser console.
+     * @param {string} referrer The fuction or process which passed the value.
+     * @param {string} channelBranch It can be info, debug, warn, error or log.
+     * @returns {boolean} True or false indicating success
+     */
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
+    {
+      var channel:String = "OO." + channelBranch;
+      if (referrer) referrer = "[" + referrer + "]";
+      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
+                                                        referrer + ": " + value);
+      return debugMessage;
+    }
     
     /**
      * Creates the MediaPlayerSprite and DefaultMediaFactory instances.
@@ -308,10 +326,10 @@ package
       }
       else
       {
-        Logger.log("Error in changing volume: " +_streamController.volume,"onChangeVolume");
+        SendToDebugger("Error in changing volume: " +_streamController.volume,"onChangeVolume");
         return;
       }
-      Logger.log("Set Volume to: " + volume, "onChangeVolume");
+      SendToDebugger("Set Volume to: " + volume, "onChangeVolume");
     }
     
     /**
