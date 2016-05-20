@@ -85,7 +85,6 @@ package
       addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       addEventListener("setTargetBitrate", onSetTargetBitrate);
-      addEventListener("setInitialTime", onSetInitialTime);
       addEventListener("getCurrentTime", onGetCurrentTime);
       addEventListener("destroy", onDestroy);
       _akamaiHDPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
@@ -122,7 +121,6 @@ package
       removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       removeEventListener("setTargetBitrate", onSetTargetBitrate);
-      removeEventListener("setInitialTime", onSetInitialTime);
       removeEventListener("getCurrentTime", onGetCurrentTime);
       removeEventListener("destroy", onDestroy);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);

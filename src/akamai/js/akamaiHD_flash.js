@@ -153,6 +153,7 @@ require("../../../html5-common/js/utils/constants.js");
     var videoItem = video;
     var currentUrl = '';
     var loaded = false;
+    var hasPlayed = false;
     var urlChanged = false;
     var self=this;
     var currentTime;
@@ -211,6 +212,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
+      var urlChanged = false;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -221,12 +223,13 @@ require("../../../html5-common/js/utils/constants.js");
           currentUrl = currentUrl + (/\?/.test(currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
         urlChanged = true;
+        hasPlayed = false;
         loaded = false;
         url = "setVideoUrl("+currentUrl+")";
       }
       if (!_.isEmpty(currentUrl)) 
       {
-         this.callToFlash(url);
+        this.callToFlash(url);
       }
       return urlChanged;
     };
@@ -271,7 +274,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      if (loaded) return;
+      if (loaded && !rewind) return;
       else {
         try {
           this.callToFlash("load("+rewind+")");
@@ -303,6 +306,7 @@ require("../../../html5-common/js/utils/constants.js");
       }
       this.callToFlash("videoPlay");
       loaded = true;
+      hasPlayed = true;
     };
 
     /**
@@ -505,7 +509,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
-     OO.log("[AKAMIHD]:onCallback: ", data);
+      OO.log('[Akamai HD]:onCallback: ', data);
       var eventtitle =" ";
 
       for (var key in data) {
@@ -539,8 +543,8 @@ require("../../../html5-common/js/utils/constants.js");
 
       switch (eventtitle)
       {
-        case "JSREADY":
-         while(0 < actionscriptCommandQueue.length) {
+       case "JSREADY":
+        while(0 < actionscriptCommandQueue.length) {
           this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
           actionscriptCommandQueue.shift();
         }

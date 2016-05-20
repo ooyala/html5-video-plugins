@@ -39,7 +39,7 @@ package
     private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
     private var _playQueue:Boolean = false;
-    private var _bitrateArray:Array = new Array();
+    private var _bitrateMap:Object = new Object();
     private var _bitrateIdArray:Array = new Array();
 
     /**
@@ -91,6 +91,32 @@ package
      */
     private function bufferingChangeHandler(e:BufferEvent):void
     {
+    }
+    
+    /**
+     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
+     * @private
+     * @method AkamaiHDPlayer#SendToDebugger
+     * @param {string} value The value to be passed to the browser console.
+     * @param {string} referrer The fuction or process which passed the value.
+     * @param {string} channelBranch It can be info, debug, warn, error or log.
+     * @returns {boolean} True or false indicating success
+     */
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
+    {
+      var channel:String; 
+      if (channelBranch == "log") 
+      {
+        channel = "OO." + channelBranch;
+      }
+      else 
+      {
+        channel = "console.log";
+      }
+      if (referrer) referrer = "[" + referrer + "]";
+      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
+                                                        referrer + ": " + value);
+      return debugMessage;
     }
     
     /**
@@ -169,7 +195,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
-          totalBitratesAvailable();
+          raiseTotalBitratesAvailable();
           break;
         case MediaPlayerState.UNINITIALIZED:
           break;
@@ -253,7 +279,7 @@ package
       //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
       _playQueue = false;
 
-      if ( _streamController.netStream == null )
+      if (_streamController.netStream == null)
       {
         _playQueue = true;
         _streamController.play(_akamaiStreamURL);
@@ -311,10 +337,10 @@ package
       }
       else
       {
-        Logger.log("Error in changing volume: " +_streamController.volume,"onChangeVolume");
+        SendToDebugger("Error in changing volume: " +_streamController.volume,"onChangeVolume");
         return;
       }
-      Logger.log("Set Volume to: " + volume, "onChangeVolume");
+      SendToDebugger("Set Volume to: " + volume, "onChangeVolume");
     }
     
     /**
@@ -421,9 +447,9 @@ package
     /**
      * Provides the total available bitrates and dispatches BITRATES_AVAILABLE event.
      * @public
-     * @method AkamaiHDPlayer#totalBitratesAvailable
+     * @method AkamaiHDPlayer#raiseTotalBitratesAvailable
      */
-    public function  totalBitratesAvailable():void
+    public function  raiseTotalBitratesAvailable():void
     {
       if (_bitrateIdArray.length > 0 ) return;
       var eventObject:Object = new Object();
@@ -439,7 +465,7 @@ package
           bitrateObject.height = 0;
           bitrateObject.width = 0;
           bitrateObject.bitrate = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
-          _bitrateArray[id] = [ bitrateObject, i];
+          _bitrateMap.id = [ bitrateObject, i];
           eventObject[i] = bitrateObject;
         }
         dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
