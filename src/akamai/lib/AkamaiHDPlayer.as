@@ -102,7 +102,15 @@ package
      */
     private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
     {
-      var channel:String = "OO." + channelBranch;
+      var channel:String; 
+      if (channelBranch == "log") 
+      {
+        channel = "OO." + channelBranch;
+      }
+      else 
+      {
+        channel = "console.log";
+      }
       if (referrer) referrer = "[" + referrer + "]";
       var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
                                                         referrer + ": " + value);
@@ -268,7 +276,7 @@ package
       //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
       _playQueue = false;
 
-      if ( _streamController.netStream == null )
+      if (_streamController.netStream == null)
       {
         _playQueue = true;
         _streamController.play(_akamaiStreamURL);
