@@ -111,7 +111,7 @@ package
       }
       else 
       {
-        channel = "console.log";
+        channel = "console." + channelBranch;
       }
       if (referrer) referrer = "[" + referrer + "]";
       var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
