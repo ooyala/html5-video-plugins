@@ -89,7 +89,7 @@ require("../../../html5-common/js/utils/constants.js");
         return [];
       }
       else {
-        return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS ];
+       return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS ];
       }
     }
     this.encodings = testForFlash();
@@ -153,6 +153,7 @@ require("../../../html5-common/js/utils/constants.js");
     var videoItem = video;
     var currentUrl = '';
     var loaded = false;
+    var hasPlayed = false;
     var urlChanged = false;
     var self=this;
     var currentTime;
@@ -211,6 +212,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
+      var urlChanged = false;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -221,12 +223,13 @@ require("../../../html5-common/js/utils/constants.js");
           currentUrl = currentUrl + (/\?/.test(currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
         urlChanged = true;
+        hasPlayed = false;
         loaded = false;
         url = "setVideoUrl("+currentUrl+")";
       }
       if (!_.isEmpty(currentUrl)) 
       {
-         this.callToFlash(url);
+        this.callToFlash(url);
       }
       return urlChanged;
     };
@@ -271,7 +274,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      if (loaded) return;
+      if (loaded && !rewind) return;
       else {
         try {
           this.callToFlash("load("+rewind+")");
@@ -303,6 +306,7 @@ require("../../../html5-common/js/utils/constants.js");
       }
       this.callToFlash("videoPlay");
       loaded = true;
+      hasPlayed = true;
     };
 
     /**
@@ -321,6 +325,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      this.callToFlash("videoSeek("+time+")");
     };
 
     /**
@@ -330,6 +335,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+      this.callToFlash("changeVolume("+volume+")");
     };
 
     /**
@@ -404,6 +410,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
+      currentUrl = this.callToFlash("getUrl");
     };
 
     var onLoadedMetadata = function() {
@@ -424,9 +431,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseSeekingEvent = function() {
+      self.controller.notify(self.controller.EVENTS.SEEKING);
     };
 
     var raiseSeekedEvent = function() {
+      self.controller.notify(self.controller.EVENTS.SEEKED);
     };
 
     var raiseBufferingEvent = function() {
@@ -444,6 +453,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseVolumeEvent = function(event) {
+      self.controller.notify(self.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
     };
 
     var raiseWaitingEvent = function() {
@@ -485,6 +495,17 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseBitratesAvailable = function(event) {
+      var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
+      for (var i in event.eventObject) {
+        var vtcBitrate = {
+          id: event.eventObject[i].id,
+          width: event.eventObject[i].width,
+          height: event.eventObject[i].height,
+          bitrate: event.eventObject[i].bitrate
+        }
+        vtcBitrates.push(vtcBitrate);
+      }
+      self.controller.notify(self.controller.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
     };
 
     var raiseSizeChanged = function(event) {
@@ -526,8 +547,8 @@ require("../../../html5-common/js/utils/constants.js");
 
       switch (eventtitle)
       {
-        case "JSREADY":
-         while(0 < actionscriptCommandQueue.length) {
+       case "JSREADY":
+        while(0 < actionscriptCommandQueue.length) {
           this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
           actionscriptCommandQueue.shift();
         }
@@ -556,8 +577,17 @@ require("../../../html5-common/js/utils/constants.js");
        case "PAUSED":
         raisePauseEvent();
         break;
+       case "RATE_CHANGE":
+        raiseRatechangeEvent();
+        break;
+       case "STALLED":
+        raiseStalledEvent();
+        break;
        case "VOLUME_CHANGED":
         raiseVolumeEvent(data);
+        break;
+       case "WAITING":
+        raiseWaitingEvent();
         break;
        case "TIME_UPDATE":
         raiseTimeUpdate(data);
@@ -576,6 +606,9 @@ require("../../../html5-common/js/utils/constants.js");
         break;
        case "FULLSCREEN_CHANGED_END":
         raiseFullScreenEnd(data);
+        break;
+       case "BITRATES_AVAILABLE":
+        raiseBitratesAvailable(data);
         break;
        case "ERROR":
         raiseErrorEvent(data);
