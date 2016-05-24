@@ -438,7 +438,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseSeekedEvent = function() {
-      self.controller.notify(self.controller.EVENTS.SEEKING);    
+      self.controller.notify(self.controller.EVENTS.SEEKED);
     };
 
     var raiseBufferingEvent = function() {
@@ -456,7 +456,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseVolumeEvent = function(event) {
-      self.controller.notify(self.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume })
+      self.controller.notify(self.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
     };
 
     var raiseWaitingEvent = function() {
