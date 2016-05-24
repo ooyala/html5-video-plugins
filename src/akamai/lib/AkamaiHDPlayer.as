@@ -40,6 +40,8 @@ package
     private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
     private var _playQueue:Boolean = false;
+    private var _bitrateMap:Object = new Object();
+    private var _bitrateIdArray:Array = new Array();
     private var _initialPlay:Boolean = true;
     private var _initalSeekTime:Number = 0;
 
@@ -68,7 +70,7 @@ package
       _streamController.mediaPlayer.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                      onPlayerStateChange);
       _streamController.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
-      Logger.log("events added", "registerListeners");
+      SendToDebugger("events added", "registerListeners");
     }
     
     /**
@@ -96,13 +98,39 @@ package
     }
     
     /**
+     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
+     * @private
+     * @method AkamaiHDPlayer#SendToDebugger
+     * @param {string} value The value to be passed to the browser console.
+     * @param {string} referrer The fuction or process which passed the value.
+     * @param {string} channelBranch It can be info, debug, warn, error or log.
+     * @returns {boolean} True or false indicating success
+     */
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
+    {
+      var channel:String; 
+      if (channelBranch == "log") 
+      {
+        channel = "OO." + channelBranch;
+      }
+      else 
+      {
+        channel = "console." + channelBranch;
+      }
+      if (referrer) referrer = "[" + referrer + "]";
+      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
+                                                        referrer + ": " + value);
+      return debugMessage;
+    }
+    
+    /**
      * Creates the MediaPlayerSprite and DefaultMediaFactory instances.
      * @public
      * @method AkamaiHDPlayer#initMediaPlayer
      */
     public function initMediaPlayer():void
     {
-      Logger.log("initMediaPlayer()", "initMediaPlayer");
+      SendToDebugger("initMediaPlayer()", "initMediaPlayer");
       
       /* Creates a timer to keep track of the TIME_UPDATE event.
       The triggering value can be changed as per the specifications. */
@@ -126,7 +154,7 @@ package
      */
     private function onNetStreamReady(event:AkamaiHDSEvent):void
     {
-      Logger.log("onNetStreamReady" , "onNetStreamReady");
+      SendToDebugger("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
       _netStream.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
       _akamaiVideoSurface.attachNetStream(_netStream);
@@ -183,7 +211,7 @@ package
       }
       else if (event.info.code == "NetStream.Seek.Failed")
       {
-        Logger.log("Error:Seeking Operation failed", "onNetStatus");
+        SendToDebugger("Error:Seeking Operation failed", "onNetStatus");
       }
     }
 
@@ -205,7 +233,7 @@ package
      */
     private function onPlayerStateChange(event:MediaPlayerStateChangeEvent):void
     {
-      Logger.log("akamaiHD state changed: " + event.state, "onPlayerStateChange");
+      SendToDebugger("akamaiHD state changed: " + event.state, "onPlayerStateChange");
       
       switch(event.state)
       {
@@ -222,6 +250,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          raiseTotalBitratesAvailable();
           break;
         case MediaPlayerState.UNINITIALIZED:
           break;
@@ -277,17 +306,7 @@ package
         default:
           break;
       }
-      Logger.log("Error: " + event.error["errorID"], " " + event.error.detail);
-    }
-    
-    /**
-     * Sends the SEEKED event to the controller, after seeking is completed successfully.
-     * @protected
-     * @method AkamaiHDPlayer#onSeekingChange
-     * @param {SeekEvent} event
-     */
-    protected function onSeekingChange(event:SeekEvent):void
-    {
+      SendToDebugger("Error: " + event.error["errorID"], " " + event.error.detail);
     }
     
     /**
@@ -305,7 +324,7 @@ package
       //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
       _playQueue = false;
 
-      if ( _streamController.netStream == null )
+      if (_streamController.netStream == null)
       {
         _playQueue = true;
         _streamController.play(_akamaiStreamURL);
@@ -330,7 +349,7 @@ package
       }
       else
       {
-        Logger.log("Error in pausing video: Player State: ", "onVideoPause");
+        SendToDebugger("Error in pausing video: Player State: ", "onVideoPause");
       }
     }
     
@@ -353,11 +372,11 @@ package
           (_streamController.mediaPlayer.canSeekTo(time)))
       {
         _streamController.seek(time);
-        Logger.log("Seek to: " + time, "onVideoSeek");
+        SendToDebugger("Seek to: " + time, "onVideoSeek");
       }
       else
       {
-        Logger.log("Error:Cannot seek to : " + time, "onVideoSeek");
+        SendToDebugger("Error:Cannot seek to : " + time, "onVideoSeek");
       }
     }
     
@@ -380,10 +399,10 @@ package
       }
       else
       {
-        Logger.log("Error in changing volume: " +_streamController.volume,"onChangeVolume");
+        SendToDebugger("Error in changing volume: " +_streamController.volume,"onChangeVolume");
         return;
       }
-      Logger.log("Set Volume to: " + volume, "onChangeVolume");
+      SendToDebugger("Set Volume to: " + volume, "onChangeVolume");
     }
     
     /**
@@ -480,10 +499,29 @@ package
     /**
      * Provides the total available bitrates and dispatches BITRATES_AVAILABLE event.
      * @public
-     * @method AkamaiHDPlayer#totalBitratesAvailable
+     * @method AkamaiHDPlayer#raiseTotalBitratesAvailable
      */
-    public function  totalBitratesAvailable():void
-    { 
+    public function  raiseTotalBitratesAvailable():void
+    {
+      if (_bitrateIdArray.length > 0 ) return;
+      var eventObject:Object = new Object();
+      var id:String;
+      if (getStreamsCount() > 0)
+      {
+        for (var i:int = 0; i < getStreamsCount(); i++)
+        {
+          _bitrateIdArray.push((_streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
+          id = _bitrateIdArray[i];
+          var bitrateObject:Object = new Object();
+          bitrateObject.id = id;
+          bitrateObject.height = 0;
+          bitrateObject.width = 0;
+          bitrateObject.bitrate = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
+          _bitrateMap.id = [ bitrateObject, i];
+          eventObject[i] = bitrateObject;
+        }
+        dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
+      } 
     }
 
     /**
@@ -506,6 +544,16 @@ package
     {
     }
     
+    /**
+     * Returns the total number of streams
+     * @private
+     * @method AkamaiHDPlayer#getStreamsCount
+     */
+    private function getStreamsCount():int
+    {
+      return _streamController.mediaPlayer.numDynamicStreams;
+    } 
+
     /**
      * Unregisters events and removes media player child.
      * @public
