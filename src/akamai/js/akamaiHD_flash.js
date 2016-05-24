@@ -89,7 +89,7 @@ require("../../../html5-common/js/utils/constants.js");
         return [];
       }
       else {
-       return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS ];
+        return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS ];
       }
     }
     this.encodings = testForFlash();
@@ -293,6 +293,9 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
+      if (!hasPlayed) {
+        this.seek(initialTime);
+      }
     };
 
     /**
@@ -513,7 +516,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
-     OO.log("[AKAMIHD]:onCallback: ", data);
+      OO.log('[Akamai HD]:onCallback: ', data);
       var eventtitle =" ";
 
       for (var key in data) {

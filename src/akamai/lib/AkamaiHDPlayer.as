@@ -42,6 +42,8 @@ package
     private var _playQueue:Boolean = false;
     private var _bitrateMap:Object = new Object();
     private var _bitrateIdArray:Array = new Array();
+    private var _initialPlay:Boolean = true;
+    private var _initalSeekTime:Number = 0;
 
     /**
      * Constructor
@@ -171,11 +173,43 @@ package
      */
     private function onNetStatus(event:NetStatusEvent):void
     {
-      if (event.info.code == "NetStream.Seek.Notify")
+      if (event.info.code == "NetStream.Buffer.Full")
       {
-        dispatchEvent(new DynamicEvent(DynamicEvent.SEEKED,null));
+        if (_initialPlay)
+        {
+          //Sets initial time to duration when it is greater than duration
+          if (_initalSeekTime > _streamController.mediaPlayer.duration)
+          {
+            _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
+          }
+          //Sets initial time to zero when it is less than zero
+          else if (_initalSeekTime < 0)
+          {
+            _initalSeekTime = 0;
+          }
+        }
+        if (_initalSeekTime != 0)
+        {
+          if (_streamController.mediaPlayer.canSeek &&
+              (_streamController.mediaPlayer.canSeekTo(_initalSeekTime)))
+          {
+            _streamController.seek(_initalSeekTime);
+          }
+          _initalSeekTime = 0;
+        }
       }
-      else (event.info.code == "NetStream.Seek.Failed")
+      else if (event.info.code == "NetStream.Seek.Notify")
+      {
+        if(_initialPlay == false)
+        {
+          dispatchEvent(new DynamicEvent(DynamicEvent.SEEKED,null));
+        }
+        else
+        {
+          _initialPlay = false;
+        }
+      }
+      else if (event.info.code == "NetStream.Seek.Failed")
       {
         SendToDebugger("Error:Seeking Operation failed", "onNetStatus");
       }
@@ -276,16 +310,6 @@ package
     }
     
     /**
-     * Sends the SEEKED event to the controller, after seeking is completed successfully.
-     * @protected
-     * @method AkamaiHDPlayer#onSeekingChange
-     * @param {SeekEvent} event
-     */
-    protected function onSeekingChange(event:SeekEvent):void
-    {
-    }
-    
-    /**
      * Initiates the play functionality through the plugin.
      * @public
      * @method AkamaiHDPlayer#onVideoPlay
@@ -338,6 +362,12 @@ package
     public function onVideoSeek(event:DynamicEvent):void
     {
       var time:Number = (Number)(event.args);
+      if (_initialPlay) 
+      {
+        _initalSeekTime = time;
+        return;
+      }
+      
       if (_streamController.mediaPlayer.canSeek &&
         (_streamController.mediaPlayer.canSeekTo(time)))
       {
@@ -442,16 +472,6 @@ package
      * @param {Event} event The event passed from the external interface.
      */
     public function onPlayheadUpdate(event:Event):void
-    {
-    }
-    
-    /**
-     * Sets the initial time from where the video should begin the play.
-     * @public
-     * @method AkamaiHDPlayer#onSetInitialTime
-     * @param {Event} event The event passed from the external interface.
-     */
-    public function onSetInitialTime(event:DynamicEvent):void
     {
     }
     
