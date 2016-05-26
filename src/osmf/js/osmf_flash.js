@@ -304,7 +304,7 @@ require("../../../html5-common/js/utils/constants.js");
         hasPlayed = false;
         loaded = false;
         firstPlay = true;
-        url = "setVideoUrl("+_currentUrl+")";
+        url = "setVideoUrl(" + _currentUrl + ")";
       }
       if (_.isEmpty(_currentUrl)) {
       //if (!_currentUrl) {
@@ -337,7 +337,7 @@ require("../../../html5-common/js/utils/constants.js");
      */
 
     this.setClosedCaptionsMode = function(mode){
-      this.callToFlash("setVideoClosedCaptionsMode("+mode+")");
+      this.callToFlash("setVideoClosedCaptionsMode(" + mode + ")");
     };
 
     /**
@@ -350,7 +350,7 @@ require("../../../html5-common/js/utils/constants.js");
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
      */
     this.setBitrate = function(id) {
-      this.callToFlash("setTargetBitrate("+id+")");
+      this.callToFlash("setTargetBitrate(" + id + ")");
     };
 
     /**
@@ -363,7 +363,7 @@ require("../../../html5-common/js/utils/constants.js");
       if (loaded && !rewind) return;
       if (!!rewind) {
         try {
-          this.callToFlash("load("+rewind+")");
+          this.callToFlash("load(" + rewind + ")");
           loaded = true;
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
@@ -416,7 +416,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      this.callToFlash("videoSeek("+time+")");
+      this.callToFlash("videoSeek(" + time + ")");
     };
 
     /**
@@ -426,7 +426,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      this.callToFlash("changeVolume("+volume+")");
+      this.callToFlash("changeVolume(" + volume + ")");
     };
 
     /**
@@ -471,8 +471,6 @@ require("../../../html5-common/js/utils/constants.js");
       // Remove the element
       $('#'+domId).replaceWith('');
       _video=null;
-
-      // return unbound object.
       $(_video).remove();
       delete flashItems[this.id];
     };
@@ -674,7 +672,6 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash
     this.onCallback = function(data) {
-      // Remove the element
       var eventtitle =" ";
 
       for(var key in data) {
@@ -875,7 +872,7 @@ var swfobject = function() {
       windows = p ? /win/.test(p) : /win/.test(u),
       mac = p ? /mac/.test(p) : /mac/.test(u),
       webkit = /webkit/.test(u) ? parseFloat(u.replace(/^.*webkit\/(\d+(\.\d+)?).*$/, "$1")) : false, // returns either the webkit version or false if not webkit
-      ie = !+"\v1", // feature detection based on Andrea Giammarchi's solution: http://webreflection.blogspot.com/2009/01/32-bytes-to-know-if-your-browser-is-ie.html
+      ie = ! + "\v1", // feature detection based on Andrea Giammarchi's solution: http://webreflection.blogspot.com/2009/01/32-bytes-to-know-if-your-browser-is-ie.html
       playerVersion = [0,0,0],
       d = null;
     if (typeof nav.plugins != UNDEF && typeof nav.plugins[SHOCKWAVE_FLASH] == OBJECT) {
