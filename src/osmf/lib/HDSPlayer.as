@@ -78,6 +78,8 @@ package
     public var _bitrateArray:Array = new Array();
     public var _bitrateIdArray:Array = new Array();
     private var _currentBitrate:Number = -1;
+    private var _previousBitrate:Number = -1;
+    private var _bitrateFlag:Number = 0;
     private var _hiddenCaptionFlag:Boolean = false;
     private var _previousCaptionMode:String;
     
@@ -327,6 +329,7 @@ package
     private function onPlayComplete(event:TimeEvent):void
     {
       _playheadTimer.stop();
+      _previousBitrate=_currentBitrate;
       _resource = null;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
@@ -419,12 +422,34 @@ package
       
       //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
       _playQueue = false;
-
+      if(_playerState == MediaPlayerState.READY)
+      {
+        _mediaPlayerSprite.mediaPlayer.play();
+        var id:String;
+        if(_previousBitrate != -1)
+        {
+          if(_bitrateFlag != 0)
+          {
+            for (var i:int = 0; i < _bitrateIdArray.length; i++)
+            {
+              id = _bitrateIdArray[i];
+              if (_previousBitrate == (_bitrateArray[id][0].bitrate)/1000)
+              {
+                _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = false;
+                _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[id][1]);
+              }
+            }
+          }
+          else
+          {
+            _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = true;
+          }
+        }
+      }
       //Included MediaPlayerState.BUFFERING in the condition to handle the play requests that occurs
       //when the player is in buffering state.
       
-      if (_playerState == MediaPlayerState.READY || _playerState == MediaPlayerState.PAUSED 
-          || _playerState == MediaPlayerState.BUFFERING)
+      else if (_playerState == MediaPlayerState.PAUSED || _playerState == MediaPlayerState.BUFFERING)
       {
         _mediaPlayerSprite.mediaPlayer.play();
       }
@@ -954,6 +979,7 @@ package
          _mediaPlayerSprite.mediaPlayer.maxAllowedDynamicStreamIndex =  _mediaPlayerSprite.mediaPlayer.numDynamicStreams - 1;
          //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
          _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
+         _bitrateFlag = 1;
        }
        else 
        {
@@ -964,6 +990,7 @@ package
            eventObject.width = 0;
            eventObject.bitrate = 0;
            dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
+           _bitrateFlag = 0;
        }
       }
       catch(error:Error)
