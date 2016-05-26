@@ -212,10 +212,6 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
-<<<<<<< HEAD
-      var urlChanged = false;
-=======
->>>>>>> master
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -277,11 +273,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-<<<<<<< HEAD
       if (loaded && !rewind) return;
-=======
-      if (loaded) return;
->>>>>>> master
       else {
         try {
           this.callToFlash("load("+rewind+")");
@@ -505,11 +497,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
-<<<<<<< HEAD
       OO.log('[Akamai HD]:onCallback: ', data);
-=======
-     OO.log("[AKAMIHD]:onCallback: ", data);
->>>>>>> master
       var eventtitle =" ";
 
       for (var key in data) {
@@ -543,13 +531,8 @@ require("../../../html5-common/js/utils/constants.js");
 
       switch (eventtitle)
       {
-<<<<<<< HEAD
-       case "JSREADY":
-        while(0 < actionscriptCommandQueue.length) {
-=======
         case "JSREADY":
          while(0 < actionscriptCommandQueue.length) {
->>>>>>> master
           this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
           actionscriptCommandQueue.shift();
         }
