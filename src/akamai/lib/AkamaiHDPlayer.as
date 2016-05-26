@@ -39,6 +39,8 @@ package
     private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
     private var _playQueue:Boolean = false;
+    private var _bitrateMap:Object = new Object();
+    private var _bitrateIdArray:Array = new Array();
 
     /**
      * Constructor
@@ -91,6 +93,32 @@ package
     {
     }
 
+    /**
+     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
+     * @private
+     * @method AkamaiHDPlayer#SendToDebugger
+     * @param {string} value The value to be passed to the browser console.
+     * @param {string} referrer The fuction or process which passed the value.
+     * @param {string} channelBranch It can be info, debug, warn, error or log.
+     * @returns {boolean} True or false indicating success
+     */
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
+    {
+      var channel:String; 
+      if (channelBranch == "log") 
+      {
+        channel = "OO." + channelBranch;
+      }
+      else 
+      {
+        channel = "console." + channelBranch;
+      }
+      if (referrer) referrer = "[" + referrer + "]";
+      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
+                                                        referrer + ": " + value);
+      return debugMessage;
+    }
+    
     /**
      * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
      * @private
@@ -193,6 +221,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          raiseTotalBitratesAvailable();
           break;
         case MediaPlayerState.UNINITIALIZED:
           break;
@@ -444,10 +473,29 @@ package
     /**
      * Provides the total available bitrates and dispatches BITRATES_AVAILABLE event.
      * @public
-     * @method AkamaiHDPlayer#totalBitratesAvailable
+     * @method AkamaiHDPlayer#raiseTotalBitratesAvailable
      */
-    public function  totalBitratesAvailable():void
-    { 
+    public function  raiseTotalBitratesAvailable():void
+    {
+      if (_bitrateIdArray.length > 0 ) return;
+      var eventObject:Object = new Object();
+      var id:String;
+      if (getStreamsCount() > 0)
+      {
+        for (var i:int = 0; i < getStreamsCount(); i++)
+        {
+          _bitrateIdArray.push((_streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
+          id = _bitrateIdArray[i];
+          var bitrateObject:Object = new Object();
+          bitrateObject.id = id;
+          bitrateObject.height = 0;
+          bitrateObject.width = 0;
+          bitrateObject.bitrate = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
+          _bitrateMap.id = [ bitrateObject, i];
+          eventObject[i] = bitrateObject;
+        }
+        dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
+      } 
     }
 
     /**
@@ -470,6 +518,16 @@ package
     {
     }
     
+    /**
+     * Returns the total number of streams
+     * @private
+     * @method AkamaiHDPlayer#getStreamsCount
+     */
+    private function getStreamsCount():int
+    {
+      return _streamController.mediaPlayer.numDynamicStreams;
+    } 
+
     /**
      * Unregisters events and removes media player child.
      * @public

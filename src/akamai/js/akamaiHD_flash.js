@@ -490,6 +490,17 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseBitratesAvailable = function(event) {
+      var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
+      for (var i in event.eventObject) {
+        var vtcBitrate = {
+          id: event.eventObject[i].id,
+          width: event.eventObject[i].width,
+          height: event.eventObject[i].height,
+          bitrate: event.eventObject[i].bitrate
+        }
+        vtcBitrates.push(vtcBitrate);
+      }
+      self.controller.notify(self.controller.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
     };
 
     var raiseSizeChanged = function(event) {
@@ -531,8 +542,8 @@ require("../../../html5-common/js/utils/constants.js");
 
       switch (eventtitle)
       {
-        case "JSREADY":
-         while(0 < actionscriptCommandQueue.length) {
+       case "JSREADY":
+        while(0 < actionscriptCommandQueue.length) {
           this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
           actionscriptCommandQueue.shift();
         }
@@ -561,6 +572,9 @@ require("../../../html5-common/js/utils/constants.js");
        case "PAUSED":
         raisePauseEvent();
         break;
+       case "RATE_CHANGE":
+        raiseRatechangeEvent();
+        break;
        case "VOLUME_CHANGED":
         raiseVolumeEvent(data);
         break;
@@ -581,6 +595,9 @@ require("../../../html5-common/js/utils/constants.js");
         break;
        case "FULLSCREEN_CHANGED_END":
         raiseFullScreenEnd(data);
+        break;
+       case "BITRATES_AVAILABLE":
+        raiseBitratesAvailable(data);
         break;
        case "ERROR":
         raiseErrorEvent(data);
