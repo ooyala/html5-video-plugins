@@ -53,27 +53,22 @@ require("../../../html5-common/js/utils/constants.js");
      */
     function getFlashVersion() {
       // ie
-      try
-      {
-        try
-        {
+      try {
+        try {
           var axo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash.6');
-          try
-          {
+          try {
             axo.AllowScriptAccess = 'always';
           }
-          catch(e)
-          {
+          catch(e) {
            return '6,0,0';
           }
         }
         catch(e) {}
         return new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version').replace(/\D+/g, ',').match(/^,?(.+),?$/)[1];
-        // other browsers
       }
+      // other browsers
       catch(e) {
-        try
-        {
+        try {
           if (navigator.mimeTypes["application/x-shockwave-flash"].enabledPlugin) {
             return (navigator.plugins["Shockwave Flash 2.0"] || navigator.plugins["Shockwave Flash"]).description.replace(/\D+/g, ",").match(/^,?(.+),?$/)[1];
           }
@@ -88,8 +83,7 @@ require("../../../html5-common/js/utils/constants.js");
       if (version < 11) {
         console.error("NO FLASH DETECTED");
         return [];
-      }
-      else {
+      } else {
         return [ OO.VIDEO.ENCODING.HDS ];
       }
     }
@@ -309,8 +303,7 @@ require("../../../html5-common/js/utils/constants.js");
       if (_.isEmpty(_currentUrl)) {
       //if (!_currentUrl) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
-      }
-      else {
+      } else {
         this.callToFlash(url);
       }
       return urlChanged;
@@ -324,7 +317,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} closedCaptions The captions object
      * @param {object} params The parameters object
      */
-    this.setClosedCaptions = function(language,closedCaptions,params){
+    this.setClosedCaptions = function(language,closedCaptions,params) {
        var parameters = {language:language, closedCaptions:closedCaptions, params:params};
         this.callToFlash("setVideoClosedCaptions()" , parameters);
      };
@@ -336,7 +329,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {string} mode Mode of the captions(disabled/showing)
      */
 
-    this.setClosedCaptionsMode = function(mode){
+    this.setClosedCaptionsMode = function(mode) {
       this.callToFlash("setVideoClosedCaptionsMode(" + mode + ")");
     };
 
@@ -479,21 +472,14 @@ require("../../../html5-common/js/utils/constants.js");
     this.callToFlash = function (data,dataObj) {
       if(_video == undefined) { 
         javascriptCommandQueue.push([data,dataObj]);
-      }
-      else
-      {
+      } else {
         if (_video.sendToActionScript) {
           dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
           return _video.sendToActionScript(data,dataObj, this.id);
-        } 
-        else
-        {
-          if(actionscriptCommandQueue.length <= 100)
-          {
+        } else {
+          if(actionscriptCommandQueue.length <= 100) {
             actionscriptCommandQueue.push([data,dataObj]);
-          }
-          else
-          {
+          } else {
             actionscriptCommandQueue.shift();
             actionscriptCommandQueue.push([data,dataObj]);
           }
@@ -661,12 +647,10 @@ require("../../../html5-common/js/utils/constants.js");
         var klass = flashItems[arguments[0]];
   
         if (klass) {
- 
           klass.onCallback(arguments[2]);
         }
-        else
-        {
-        OO.log('[OSMF]:JFlashBridge: No binding: ', arguments);
+        else {
+          OO.log('[OSMF]:JFlashBridge: No binding: ', arguments);
         }
       };
 
@@ -803,12 +787,7 @@ require("../../../html5-common/js/utils/constants.js");
    * @returns {object} the object containing the desired swf.
    */
   var getSwf = function (thisId) {
-    if (navigator.appName.indexOf("Microsoft") != -1) {
-      return document.getElementsByName(thisId)[0];
-    }
-    else{
-      return document.getElementsByName(thisId)[0];
-    }
+    return document.getElementsByName(thisId)[0];
   };
 
   /**

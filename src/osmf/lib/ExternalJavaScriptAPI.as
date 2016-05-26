@@ -25,31 +25,23 @@ package
     public function ExternalJavaScriptAPI(hdsPlayer:HDSPlayer)
     {
       _hdsPlayer = hdsPlayer;
-      if (ExternalInterface.available)
-      {
+      if (ExternalInterface.available) {
         super();
-        try
-        {
+        try {
           ExternalInterface.addCallback("sendToActionScript", receivedFromJavaScript);
-          if (checkJavaScriptReady())
-          {
+          if (checkJavaScriptReady()) {
             init();
-          }
-          else
-          {
+          } else {
             var readyTimer:Timer = new Timer(100, 0);
             readyTimer.addEventListener(TimerEvent.TIMER, timerHandler);
             readyTimer.start();
           }
           ExternalInterface.addCallback("call", sendToJavaScript);
         }
-        catch (error:Error)
-        {
+        catch (error:Error) {
           SendToDebugger(error.message, "ExternalJavaScriptAPI","error");
         }
-      }
-      else
-      {
+      } else {
         trace("JavaScript external interface is not available.");
       }
     }
@@ -59,8 +51,7 @@ package
     * @private
     * @method ExternalJavaScriptAPI#init
     */
-    private function init():void
-    {
+    private function init():void {
       _hdsPlayer.initMediaPlayer();
       registerListeners();
       jsBridge = new JFlashBridge();
@@ -73,8 +64,7 @@ package
      * @private
      * @method ExternalJavaScriptAPI#registerListeners
      */
-    private function registerListeners():void
-    {
+    private function registerListeners():void {
       addEventListener("videoPlay", onVideoPlay);
       addEventListener("videoPause", onVideoPause);
       addEventListener("videoSeek", onVideoSeek);
@@ -112,8 +102,7 @@ package
      * @public
      * @method ExternalJavaScriptAPI#unregisterListeners
      */
-    private function unregisterListeners():void
-    {
+    private function unregisterListeners():void {
       removeEventListener("videoPlay", onVideoPlay);
       removeEventListener("videoPause", onVideoPause);
       removeEventListener("videoSeek", onVideoSeek);
@@ -150,8 +139,7 @@ package
      * @method ExternalJavaScriptAPI#onFlashEvent
      * @param {DynamicEvent} event
      */
-    private function onFlashEvent(event:DynamicEvent):void
-    {
+    private function onFlashEvent(event:DynamicEvent):void {
       var eventData : Object = new Object();
       eventData.eventtype = event.type;
       eventData.eventObject = event.eventObject;
@@ -166,8 +154,7 @@ package
      * @method ExternalJavaScriptAPI#onVideoPlay
      * @param {Event} event
      */
-    private function onVideoPlay(event:Event):void
-    {
+    private function onVideoPlay(event:Event):void {
       _hdsPlayer.onVideoPlay(event);
     }
 
@@ -177,8 +164,7 @@ package
     * @method ExternalJavaScriptAPI#onVideoPause
     * @param {Event} event
     */
-    private function onVideoPause(event:Event):void
-    {
+    private function onVideoPause(event:Event):void {
       _hdsPlayer.onVideoPause(event);
     }
 
@@ -188,8 +174,7 @@ package
     * @method ExternalJavaScriptAPI#onVideoSeek
     * @param {DynamicEvent} event
     */
-    private function onVideoSeek(event:DynamicEvent):void
-    {
+    private function onVideoSeek(event:DynamicEvent):void {
       _hdsPlayer.onVideoSeek(event);
     }
 
@@ -199,8 +184,7 @@ package
     * @method ExternalJavaScriptAPI#onChangeVolume
     * @param {DynamicEvent} event
     */
-    private function onChangeVolume(event:DynamicEvent):void
-    {
+    private function onChangeVolume(event:DynamicEvent):void {
       _hdsPlayer.onChangeVolume(event);
     }
 
@@ -210,8 +194,7 @@ package
     * @method ExternalJavaScriptAPI#onPlayheadTimeChanged
     * @param {Event} event
     */
-    private function onPlayheadTimeChanged(event:TimerEvent = null):void
-    {
+    private function onPlayheadTimeChanged(event:TimerEvent = null):void {
       _hdsPlayer.onPlayheadTimeChanged(event);
     }
 
@@ -221,8 +204,7 @@ package
     * @method ExternalJavaScriptAPI#onSetVideoURL
     * @param {DynamicEvent} event
     */
-    private function onSetVideoURL(event:DynamicEvent):void
-    {
+    private function onSetVideoURL(event:DynamicEvent):void {
       _hdsPlayer.onSetVideoURL(event);
     }
 
@@ -232,8 +214,7 @@ package
     * @method ExternalJavaScriptAPI#onLoadVideo
     * @param {DynamicEvent} event
     */
-    private function onLoadVideo(event:DynamicEvent):void
-    {
+    private function onLoadVideo(event:DynamicEvent):void {
       _hdsPlayer.onLoadVideo(event);
     }
 
@@ -243,8 +224,7 @@ package
     * @method ExternalJavaScriptAPI#onSetVideoClosedCaptions
     * @param {Event} event
     */
-    private function onSetVideoClosedCaptions(event:DynamicEvent):void
-    {
+    private function onSetVideoClosedCaptions(event:DynamicEvent):void {
       _hdsPlayer.onSetVideoClosedCaptions(event);
     }
 
@@ -254,8 +234,7 @@ package
     * @method ExternalJavaScriptAPI#onSetVideoClosedCaptionsMode
     * @param {Event} event
     */
-    private function onSetVideoClosedCaptionsMode(event:DynamicEvent):void
-    {
+    private function onSetVideoClosedCaptionsMode(event:DynamicEvent):void {
       _hdsPlayer.onSetVideoClosedCaptionsMode(event);
     }
 
@@ -265,8 +244,7 @@ package
     * @method ExternalJavaScriptAPI#onReplay
     * @param {Event} event
     */
-    private function onReplay(event:Event):void
-    {
+    private function onReplay(event:Event):void {
       _hdsPlayer.onReplay(event);
     }
 
@@ -276,8 +254,7 @@ package
     * @method ExternalJavaScriptAPI#onSetInitialTime
     * @param {DynamicEvent} event
     */
-    private function onSetInitialTime(event:DynamicEvent):void
-    {
+    private function onSetInitialTime(event:DynamicEvent):void {
       _hdsPlayer.onSetInitialTime(event);
     }
 
@@ -287,8 +264,7 @@ package
     * @method ExternalJavaScriptAPI#onSetTargetBitrate
     * @param {DynamicEvent} event
     */
-    private function onSetTargetBitrate(event:DynamicEvent):void
-    {
+    private function onSetTargetBitrate(event:DynamicEvent):void {
       _hdsPlayer.onSetTargetBitrate(event);
     }
 
@@ -298,8 +274,7 @@ package
     * @method ExternalJavaScriptAPI#onGetCurrentTime
     * @param {Event} event
     */
-    private function onGetCurrentTime(event:Event):void
-    {
+    private function onGetCurrentTime(event:Event):void {
       _hdsPlayer.onGetCurrentTime(event);
     }
 
@@ -309,16 +284,14 @@ package
     * @method ExternalJavaScriptAPI#onDestroy
     * @param {Event} event
     */
-    private function onDestroy(event:Event):void
-    {
+    private function onDestroy(event:Event):void {
       _hdsPlayer.onDestroy();
       destroy();
     }
 
     // This is an internal callback that passes data to
     // the JavaScript application
-    private function onCallback(data:String):void
-    {
+    private function onCallback(data:String):void {
       SendToDebugger(data, "swf onCallback", "log");
       var eventData : Object = new Object();
       eventData.eventtype = data;
@@ -334,8 +307,7 @@ package
     * @param {string} value The value to be send to the java script page.
     * @returns {boolean} True or false indicating success
     */
-    private function sendToJavaScript(value:Object):Boolean
-    {
+    private function sendToJavaScript(value:Object):Boolean {
       var messageSent:Boolean = jsBridge.call("onCallback", value);
       return messageSent;
     }
@@ -347,13 +319,11 @@ package
     * @param {string} value The value to be send to the java script page.
     * @param {object} dataObj The object to be send to the java script page.
     */
-    private function receivedFromJavaScript(value:String , dataObj:Object = null, videoId:String = null):void
-    {
+    private function receivedFromJavaScript(value:String , dataObj:Object = null, videoId:String = null):void {
       var eventArgs:String = "";
       if (videoId != null && thisVideoId == null) thisVideoId = videoId;
 
-      if (value.indexOf("(") != -1)
-      {
+      if (value.indexOf("(") != -1) {
         var start:int = value.indexOf("(");
         var end:int = value.lastIndexOf(")");
         eventArgs = (String)(value.slice(start + 1, end));
@@ -361,12 +331,9 @@ package
         SendToDebugger(eventArgs + " : " + videoId, "receivedFromJavaScript args", "log");
       }
       var jsEvent:DynamicEvent = new DynamicEvent(value);
-      if (eventArgs != "")
-      {
+      if (eventArgs != "") {
         jsEvent.args = eventArgs;
-      }
-      else if(dataObj != null)
-      {
+      } else if (dataObj != null) {
         jsEvent.args = dataObj;
       }
       dispatchEvent(jsEvent);
@@ -383,8 +350,7 @@ package
     * @returns {boolean} True or false indicating success
     */
     private function SendToDebugger(value:String, referrer:String = null,
-                                    channelBranch:String = "log"):Boolean
-    {
+                                    channelBranch:String = "log"):Boolean {
       // channelBranch = info, debug, warn, error, log
       var channel:String = "OO." + channelBranch;
       if (referrer) referrer = "[" + referrer + " : " + thisVideoId + "]";
@@ -399,22 +365,18 @@ package
      * @private
      * @method ExternalJavaScriptAPI#destroy
      */
-    private function destroy():void
-    {
+    private function destroy():void {
       unregisterListeners();
     }
 
-    private function timerHandler(event:TimerEvent):void
-    {
+    private function timerHandler(event:TimerEvent):void {
       var isReady:Boolean = checkJavaScriptReady();
-      if (isReady)
-      {
+      if (isReady) {
         Timer(event.target).stop();
         init();
       }
     }
-    private function checkJavaScriptReady():Boolean
-    {
+    private function checkJavaScriptReady():Boolean {
       // Call to 'isReady' in the Javascript. Prevents a race condition between config of ActionScript and JavaScript.
       var isReady:Boolean = ExternalInterface.call("isReady");
       return isReady;

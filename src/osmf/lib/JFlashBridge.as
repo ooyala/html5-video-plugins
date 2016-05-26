@@ -15,27 +15,22 @@ package
      * Constructor
      * @public
      */
-    public function JFlashBridge()
-    {
-    }
+    public function JFlashBridge() {}
 
     /**
      * Checks whether the ExternalInterface is available and initializes the timer accordingly.
      * @prublic
      * @method JFlashBridge#initialize
      */
-    public function initialize():void
-    {
-      if (ExternalInterface.available)
-      {
+    public function initialize():void {
+      if (ExternalInterface.available) {
         objectName = getSWFObjectName();
         var eventData : Object = new Object();
         eventData.eventtype = "JSREADY";
         eventData.eventObject = null;
 
         call("onCallback", eventData);
-        try
-        {
+        try {
           if (checkReady()) {
             available = true;
           } else {
@@ -45,17 +40,13 @@ package
             readyTimer.start();
           }
         }
-        catch (error:SecurityError)
-        {
+        catch (error:SecurityError) {
           trace("A SecurityError occurred: " + error.message);
         }
-        catch (error:Error)
-        {
+        catch (error:Error) {
           trace("An Error occurred: " + error.message);
         }
-      }
-      else
-      {
+      } else {
         trace("JavaScript external interface is not available.");
       }
     }
@@ -67,8 +58,7 @@ package
      * @param {string} name Name of the method for which callback to be added.
      * @param {Function} callback The callback fuction.
      */
-    public function addMethod(name:String, callback:Function):void
-    {
+    public function addMethod(name:String, callback:Function):void {
       ExternalInterface.addCallback(name, callback);
     }
 
@@ -92,13 +82,12 @@ package
      * @method JFlashBridge#getSWFObjectName
      * @returns {String} Name of the SWF object.
      */
-    public function getSWFObjectName():String
-    {
+    public function getSWFObjectName():String {
       var js:XML;
       js = <script><![CDATA[
         function(__randomFunction) {
-          var check = function(objects){
-            for (var i = 0; i < objects.length; i++){
+          var check = function(objects) {
+            for (var i = 0; i < objects.length; i++) {
               if (objects[i][__randomFunction]) return objects[i].id;
             }
             return undefined;
@@ -119,8 +108,7 @@ package
      * @method JFlashBridge#checkReady
      * @returns {boolean} True or false indicating the ready condition.
      */
-    private function checkReady():Boolean
-    {
+    private function checkReady():Boolean {
       var res:* = call(jsReadyFuncName);
       if (res == undefined ||
         res == null) {
@@ -136,8 +124,7 @@ package
      * @method JFlashBridge#onReadyTimer
      * @param {TimerEvent} event
      */
-    private function onReadyTimer(event:TimerEvent):void
-    {
+    private function onReadyTimer(event:TimerEvent):void {
       var isReady:Boolean = checkReady();
       trace("JavaScript ready status: ", isReady);
       if (isReady) {
@@ -160,8 +147,7 @@ package
      * @method JFlashBridge#sset available
      * @param {Boolean} value True or False.
      */
-    public function set available(value:Boolean):void
-    {
+    public function set available(value:Boolean):void {
       if (_available != value) {
         _available = value;
         if (_available) {
