@@ -247,7 +247,7 @@ package
     {
       _hdsPlayer.onSetVideoClosedCaptions(event);
     }
-   
+
    /**
     * Sets the closed captions mode through the player
     * @private
@@ -291,7 +291,7 @@ package
     {
       _hdsPlayer.onSetTargetBitrate(event);
     }
-    
+
    /**
     * Fetches the current time from the player.
     * @private

@@ -216,12 +216,7 @@ require("../../../html5-common/js/utils/constants.js");
       flashvars, params, attributes, this.subscribeAllEvents);
 
     flashItems[this.id] = this;
-    if (navigator.appName.indexOf("Microsoft") != -1) {
-      _video = document.getElementsByName(this.id)[0];
-    }
-    else{
-      _video = document.getElementsByName(this.id)[0];
-    }
+    _video = getSwf(this.id);
 
     var _readyToPlay = false; // should be set to true on canplay event
     var actionscriptCommandQueue = [];
@@ -229,23 +224,16 @@ require("../../../html5-common/js/utils/constants.js");
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
     /************************************************************************************/
-    
+
     // Return if the Dom and JavaScript are ready.
     // We cannot predict the presence of jQuery, so use a core javascript technique here.
     isReady = _.bind(function() {
       if (document.readyState === "complete") {
-        if(_video == undefined) {
-          if (navigator.appName.indexOf("Microsoft") != -1) {
-            _video = document.getElementsByName(this.id)[0];
-          }
-          else{
-            _video = document.getElementsByName(this.id)[0];
-          }
-        } 
+        if(_video == undefined) _video = getSwf(this.id);
         return true;
       }
     },this);
-    
+
     /**
      * Subscribes to all events raised by the video element.
      * This is called by the Factory during creation.
@@ -489,23 +477,13 @@ require("../../../html5-common/js/utils/constants.js");
       delete flashItems[this.id];
     };
 
-    // Returns the SWF instance
-    this.swf = function () {
-      if (navigator.appName.indexOf("Microsoft") != -1) {
-        return document.getElementsByName(this.id)[0];
-      }
-      else{
-        return document.getElementsByName(this.id)[0];
-      }
-    };
-
     // Calls a Flash method
     this.callToFlash = function (data,dataObj) {
       if(_video == undefined) { 
         javascriptCommandQueue.push([data,dataObj]);
       }
       else
-      {      
+      {
         if (_video.sendToActionScript) {
           dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
           return _video.sendToActionScript(data,dataObj, this.id);
@@ -514,7 +492,7 @@ require("../../../html5-common/js/utils/constants.js");
         {
           if(actionscriptCommandQueue.length <= 100)
           {
-            actionscriptCommandQueue.push([data,dataObj]);          
+            actionscriptCommandQueue.push([data,dataObj]);
           }
           else
           {
@@ -678,14 +656,14 @@ require("../../../html5-common/js/utils/constants.js");
       var captionText = event.eventObject.text;
       newController.notify(newController.EVENTS.CLOSED_CAPTION_CUE_CHANGED,captionText);
     }
-    
+
     call = function() {
         OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
 
         var klass = flashItems[arguments[0]];
-        
+  
         if (klass) {
-       
+ 
           klass.onCallback(arguments[2]);
         }
         else
@@ -698,7 +676,7 @@ require("../../../html5-common/js/utils/constants.js");
     this.onCallback = function(data) {
       // Remove the element
       var eventtitle =" ";
-      
+
       for(var key in data) {
         if (key == "eventtype") {
              eventtitle = data[key];
@@ -730,11 +708,11 @@ require("../../../html5-common/js/utils/constants.js");
 
       switch (eventtitle)
       {
-       case "JSREADY":    
+       case "JSREADY":
         if(javascriptCommandQueue.length != 0) {
           for(var i = 0; i < javascriptCommandQueue.length; i++) {
             this.callToFlash(javascriptCommandQueue[i][0], javascriptCommandQueue[i][1]);
-          }    
+          }
         }
         for (i = 0; i < actionscriptCommandQueue.length; i++) {
           this.callToFlash(actionscriptCommandQueue[i][0],actionscriptCommandQueue[i][1]);
@@ -813,12 +791,28 @@ require("../../../html5-common/js/utils/constants.js");
       }
       return true;
     }
-    
+
   };
 
   /************************************************************************************/
   // Helper methods
   /************************************************************************************/
+
+  /**
+   * Returns the SWF instance present in the Dom matching the provided id
+   * @private
+   * @method OoyalaFlashVideoWrapper#getSwf
+   * @param {string} thisId the id of the swf object sought.
+   * @returns {object} the object containing the desired swf.
+   */
+  var getSwf = function (thisId) {
+    if (navigator.appName.indexOf("Microsoft") != -1) {
+      return document.getElementsByName(thisId)[0];
+    }
+    else{
+      return document.getElementsByName(thisId)[0];
+    }
+  };
 
   /**
    * Generates a random string.
@@ -829,6 +823,7 @@ require("../../../html5-common/js/utils/constants.js");
   var getRandomString = function() {
     return Math.random().toString(36).substring(7);
   };
+
   OO.Video.plugin(new OoyalaFlashVideoFactory());
 }(OO._, OO.$));
 
