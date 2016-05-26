@@ -44,11 +44,10 @@ require("../../../html5-common/js/utils/environment.js");
 
         if ((!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
              !!videoElement.canPlayType("application/x-mpegURL")) &&
-            !OO.isSmartTV && !OO.isRimDevice && !OO.isAndroid &&
+            !OO.isSmartTV && !OO.isRimDevice &&
             (!OO.isMacOs || OO.isMacOsLionOrLater)) {
           // 2012 models of Samsung and LG smart TV's do not support HLS even if reported
           // Mac OS must be lion or later
-          // We do not yet officially support HLS on android chrome; blocking it until it's ready
           list.push(OO.VIDEO.ENCODING.HLS);
         }
 
@@ -139,7 +138,7 @@ require("../../../html5-common/js/utils/environment.js");
     this.maxSupportedElements = (function() {
       var iosRequireSingleElement = OO.isIos;
       var androidRequireSingleElement = OO.isAndroid &&
-                                        (!Platform.isAndroid4Plus || OO.chromeMajorVersion < 40);
+                                        (!OO.isAndroid4Plus || OO.chromeMajorVersion < 40);
       return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : -1;
     })();
   };
@@ -447,6 +446,11 @@ require("../../../html5-common/js/utils/environment.js");
 
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
       _video.volume = resolvedVolume;
+
+      // If no video is assigned yet, the volumeChange event is not raised although it takes effect
+      if (_video.currentSrc === "" || _video.currentSrc === null) {
+        raiseVolumeEvent({ target: { volume: resolvedVolume }});
+      }
     };
 
     /**
@@ -1282,6 +1286,12 @@ require("../../../html5-common/js/utils/environment.js");
                       _video.currentTime);
           _.defer(raiseEndedEvent);
         }
+        else if (OO.isSafari && !OO.isIos && isSeeking === true && !_video.ended && Math.round(_video.currentTime) === Math.round(_video.duration))
+        {
+          this.controller.notify(this.controller.EVENTS.SEEKED);
+          videoEnded = true;
+          this.controller.notify(this.controller.EVENTS.ENDED);
+        }
       }
     }, this);
 
@@ -1348,25 +1358,6 @@ require("../../../html5-common/js/utils/environment.js");
    */
   var getRandomString = function() {
     return Math.random().toString(36).substring(7);
-  };
-
-  /**
-   * @class Platform
-   * @classdesc Functions that provide platform information
-   * @private
-   */
-  var Platform = {
-    /**
-     * Checks if the player is running on an Android device of version 4 or later.
-     * @private
-     * @method Platform#isAndroid4Plus
-     * @returns {boolean} True if the player is running on an Android device of version 4 or later
-     */
-    isAndroid4Plus: (function(){
-      if (!window.navigator.appVersion.match(/Android/)) return false;
-      var device = window.navigator.appVersion.match(/Android [1-9]/) || [];
-      return (_.first(device) || "").slice(-1) >= "4";
-    })(),
   };
 
   OO.Video.plugin(new OoyalaVideoFactory());

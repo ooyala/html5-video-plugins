@@ -36,7 +36,9 @@ package
     private var _streamController:AkamaiStreamController;
     private var _netStream:AkamaiHTTPNetStream;
     private var _akamaiVideoSurface:AkamaiVideoSurface;
+    private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
+    private var _playQueue:Boolean = false;
 
     /**
      * Constructor
@@ -88,6 +90,32 @@ package
     private function bufferingChangeHandler(e:BufferEvent):void
     {
     }
+
+    /**
+     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
+     * @private
+     * @method AkamaiHDPlayer#SendToDebugger
+     * @param {string} value The value to be passed to the browser console.
+     * @param {string} referrer The fuction or process which passed the value.
+     * @param {string} channelBranch It can be info, debug, warn, error or log.
+     * @returns {boolean} True or false indicating success
+     */
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
+    {
+      var channel:String; 
+      if (channelBranch == "log") 
+      {
+        channel = "OO." + channelBranch;
+      }
+      else 
+      {
+        channel = "console." + channelBranch;
+      }
+      if (referrer) referrer = "[" + referrer + "]";
+      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
+                                                        referrer + ": " + value);
+      return debugMessage;
+    }
     
     /**
      * Creates the MediaPlayerSprite and DefaultMediaFactory instances.
@@ -123,9 +151,13 @@ package
       Logger.log("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
       _akamaiVideoSurface.attachNetStream(_netStream);
+      if (_playQueue)
+      {
+        _playQueue = false;
+        _streamController.resume();
+      }
     }
-
-
+    
     /**
      * Adds the display object to the streamcontroller.
      * @private
@@ -135,7 +167,7 @@ package
     {
       _streamController.displayObject = this;
     }
-    
+  
     /**
      * Event listner for MediaPlayerStateChangeEvent
      * @private
@@ -149,8 +181,10 @@ package
       switch(event.state)
       {
         case MediaPlayerState.PLAYING:
+          dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING,null));
           break;
         case MediaPlayerState.PAUSED:
+          dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
           break;
         case MediaPlayerState.BUFFERING:
           break;
@@ -235,6 +269,22 @@ package
      */
     public function onVideoPlay(event:Event):void
     {
+      var eventObject:Object = new Object();
+      eventObject.url = _akamaiStreamURL;
+      dispatchEvent(new DynamicEvent(DynamicEvent.PLAY,eventObject));
+      
+      //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
+      _playQueue = false;
+
+      if (_streamController.netStream == null)
+      {
+        _playQueue = true;
+        _streamController.play(_akamaiStreamURL);
+      }
+      else
+      {
+        _streamController.resume();
+      }
     }
     
     /**
@@ -245,6 +295,14 @@ package
      */
     public function onVideoPause(event:Event):void
     {
+      if (_streamController.canPause)
+      {
+        _streamController.pause();
+      }
+      else
+      {
+        Logger.log("Error in pausing video: Player State: ", "onVideoPause");
+      }
     }
     
     /**
@@ -265,6 +323,21 @@ package
      */
     public function onChangeVolume(event:DynamicEvent):void
     {
+      var volume:Number = (Number)(event.args);
+      _streamController.volume = volume;
+      //Dispatches the VOLUME_CHANGED event only when the change occures properly.
+      if (_streamController.volume == volume)
+      {
+        var eventObject:Object = new Object();
+        eventObject.volume = _streamController.volume;
+        dispatchEvent(new DynamicEvent(DynamicEvent.VOLUME_CHANGED,(eventObject)));
+      }
+      else
+      {
+        SendToDebugger("Error in changing volume: " +_streamController.volume,"onChangeVolume");
+        return;
+      }
+      SendToDebugger("Set Volume to: " + volume, "onChangeVolume");
     }
     
     /**
@@ -275,6 +348,7 @@ package
      */
     public function onSetVideoURL(event:DynamicEvent):void
     {
+      _akamaiStreamURL = (String)(event.args);
     }
     
     /**

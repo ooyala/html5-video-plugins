@@ -80,6 +80,9 @@ package
     private var _currentBitrate:Number = -1;
     private var _previousBitrate:Number = -1;
     private var _bitrateFlag:Number = 0;
+    private var _hiddenCaptionFlag:Boolean = false;
+    private var _previousCaptionMode:String;
+    
     /**
      * Constructor
      * @public
@@ -565,6 +568,8 @@ package
       var captionsObject:Object =(Object)(event.args);
       var closedCaptions:Object = captionsObject.closedCaptions;
       var params:Object = captionsObject.params;
+      _mode = params.mode;
+      _previousCaptionMode = _mode;
       _selectedCaptionLanguage = captionsObject.language;
       
       if (closedCaptions.closed_captions_dfxp != null)
@@ -727,16 +732,18 @@ package
     public function onSetVideoClosedCaptionsMode(event:DynamicEvent):void
     {
       _mode = (String)(event.args);
-
-      if(_mode == "disabled")
+      _captioningEnabled = false;
+      if(_mode == "disabled" && _previousCaptionMode == "hidden")
       {
         _captionLabel.visible = false;
+        var eventObject:Object = new Object();
+        eventObject.text = "" ;
+        dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
       }
-      else if(_mode == "showing")
+      else if(_mode == "disabled" && _previousCaptionMode == "showing")
       {
-        _captionLabel.visible = true;
-      }
-       
+        _captionLabel.visible = false;
+      }      
       SendToDebugger("Set Video Closed Captions Mode :" + _mode, "onSetVideoClosedCaptionsMode");
     }
     
@@ -768,7 +775,7 @@ package
         totalTime = 0;
       }
       eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime;
-      eventObject.duration = duration
+      eventObject.duration = totalTime;
       eventObject.buffer = _mediaPlayerSprite.mediaPlayer.bufferLength + _mediaPlayerSprite.mediaPlayer.currentTime;
       eventObject.seekRange_start = 0;
       eventObject.seekRange_end = totalTime;
@@ -795,6 +802,37 @@ package
             captionFlag = true;
             break;
           }
+        }
+      }
+      else if(_captionObject != null && _mode == "hidden")
+      {
+        for each(var captionObject:Caption in _captionObject[_selectedCaptionLanguage])
+        {  
+          _hiddenCaptionFlag =false;  
+          var eventObject:Object = new Object();
+          var caption:Caption = captionObject;
+          if(caption.end > _mediaPlayerSprite.mediaPlayer.currentTime && caption.start <= _mediaPlayerSprite.mediaPlayer.currentTime)
+          { 
+            _hiddenCaptionFlag =true;  
+            if ( (caption.text != _previousCaption) || (_captioningEnabled && (caption.text == _previousCaption) ) )
+            {
+              var removeHtmlRegExp:RegExp = new RegExp("<[^<]+?>", "gi");
+              var ccText = (caption.text).replace(removeHtmlRegExp, "");
+              eventObject.text = ccText;
+              dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
+              _previousCaption = caption.text;
+              _captioningEnabled = false;
+            }
+            captionFlag = false;
+            break;
+          }
+        }
+        if(!_hiddenCaptionFlag &&  _previousCaption != "" )
+        {
+          eventObject.text = "" ;
+          _previousCaption = "" ;
+          dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
+          _hiddenCaptionFlag = false;
         }
       }
       if (!captionFlag)
