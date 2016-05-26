@@ -153,6 +153,7 @@ require("../../../html5-common/js/utils/constants.js");
     var videoItem = video;
     var currentUrl = '';
     var loaded = false;
+    var hasPlayed = false;
     var urlChanged = false;
     var self=this;
     var currentTime;
@@ -221,6 +222,7 @@ require("../../../html5-common/js/utils/constants.js");
           currentUrl = currentUrl + (/\?/.test(currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
         urlChanged = true;
+        hasPlayed = false;
         loaded = false;
         url = "setVideoUrl("+currentUrl+")";
       }
@@ -271,7 +273,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      if (loaded) return;
+      if (loaded && !rewind) return;
       else {
         try {
           this.callToFlash("load("+rewind+")");
@@ -303,6 +305,7 @@ require("../../../html5-common/js/utils/constants.js");
       }
       this.callToFlash("videoPlay");
       loaded = true;
+      hasPlayed = true;
     };
 
     /**
@@ -330,6 +333,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+      this.callToFlash("changeVolume("+volume+")");
     };
 
     /**
@@ -444,6 +448,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseVolumeEvent = function(event) {
+      self.controller.notify(self.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
     };
 
     var raiseWaitingEvent = function() {
@@ -492,7 +497,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
-     OO.log("[AKAMIHD]:onCallback: ", data);
+      OO.log('[Akamai HD]:onCallback: ', data);
       var eventtitle =" ";
 
       for (var key in data) {
