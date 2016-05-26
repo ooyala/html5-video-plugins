@@ -90,7 +90,7 @@ package
       args.push(objectName);
       args.push(method);
       return ExternalInterface.call.apply(ExternalInterface, args.concat(parameters));
-    } 
+    }
 
     /**
      * Returns the SWF's object name for getElementById
