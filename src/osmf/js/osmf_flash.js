@@ -10,6 +10,7 @@ require("../../../html5-common/js/utils/constants.js");
   var pluginName = "ooyalaFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
   var cssFromContainer;
+  var flashItems = {}; // container for all current flash objects in the Dom controlled by the Ooyala player.
 
   /**
    * Config variables for paths to flash resources.
@@ -107,14 +108,24 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, id, controller, css) {
+    this.create = function(parentContainer, domId, controller, css, playerId) {
       var video = $("<video>");
-      video.attr("id", id);
-      parentContainer.append(video);
+      video.attr("class", "video");
+      video.attr("id", domId);
+      video.attr("preload", "none");
+
       cssFromContainer = css;
 
-      element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer);
+      if (!playerId) {
+        playerId = getRandomString();
+      }
+      parentContainer.append(video);
+
+
+      element = new OoyalaFlashVideoWrapper(domId, video[0], parentContainer, playerId);
       element.controller = controller;
+      controller.notify(controller.EVENTS.CAN_PLAY);
+
       // TODO: Wait for loadstart before calling this?
       element.subscribeAllEvents();
       return element;
@@ -143,18 +154,21 @@ require("../../../html5-common/js/utils/constants.js");
   /**
    * @class OoyalaFlashVideoWrapper
    * @classdesc Player object that wraps the video element.
-   * @param {string} playerId The id of the video player element
-   * @param {object} video The core video object to wrap
+   * @param {string} domId The id of the video player element
+   * @param {object} video The core video object to wrap - unused.
    * @param {string} parentContainer Id of the Div element in which the swf will be embedded
    * @param {object} css The css to apply to the object element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer) {
+  var OoyalaFlashVideoWrapper = function(domId, video, parentContainer, playerId) {
+    this.controller = {};
+    this.disableNativeSeek = false;
+    this.id=domId;
+    if(!parentContainer) parentContainer = "container";
 
-    parentContainer = "container";
-    var _video = video;
+    var _video; // reference to the current swf being acted upon.
     var listeners = {};
     var _currentUrl = '';
     var videoEnded = false;
@@ -183,7 +197,7 @@ require("../../../html5-common/js/utils/constants.js");
     params.scale = "showAll";
 
     var attributes = {};
-    attributes.id = playerId;
+    attributes.id = domId;
     attributes.class = 'video';
     attributes.preload = 'none';
     attributes.style = 'position:absolute;';
@@ -193,17 +207,22 @@ require("../../../html5-common/js/utils/constants.js");
         attributes.style += i + ":" + cssFromContainer[i] + "; ";
       }
     }
-    attributes.name = playerId;
+    attributes.name = domId;
     attributes.align = "middle";
     swfobject.embedSWF(
-      pluginPath, playerId,
+      pluginPath, domId,
       "100%", "100%",
       flashMinimumVersion, flexPath,
       flashvars, params, attributes, this.subscribeAllEvents);
 
-    JFlashBridge.bind(playerId, this);
+    flashItems[this.id] = this;
+    if (navigator.appName.indexOf("Microsoft") != -1) {
+      _video = document.getElementsByName(this.id)[0];
+    }
+    else{
+      _video = document.getElementsByName(this.id)[0];
+    }
 
-    var _flashVideoObject = JFlashBridge.getSWF(playerId);
     var _readyToPlay = false; // should be set to true on canplay event
     var actionscriptCommandQueue = [];
 
@@ -215,8 +234,13 @@ require("../../../html5-common/js/utils/constants.js");
     // We cannot predict the presence of jQuery, so use a core javascript technique here.
     isReady = _.bind(function() {
       if (document.readyState === "complete") {
-        if(_flashVideoObject == undefined) {
-          _flashVideoObject = JFlashBridge.getSWF(playerId);
+        if(_video == undefined) {
+          if (navigator.appName.indexOf("Microsoft") != -1) {
+            _video = document.getElementsByName(this.id)[0];
+          }
+          else{
+            _video = document.getElementsByName(this.id)[0];
+          }
         } 
         return true;
       }
@@ -355,7 +379,7 @@ require("../../../html5-common/js/utils/constants.js");
           loaded = true;
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
-          console.log('[OSMF]: Failed to rewind video, probably ok; continuing');
+          OO.log('HDSFlash ['+this.id+']: Failed to rewind video, probably ok; continuing');
         }
       }
 
@@ -457,50 +481,49 @@ require("../../../html5-common/js/utils/constants.js");
       this.callToFlash("destroy");
 
       // Remove the element
-      $('#'+playerId).replaceWith('');
-      _flashVideoObject=null;
+      $('#'+domId).replaceWith('');
+      _video=null;
 
       // return unbound object.
-      return JFlashBridge.unbind(playerId);
+      $(_video).remove();
+      delete flashItems[this.id];
     };
 
     // Returns the SWF instance
     this.swf = function () {
-      return JFlashBridge.getSWF(playerId);
+      if (navigator.appName.indexOf("Microsoft") != -1) {
+        return document.getElementsByName(this.id)[0];
+      }
+      else{
+        return document.getElementsByName(this.id)[0];
+      }
     };
 
     // Calls a Flash method
     this.callToFlash = function (data,dataObj) {
-      if(_flashVideoObject == undefined) { 
+      if(_video == undefined) { 
         javascriptCommandQueue.push([data,dataObj]);
       }
       else
       {      
-        if (_flashVideoObject.sendToActionScript) {
+        if (_video.sendToActionScript) {
           dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
-          return _flashVideoObject.sendToActionScript(data,dataObj);
+          return _video.sendToActionScript(data,dataObj, this.id);
         } 
-        else 
+        else
         {
-          actionscriptCommandQueue.push([data,dataObj]);
+          if(actionscriptCommandQueue.length <= 100)
+          {
+            actionscriptCommandQueue.push([data,dataObj]);          
+          }
+          else
+          {
+            actionscriptCommandQueue.shift();
+            actionscriptCommandQueue.push([data,dataObj]);
+          }
         }
       }
     };
-
-
-    // Receives a callback from Flash - Not used.
-    this.sendToJavaScript = function(data) {
-      OO.log('[OSMF]:sendToJavaScript: Call: ', data);
-      return true;
-    };
-
-    // **********************************************************************************/
-    // Example callback methods
-    // **********************************************************************************/
-
-    // **********************************************************************************/
-    // Event callback methods
-    // **********************************************************************************/
 
     /**
      * Stores the url of the video when load is started.
@@ -655,12 +678,27 @@ require("../../../html5-common/js/utils/constants.js");
       var captionText = event.eventObject.text;
       newController.notify(newController.EVENTS.CLOSED_CAPTION_CUE_CHANGED,captionText);
     }
+    
+    call = function() {
+        OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
+
+        var klass = flashItems[arguments[0]];
+        
+        if (klass) {
+       
+          klass.onCallback(arguments[2]);
+        }
+        else
+        {
+        OO.log('[OSMF]:JFlashBridge: No binding: ', arguments);
+        }
+      };
 
     // Receives a callback from Flash
-    onCallback = _.bind(function(data) {
-      // console.log("[OSMF]:onCallback: ", data);
+    this.onCallback = function(data) {
+      // Remove the element
       var eventtitle =" ";
-
+      
       for(var key in data) {
         if (key == "eventtype") {
              eventtitle = data[key];
@@ -774,8 +812,10 @@ require("../../../html5-common/js/utils/constants.js");
         break;
       }
       return true;
-    }, this);
+    }
+    
   };
+
   /************************************************************************************/
   // Helper methods
   /************************************************************************************/
@@ -791,47 +831,6 @@ require("../../../html5-common/js/utils/constants.js");
   };
   OO.Video.plugin(new OoyalaFlashVideoFactory());
 }(OO._, OO.$));
-
-var JFlashBridge = {
-  items: {},
-
-  bind: function(id, klass) {
-      OO.log('[OSMF]:JFlashBridge: Bind: ', id, klass);
-      this.items[id] = klass;
-  },
-
-  unbind: function(id) {
-     OO.log('[OSMF]:JFlashBridge: Unbind: ', id);
-     delete this.items[id];
-  },
-
-  call: function() {
-    OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
-    var klass = this.items[arguments[0]];
-    if (klass) {
-      var method = klass[arguments[1]];
-      if (method)
-      {
-        method.apply(klass, Array.prototype.slice.call(arguments, 2));
-      }
-      else
-        OO.log('[OSMF]:JFlashBridge: No method: ', arguments[1]);
-    }
-    else
-      OO.log('[OSMF]:JFlashBridge: No binding: ', arguments);
-  },
-
-  getSWF: function(movieName) {
-    if (navigator.appName.indexOf("Microsoft") != -1) {
-      OO.log("get swf returns some value",document.getElementsByName(movieName)[0]);
-      return document.getElementsByName(movieName)[0];
-    }
-    else{
-      OO.log("get swf returns some other value",document.getElementsByName(movieName)[0]);
-      return document.getElementsByName(movieName)[0];
-    }
-  }
-};
 
 /*! SWFObject v2.2 <http://code.google.com/p/swfobject/>
   is released under the MIT License <http://www.opensource.org/licenses/mit-license.php>

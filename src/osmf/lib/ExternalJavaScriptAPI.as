@@ -16,6 +16,7 @@ package
     private var _hdsPlayer:HDSPlayer = null;
     public var jsBridge:JFlashBridge;
     private var _dynamicEvent:DynamicEvent = null;
+    private var thisVideoId:String = null;
 
     /**
      * Constructor
@@ -40,7 +41,7 @@ package
             readyTimer.addEventListener(TimerEvent.TIMER, timerHandler);
             readyTimer.start();
           }
-          ExternalInterface.addCallback("sendToJavaScript", sendToJavaScript);
+          ExternalInterface.addCallback("call", sendToJavaScript);
         }
         catch (error:Error)
         {
@@ -63,7 +64,7 @@ package
       _hdsPlayer.initMediaPlayer();
       registerListeners();
       jsBridge = new JFlashBridge();
-      jsBridge.addMethod("someMethod", someMethod);
+      jsBridge.addMethod("onCallback", onCallback);
       jsBridge.initialize();
     }
 
@@ -84,17 +85,6 @@ package
       addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       addEventListener("setTargetBitrate", onSetTargetBitrate);
-      /*addEventListener("rateChange", onRateChanged);
-      addEventListener("stalled", onStalled);
-      addEventListener("progress", onProgress);
-      addEventListener("videoEnd", onVideoEnd );
-      addEventListener("error", onErrorCode);
-      addEventListener("durationChanged", onDurationChanged);
-      addEventListener("waiting", onWaiting);
-      addEventListener("timeUpdate", onTimeUpdate);
-      addEventListener("canPlayThrough", onCanPlayThrough);
-      addEventListener("playing", onPlaying);
-      addEventListener("seeking", onSeeking);*/
       addEventListener("replay", onReplay);
       addEventListener("setInitialTime", onSetInitialTime);
       addEventListener("getCurrentTime", onGetCurrentTime);
@@ -134,17 +124,6 @@ package
       removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       removeEventListener("setTargetBitrate", onSetTargetBitrate);
-      /*removeEventListener("rateChange", onRateChanged);
-      removeEventListener("stalled", onStalled);
-      removeEventListener("progress", onProgress);
-      removeEventListener("videoEnd", onVideoEnd );
-      removeEventListener("error", onErrorCode);
-      removeEventListener("durationChanged", onDurationChanged);
-      removeEventListener("waiting", onWaiting);
-      removeEventListener("timeUpdate", onTimeUpdate);
-      removeEventListener("canPlayThrough", onCanPlayThrough);
-      removeEventListener("playing", onPlaying);
-      removeEventListener("seeking", onSeeking);*/
       removeEventListener("replay", onReplay);
       removeEventListener("setInitialTime", onSetInitialTime);
       removeEventListener("getCurrentTime", onGetCurrentTime);
@@ -176,6 +155,7 @@ package
       var eventData : Object = new Object();
       eventData.eventtype = event.type;
       eventData.eventObject = event.eventObject;
+      eventData.thisVideoId = thisVideoId;
       SendToDebugger(eventData.eventtype, "onFlashEvent", "log");
       sendToJavaScript(eventData);
     }
@@ -343,16 +323,8 @@ package
       var eventData : Object = new Object();
       eventData.eventtype = data;
       eventData.eventObject = null;
+      eventData.videoId = thisVideoId;
       jsBridge.call("onCallback", eventData);
-    }
-
-    // This method is bound to the ExternalInterface to
-    // receive data from the JavaScript application
-    private function someMethod(data:String):Object
-    {
-      SendToDebugger(data, "swf someMethod", "log");
-      onCallback(data);
-      return data;
     }
 
    /**
@@ -375,9 +347,10 @@ package
     * @param {string} value The value to be send to the java script page.
     * @param {object} dataObj The object to be send to the java script page.
     */
-    private function receivedFromJavaScript(value:String , dataObj:Object = null):void
+    private function receivedFromJavaScript(value:String , dataObj:Object = null, videoId:String = null):void
     {
       var eventArgs:String = "";
+      if (videoId != null && thisVideoId == null) thisVideoId = videoId;
 
       if (value.indexOf("(") != -1)
       {
@@ -385,7 +358,7 @@ package
         var end:int = value.lastIndexOf(")");
         eventArgs = (String)(value.slice(start + 1, end));
         value = (value.slice(0, start));
-        SendToDebugger(eventArgs, "receivedFromJavaScript args", "log");
+        SendToDebugger(eventArgs + " : " + videoId, "receivedFromJavaScript args", "log");
       }
       var jsEvent:DynamicEvent = new DynamicEvent(value);
       if (eventArgs != "")
@@ -397,14 +370,14 @@ package
         jsEvent.args = dataObj;
       }
       dispatchEvent(jsEvent);
-      SendToDebugger(jsEvent.toString(), "receivedFromJavaScript event", "log");
+      SendToDebugger(jsEvent.toString()  + " : " + videoId, "receivedFromJavaScript event", "log");
     }
 
    /**
-    * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
+    * Send messages to the Ooyala debugging log. In future this can be hooked to any other Debugging tools.
     * @private
     * @method HDSPlayer#SendToDebugger
-    * @param {string} value The value to be passed to the browser console.
+    * @param {string} value The value to be passed to the debugger.
     * @param {string} referrer The fuction or process which passed the value.
     * @param {string} channelBranch It can be info, debug, warn, error or log.
     * @returns {boolean} True or false indicating success
@@ -414,7 +387,7 @@ package
     {
       // channelBranch = info, debug, warn, error, log
       var channel:String = "OO." + channelBranch;
-      if (referrer) referrer = "[" + referrer + "]";
+      if (referrer) referrer = "[" + referrer + " : "+ thisVideoId +"]";
       var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
                                                         referrer + ": " + value);
       return debugMessage;
@@ -430,74 +403,6 @@ package
     {
       unregisterListeners();
     }
-   /**
-    * Sends the error code
-    * @private
-    * @method ExternalJavaScriptAPI#onErrorCode
-    * @param {DynamicEvent} event
-    */
-    /*private function onErrorCode(event:DynamicEvent):void
-    {
-      _hdsPlayer.onErrorCode(event);
-      var eventLog:String = event.toString();
-      SendToDebugger(eventLog, "onErrorCode", "error");
-    }
-
-   /**
-    * Initiates video end functionality through the player
-    * @private
-    * @method ExternalJavaScriptAPI#onVideoEnd
-    * @param {Event} event
-    */
-    /*private function onVideoEnd(event:Event):void
-    {
-      _hdsPlayer.onVideoEnd(event);
-    }
-
-    private function onRateChanged(event:Event):void
-    {
-      _hdsPlayer.onRateChanged(event);
-    }
-
-    private function onStalled(event:Event):void
-    {
-      _hdsPlayer.onStalled(event);
-    }
-
-    private function onProgress(event:Event):void
-    {
-      _hdsPlayer.onProgress(event);
-    }
-
-    private function onDurationChanged(event:Event):void
-    {
-      _hdsPlayer.onDurationChanged(event);
-    }
-
-    private function onWaiting(event:Event):void
-    {
-      _hdsPlayer.onWaiting(event);
-    }
-
-    private function onTimeUpdate(event:Event):void
-    {
-      _hdsPlayer.onTimeUpdate(event);
-    }
-
-    private function onCanPlayThrough(event:Event):void
-    {
-      _hdsPlayer.onCanPlayThrough(event);
-    }
-
-    private function onPlaying(event:Event):void
-    {
-      _hdsPlayer.onPlaying(event);
-    }
-
-    private function onSeeking(event:Event):void
-    {
-      _hdsPlayer.onSeeking(event);
-    }*/
 
     private function timerHandler(event:TimerEvent):void
     {
