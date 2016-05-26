@@ -164,6 +164,17 @@ require("../html5-common/js/utils/constants.js");
     }, this);
 
     /**
+     * Set DRM data
+     * @public
+     * @method TemplateVideoWrapper#setDRM
+     * @param {object} drm DRM data object contains widevine, playready and fairplay as keys and object as value that includes
+     * la_url {string} (optional for playready), and certificate_url {string} (for fairplay only).
+     * (ex. {"widevine": {"la_url":"https://..."},"playready": {}, "fairplay": {"la_url":"https://...", "certificate_url":"https://..."}}})
+     */
+    this.setDRM = function(drm) {
+    };
+
+    /**
      * Sets the url of the video.
      * @public
      * @method TemplateVideoWrapper#setVideoUrl

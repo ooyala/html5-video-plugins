@@ -66,9 +66,9 @@ gulp.task('build_flash_osmf', function(callback) {
         exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-osmf", function(err) { 
           if (err) console.log("Error occured in building osmf plugin : " + err);
           else {osmf_fn();}
-          callback();
         });
       }
+      callback();
     });
 });
 
