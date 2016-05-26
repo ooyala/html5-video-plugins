@@ -10,6 +10,7 @@ require("../../../html5-common/js/utils/constants.js");
   var pluginName = "ooyalaFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
   var cssFromContainer;
+  var flashItems = {}; // container for all current flash objects in the Dom controlled by the Ooyala player.
 
   /**
    * Config variables for paths to flash resources.
@@ -52,27 +53,22 @@ require("../../../html5-common/js/utils/constants.js");
      */
     function getFlashVersion() {
       // ie
-      try
-      {
-        try
-        {
+      try {
+        try {
           var axo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash.6');
-          try
-          {
+          try {
             axo.AllowScriptAccess = 'always';
           }
-          catch(e)
-          {
+          catch(e) {
            return '6,0,0';
           }
         }
         catch(e) {}
         return new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version').replace(/\D+/g, ',').match(/^,?(.+),?$/)[1];
-        // other browsers
       }
+      // other browsers
       catch(e) {
-        try
-        {
+        try {
           if (navigator.mimeTypes["application/x-shockwave-flash"].enabledPlugin) {
             return (navigator.plugins["Shockwave Flash 2.0"] || navigator.plugins["Shockwave Flash"]).description.replace(/\D+/g, ",").match(/^,?(.+),?$/)[1];
           }
@@ -87,8 +83,7 @@ require("../../../html5-common/js/utils/constants.js");
       if (version < 11) {
         console.error("NO FLASH DETECTED");
         return [];
-      }
-      else {
+      } else {
         return [ OO.VIDEO.ENCODING.HDS ];
       }
     }
@@ -107,14 +102,24 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} css The css to apply to the video element
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, id, controller, css) {
+    this.create = function(parentContainer, domId, controller, css, playerId) {
       var video = $("<video>");
-      video.attr("id", id);
-      parentContainer.append(video);
+      video.attr("class", "video");
+      video.attr("id", domId);
+      video.attr("preload", "none");
+
       cssFromContainer = css;
 
-      element = new OoyalaFlashVideoWrapper(id, video[0], parentContainer);
+      if (!playerId) {
+        playerId = getRandomString();
+      }
+      parentContainer.append(video);
+
+
+      element = new OoyalaFlashVideoWrapper(domId, video[0], parentContainer, playerId);
       element.controller = controller;
+      controller.notify(controller.EVENTS.CAN_PLAY);
+
       // TODO: Wait for loadstart before calling this?
       element.subscribeAllEvents();
       return element;
@@ -143,18 +148,21 @@ require("../../../html5-common/js/utils/constants.js");
   /**
    * @class OoyalaFlashVideoWrapper
    * @classdesc Player object that wraps the video element.
-   * @param {string} playerId The id of the video player element
-   * @param {object} video The core video object to wrap
+   * @param {string} domId The id of the video player element
+   * @param {object} video The core video object to wrap - unused.
    * @param {string} parentContainer Id of the Div element in which the swf will be embedded
    * @param {object} css The css to apply to the object element
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaFlashVideoWrapper = function(playerId, video, parentContainer) {
+  var OoyalaFlashVideoWrapper = function(domId, video, parentContainer, playerId) {
+    this.controller = {};
+    this.disableNativeSeek = false;
+    this.id=domId;
+    if(!parentContainer) parentContainer = "container";
 
-    parentContainer = "container";
-    var _video = video;
+    var _video; // reference to the current swf being acted upon.
     var listeners = {};
     var _currentUrl = '';
     var videoEnded = false;
@@ -167,6 +175,7 @@ require("../../../html5-common/js/utils/constants.js");
     var seekRange_end;
     var buffer;
     var seekRange_start;
+    var javascriptCommandQueue = [];
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -182,7 +191,7 @@ require("../../../html5-common/js/utils/constants.js");
     params.scale = "showAll";
 
     var attributes = {};
-    attributes.id = playerId;
+    attributes.id = domId;
     attributes.class = 'video';
     attributes.preload = 'none';
     attributes.style = 'position:absolute;';
@@ -192,23 +201,32 @@ require("../../../html5-common/js/utils/constants.js");
         attributes.style += i + ":" + cssFromContainer[i] + "; ";
       }
     }
-    attributes.name = playerId;
+    attributes.name = domId;
     attributes.align = "middle";
     swfobject.embedSWF(
-      pluginPath, playerId,
+      pluginPath, domId,
       "100%", "100%",
       flashMinimumVersion, flexPath,
       flashvars, params, attributes, this.subscribeAllEvents);
 
-    JFlashBridge.bind(playerId, this);
+    flashItems[this.id] = this;
+    _video = getSwf(this.id);
 
-    var _flashVideoObject = JFlashBridge.getSWF(playerId);
     var _readyToPlay = false; // should be set to true on canplay event
     var actionscriptCommandQueue = [];
 
     /************************************************************************************/
     // Required. Methods that Video Controller, Destroy, or Factory call
     /************************************************************************************/
+
+    // Return if the Dom and JavaScript are ready.
+    // We cannot predict the presence of jQuery, so use a core javascript technique here.
+    isReady = _.bind(function() {
+      if (document.readyState === "complete") {
+        if(_video == undefined) _video = getSwf(this.id);
+        return true;
+      }
+    },this);
 
     /**
      * Subscribes to all events raised by the video element.
@@ -280,13 +298,12 @@ require("../../../html5-common/js/utils/constants.js");
         hasPlayed = false;
         loaded = false;
         firstPlay = true;
-        url = "setVideoUrl("+_currentUrl+")";
+        url = "setVideoUrl(" + _currentUrl + ")";
       }
       if (_.isEmpty(_currentUrl)) {
       //if (!_currentUrl) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
-      }
-      else {
+      } else {
         this.callToFlash(url);
       }
       return urlChanged;
@@ -300,7 +317,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} closedCaptions The captions object
      * @param {object} params The parameters object
      */
-    this.setClosedCaptions = function(language,closedCaptions,params){
+    this.setClosedCaptions = function(language,closedCaptions,params) {
        var parameters = {language:language, closedCaptions:closedCaptions, params:params};
         this.callToFlash("setVideoClosedCaptions()" , parameters);
      };
@@ -312,8 +329,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {string} mode Mode of the captions(disabled/showing)
      */
 
-    this.setClosedCaptionsMode = function(mode){
-      this.callToFlash("setVideoClosedCaptionsMode("+mode+")");
+    this.setClosedCaptionsMode = function(mode) {
+      this.callToFlash("setVideoClosedCaptionsMode(" + mode + ")");
     };
 
     /**
@@ -326,7 +343,7 @@ require("../../../html5-common/js/utils/constants.js");
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
      */
     this.setBitrate = function(id) {
-      this.callToFlash("setTargetBitrate("+id+")");
+      this.callToFlash("setTargetBitrate(" + id + ")");
     };
 
     /**
@@ -339,11 +356,11 @@ require("../../../html5-common/js/utils/constants.js");
       if (loaded && !rewind) return;
       if (!!rewind) {
         try {
-          this.callToFlash("load("+rewind+")");
+          this.callToFlash("load(" + rewind + ")");
           loaded = true;
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
-          console.log('[OSMF]: Failed to rewind video, probably ok; continuing');
+          OO.log('HDSFlash ['+this.id+']: Failed to rewind video, probably ok; continuing');
         }
       }
 
@@ -392,7 +409,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      this.callToFlash("videoSeek("+time+")");
+      this.callToFlash("videoSeek(" + time + ")");
     };
 
     /**
@@ -402,7 +419,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      this.callToFlash("changeVolume("+volume+")");
+      this.callToFlash("changeVolume(" + volume + ")");
     };
 
     /**
@@ -445,42 +462,30 @@ require("../../../html5-common/js/utils/constants.js");
       this.callToFlash("destroy");
 
       // Remove the element
-      $('#'+playerId).replaceWith('');
-      _flashVideoObject=null;
-
-      // return unbound object.
-      return JFlashBridge.unbind(playerId);
-    };
-
-    // Returns the SWF instance
-    this.swf = function () {
-      return JFlashBridge.getSWF(playerId);
+      $('#'+domId).replaceWith('');
+      _video=null;
+      $(_video).remove();
+      delete flashItems[this.id];
     };
 
     // Calls a Flash method
     this.callToFlash = function (data,dataObj) {
-      if (_flashVideoObject.sendToActionScript) {
-        dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
-        return _flashVideoObject.sendToActionScript(data,dataObj);
+      if(_video == undefined) { 
+        javascriptCommandQueue.push([data,dataObj]);
       } else {
-        actionscriptCommandQueue.push([data,dataObj]);
+        if (_video.sendToActionScript) {
+          dataObj = typeof dataObj != 'undefined' ? dataObj : "null";
+          return _video.sendToActionScript(data,dataObj, this.id);
+        } else {
+          if(actionscriptCommandQueue.length <= 100) {
+            actionscriptCommandQueue.push([data,dataObj]);
+          } else {
+            actionscriptCommandQueue.shift();
+            actionscriptCommandQueue.push([data,dataObj]);
+          }
+        }
       }
     };
-
-
-    // Receives a callback from Flash - Not used.
-    this.sendToJavaScript = function(data) {
-      OO.log('[OSMF]:sendToJavaScript: Call: ', data);
-      return true;
-    };
-
-    // **********************************************************************************/
-    // Example callback methods
-    // **********************************************************************************/
-
-    // **********************************************************************************/
-    // Event callback methods
-    // **********************************************************************************/
 
     /**
      * Stores the url of the video when load is started.
@@ -631,9 +636,26 @@ require("../../../html5-common/js/utils/constants.js");
       }
     };
 
+    var raiseHiddenCaption = function(event) {
+      var captionText = event.eventObject.text;
+      newController.notify(newController.EVENTS.CLOSED_CAPTION_CUE_CHANGED,captionText);
+    }
+
+    call = function() {
+        OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
+
+        var klass = flashItems[arguments[0]];
+  
+        if (klass) {
+          klass.onCallback(arguments[2]);
+        }
+        else {
+          OO.log('[OSMF]:JFlashBridge: No binding: ', arguments);
+        }
+      };
+
     // Receives a callback from Flash
-    onCallback = _.bind(function(data) {
-      // console.log("[OSMF]:onCallback: ", data);
+    this.onCallback = function(data) {
       var eventtitle =" ";
 
       for(var key in data) {
@@ -668,6 +690,11 @@ require("../../../html5-common/js/utils/constants.js");
       switch (eventtitle)
       {
        case "JSREADY":
+        if(javascriptCommandQueue.length != 0) {
+          for(var i = 0; i < javascriptCommandQueue.length; i++) {
+            this.callToFlash(javascriptCommandQueue[i][0], javascriptCommandQueue[i][1]);
+          }
+        }
         for (i = 0; i < actionscriptCommandQueue.length; i++) {
           this.callToFlash(actionscriptCommandQueue[i][0],actionscriptCommandQueue[i][1]);
         }
@@ -736,16 +763,32 @@ require("../../../html5-common/js/utils/constants.js");
        case "SIZE_CHANGED":
          raiseSizeChanged(data);
          break;
+       case "CLOSED_CAPTION_CUE_CHANGED":
+         raiseHiddenCaption(data);
+         break;
        case "ERROR":
         raiseErrorEvent(data);
         break;
       }
       return true;
-    }, this);
+    }
+
   };
+
   /************************************************************************************/
   // Helper methods
   /************************************************************************************/
+
+  /**
+   * Returns the SWF instance present in the Dom matching the provided id
+   * @private
+   * @method OoyalaFlashVideoWrapper#getSwf
+   * @param {string} thisId the id of the swf object sought.
+   * @returns {object} the object containing the desired swf.
+   */
+  var getSwf = function (thisId) {
+    return document.getElementsByName(thisId)[0];
+  };
 
   /**
    * Generates a random string.
@@ -756,57 +799,9 @@ require("../../../html5-common/js/utils/constants.js");
   var getRandomString = function() {
     return Math.random().toString(36).substring(7);
   };
+
   OO.Video.plugin(new OoyalaFlashVideoFactory());
 }(OO._, OO.$));
-
-var JFlashBridge = {
-  items: {},
-
-  bind: function(id, klass) {
-      OO.log('[OSMF]:JFlashBridge: Bind: ', id, klass);
-      this.items[id] = klass;
-  },
-
-  unbind: function(id) {
-     OO.log('[OSMF]:JFlashBridge: Unbind: ', id);
-     delete this.items[id];
-  },
-
-  call: function() {
-    OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
-    var klass = this.items[arguments[0]];
-    if (klass) {
-      var method = klass[arguments[1]];
-      if (method)
-      {
-        method.apply(klass, Array.prototype.slice.call(arguments, 2));
-      }
-      else
-        OO.log('[OSMF]:JFlashBridge: No method: ', arguments[1]);
-    }
-    else
-      OO.log('[OSMF]:JFlashBridge: No binding: ', arguments);
-  },
-
-  getSWF: function(movieName) {
-    if (navigator.appName.indexOf("Microsoft") != -1) {
-      OO.log("get swf returns some value",document.getElementsByName(movieName)[0]);
-      return document.getElementsByName(movieName)[0];
-    }
-    else{
-      OO.log("get swf returns some other value",document.getElementsByName(movieName)[0]);
-      return document.getElementsByName(movieName)[0];
-    }
-  }
-};
-
-// Return if the Dom and JavaScript are ready.
-// We cannot predict the presence of jQuery, so use a core javascript technique here.
-isReady = _.bind(function() {
-  if (document.readyState === "complete") {
-    return true;
-  }
-},this);
 
 /*! SWFObject v2.2 <http://code.google.com/p/swfobject/>
   is released under the MIT License <http://www.opensource.org/licenses/mit-license.php>
@@ -856,7 +851,7 @@ var swfobject = function() {
       windows = p ? /win/.test(p) : /win/.test(u),
       mac = p ? /mac/.test(p) : /mac/.test(u),
       webkit = /webkit/.test(u) ? parseFloat(u.replace(/^.*webkit\/(\d+(\.\d+)?).*$/, "$1")) : false, // returns either the webkit version or false if not webkit
-      ie = !+"\v1", // feature detection based on Andrea Giammarchi's solution: http://webreflection.blogspot.com/2009/01/32-bytes-to-know-if-your-browser-is-ie.html
+      ie = ! + "\v1", // feature detection based on Andrea Giammarchi's solution: http://webreflection.blogspot.com/2009/01/32-bytes-to-know-if-your-browser-is-ie.html
       playerVersion = [0,0,0],
       d = null;
     if (typeof nav.plugins != UNDEF && typeof nav.plugins[SHOCKWAVE_FLASH] == OBJECT) {
