@@ -871,7 +871,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @private
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
-    var raiseSeekedEvent = _.bind(function() {
+    var raiseSeekedEvent = _.bind(function(event) { // Firefox known issue: lack of global event.
       isSeeking = false;
 
       // After done seeking, see if any play events were received and execute them now
@@ -894,6 +894,7 @@ require("../../../html5-common/js/utils/environment.js");
         initialTime.reached = true;
       } else {
         this.controller.notify(this.controller.EVENTS.SEEKED);
+        raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event); // Firefox and Safari seek from paused state.
       }
     }, this);
 
