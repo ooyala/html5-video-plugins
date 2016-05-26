@@ -370,7 +370,7 @@ package
         jsEvent.args = dataObj;
       }
       dispatchEvent(jsEvent);
-      SendToDebugger(jsEvent.toString()  + " : " + videoId, "receivedFromJavaScript event", "log");
+      SendToDebugger(jsEvent.toString() + " : " + videoId, "receivedFromJavaScript event", "log");
     }
 
    /**
@@ -387,7 +387,7 @@ package
     {
       // channelBranch = info, debug, warn, error, log
       var channel:String = "OO." + channelBranch;
-      if (referrer) referrer = "[" + referrer + " : "+ thisVideoId +"]";
+      if (referrer) referrer = "[" + referrer + " : " + thisVideoId + "]";
       var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
                                                         referrer + ": " + value);
       return debugMessage;
