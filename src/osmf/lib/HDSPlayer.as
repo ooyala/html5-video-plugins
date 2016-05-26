@@ -750,7 +750,7 @@ package
         totalTime = 0;
       }
       eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime;
-      eventObject.duration = duration
+      eventObject.duration = totalTime;
       eventObject.buffer = _mediaPlayerSprite.mediaPlayer.bufferLength + _mediaPlayerSprite.mediaPlayer.currentTime;
       eventObject.seekRange_start = 0;
       eventObject.seekRange_end = totalTime;

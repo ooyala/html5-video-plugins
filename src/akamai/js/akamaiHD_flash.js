@@ -212,7 +212,6 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
-      var urlChanged = false;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -229,7 +228,7 @@ require("../../../html5-common/js/utils/constants.js");
       }
       if (!_.isEmpty(currentUrl)) 
       {
-        this.callToFlash(url);
+         this.callToFlash(url);
       }
       return urlChanged;
     };
