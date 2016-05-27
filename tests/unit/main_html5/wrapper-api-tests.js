@@ -27,6 +27,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   afterEach(function() {
+    OO.isEdge = false;
     OO.isAndroid = false;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     if (wrapper) { wrapper.destroy(); }
@@ -35,8 +36,8 @@ describe('main_html5 wrapper tests', function () {
   // helper functions
   var setFullSeekRange = function(duration) {
     element.duration = duration;
-    element.seekable.start = jasmine.createSpy("seekable.start() spy").andReturn(0);
-    element.seekable.end = jasmine.createSpy("seekable.end() spy").andReturn(duration);
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(duration);
     element.seekable.length = 1;
   }
 
@@ -98,6 +99,22 @@ describe('main_html5 wrapper tests', function () {
     expect(element.load.callCount).to.eql(1);
   });
 
+  it('should not call load when already loaded and not rewinding', function(){
+    spyOn(element, "load");
+    $(element).triggerHandler("loadedmetadata");
+    expect(element.load.wasCalled).to.be(false);
+    wrapper.load(false);
+    expect(element.load.wasCalled).to.be(false);
+  });
+
+  it('should call load when already loaded if rewinding', function(){
+    spyOn(element, "load");
+    $(element).triggerHandler("loadedmetadata");
+    expect(element.load.wasCalled).to.be(false);
+    wrapper.load(true);
+    expect(element.load.wasCalled).to.be(true);
+  });
+
   it('should call pause stream when rewinding', function(){
     spyOn(element, "pause");
     expect(element.pause.callCount).to.eql(0);
@@ -133,6 +150,19 @@ describe('main_html5 wrapper tests', function () {
     expect(element.load.callCount).to.eql(1);
     wrapper.load(true);
     expect(element.load.callCount).to.eql(2);
+  });
+
+  it('should not set currentTime or pause on Edge when loading with rewinding', function(){
+    OO.isEdge = true;
+    spyOn(element, "pause");
+    spyOn(element, "load");
+    element.currentTime = 10;
+    expect(element.pause.callCount).to.eql(0);
+    expect(element.load.callCount).to.eql(0);
+    wrapper.load(true);
+    expect(element.pause.callCount).to.eql(0);
+    expect(element.load.callCount).to.eql(1);
+    expect(element.currentTime).to.eql(10);
   });
 
   it('should act on initialTime if has not played', function(){
@@ -197,8 +227,8 @@ describe('main_html5 wrapper tests', function () {
 
   it('should ignore seek if seekrange is 0', function(){
     element.duration = 10;
-    element.seekable.start = jasmine.createSpy("seekable.start() spy").andReturn(0);
-    element.seekable.end = jasmine.createSpy("seekable.end() spy").andReturn(0);
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(0);
     element.seekable.length = 0;
     var returns = wrapper.seek(0);
     expect(returns).to.be(false);
@@ -241,6 +271,47 @@ describe('main_html5 wrapper tests', function () {
     expect(element.currentTime).to.eql(duration - 0.01);
   });
 
+  it('should block seekable from seeks until video initialization in safari', function(){
+    OO.isSafari = true;
+    vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
+    element.currentTime = 3;
+    element.duration = 10;
+    spyOn(element.seekable, "start").andReturn(2);
+    spyOn(element.seekable, "end").andReturn(10);
+    element.seekable.length = 1;
+
+    wrapper.seek(8);
+    expect(element.seekable.start.wasCalled).to.be(false);
+    expect(element.seekable.end.wasCalled).to.be(false);
+
+    $(element).triggerHandler("canplay");
+    wrapper.seek(8);
+    expect(element.seekable.start.wasCalled).to.be(true);
+    expect(element.seekable.end.wasCalled).to.be(true);
+  });
+
+  it('should reblock seekable from seeks upon load until video initialization in safari', function(){
+    OO.isSafari = true;
+    vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
+    element.currentTime = 3;
+    element.duration = 10;
+    element.seekable.length = 1;
+
+    spyOn(element.seekable, "start").andReturn(2);
+    spyOn(element.seekable, "end").andReturn(10);
+    $(element).triggerHandler("canplay");
+    wrapper.seek(8);
+    expect(element.seekable.start.wasCalled).to.be(true);
+    expect(element.seekable.end.wasCalled).to.be(true);
+
+    element.seekable.start.reset();
+    element.seekable.end.reset();
+    wrapper.load();
+    wrapper.seek(8);
+    expect(element.seekable.start.wasCalled).to.be(false);
+    expect(element.seekable.end.wasCalled).to.be(false);
+  });
+
   it('should set volume if between 0 and 1', function(){
     wrapper.setVolume(0.1);
     expect(element.volume).to.eql(0.1);
@@ -262,6 +333,27 @@ describe('main_html5 wrapper tests', function () {
     expect(element.volume).to.eql(0);
     wrapper.setVolume(-2);
     expect(element.volume).to.eql(0);
+  });
+
+  it('should notify VOLUME_CHANGE on volume change of video with empty string', function(){
+    vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
+    element.currentSrc = "";
+    vtc.notified = [];
+    wrapper.setVolume(0.3);
+    expect(vtc.notified.length).to.eql(2);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
+    vtc.notifyParameters = null;
+    vtc.notified = [];
+    element.currentSrc = null;
+    wrapper.setVolume(0.2);
+    expect(vtc.notified.length).to.eql(2);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.2 }]);
+    vtc.notifyParameters = null;
+    vtc.notified = [];
+    element.currentSrc = "url";
+    wrapper.setVolume(0.5);
+    expect(vtc.notified.length).to.eql(1);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.5 }]);
   });
 
   it('should prime a video element with play and pause', function(){
@@ -309,6 +401,13 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set closed captions', function(){
+    OO.CONSTANTS = {
+      CLOSED_CAPTIONS: {
+        SHOWING: "showing",
+        HIDDEN: "hidden",
+        DISABLED: "disabled"
+      }
+    };
     var language = "en";
     var closedCaptions = {
       closed_captions_vtt: {
@@ -333,6 +432,13 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should remove closed captions if language is null', function(){
+    OO.CONSTANTS = {
+      CLOSED_CAPTIONS: {
+        SHOWING: "showing",
+        HIDDEN: "hidden",
+        DISABLED: "disabled"
+      }
+    };
     var language = "en";
     var closedCaptions = {
       closed_captions_vtt: {
@@ -354,13 +460,20 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set the closed captions mode', function(){
+    OO.CONSTANTS = {
+      CLOSED_CAPTIONS: {
+        SHOWING: "showing",
+        HIDDEN: "hidden",
+        DISABLED: "disabled"
+      }
+    };
     //Mock textTracks
-    element.textTracks = [{ mode: "disabled" }];
-    expect(element.textTracks[0].mode).to.eql("disabled");
-    wrapper.setClosedCaptionsMode("showing");
-    expect(element.textTracks[0].mode).to.eql("showing");
-    wrapper.setClosedCaptionsMode("hidden");
-    expect(element.textTracks[0].mode).to.eql("hidden");
+    element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED }];
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+    wrapper.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+    wrapper.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
   });
 
   it('should set the crossorigin attribute', function(){
