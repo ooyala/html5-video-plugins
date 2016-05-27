@@ -5,3 +5,5 @@ npm-debug.log
 build/*
 coverage/*
 docs/*
+link_report.xml
+src/osmf/lib/closedCaption.swc
