@@ -75,9 +75,13 @@ package
     private var _currentCaption:Caption;
     public static const BASE_SCALE_FACTOR_HEIGHT:Number = 400;
     public static const BASE_SCALE_FACTOR:Number = 1;
-    public var _bitrateArray:Array=new Array();
-    public var _bitrateIdArray:Array=new Array();
+    public var _bitrateArray:Array = new Array();
+    public var _bitrateIdArray:Array = new Array();
     private var _currentBitrate:Number = -1;
+    private var _previousBitrate:Number = -1;
+    private var _bitrateFlag:Number = 0;
+    private var _hiddenCaptionFlag:Boolean = false;
+    private var _previousCaptionMode:String;
     
     /**
      * Constructor
@@ -305,12 +309,6 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
-          _bitrateIdArray.length = 0;
-          for(var i:int = 0; i < getStreamsCount(); i++)
-          {
-            _bitrateIdArray.push((_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
-          }
-
           totalBitratesAvailable();
           if (_playQueue)
           {
@@ -331,6 +329,7 @@ package
     private function onPlayComplete(event:TimeEvent):void
     {
       _playheadTimer.stop();
+      _previousBitrate=_currentBitrate;
       _resource = null;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
@@ -423,12 +422,34 @@ package
       
       //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
       _playQueue = false;
-
+      if(_playerState == MediaPlayerState.READY)
+      {
+        _mediaPlayerSprite.mediaPlayer.play();
+        var id:String;
+        if(_previousBitrate != -1)
+        {
+          if(_bitrateFlag != 0)
+          {
+            for (var i:int = 0; i < _bitrateIdArray.length; i++)
+            {
+              id = _bitrateIdArray[i];
+              if (_previousBitrate == (_bitrateArray[id][0].bitrate)/1000)
+              {
+                _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = false;
+                _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[id][1]);
+              }
+            }
+          }
+          else
+          {
+            _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = true;
+          }
+        }
+      }
       //Included MediaPlayerState.BUFFERING in the condition to handle the play requests that occurs
       //when the player is in buffering state.
       
-      if (_playerState == MediaPlayerState.READY || _playerState == MediaPlayerState.PAUSED 
-          || _playerState == MediaPlayerState.BUFFERING)
+      else if (_playerState == MediaPlayerState.PAUSED || _playerState == MediaPlayerState.BUFFERING)
       {
         _mediaPlayerSprite.mediaPlayer.play();
       }
@@ -547,6 +568,8 @@ package
       var captionsObject:Object =(Object)(event.args);
       var closedCaptions:Object = captionsObject.closedCaptions;
       var params:Object = captionsObject.params;
+      _mode = params.mode;
+      _previousCaptionMode = _mode;
       _selectedCaptionLanguage = captionsObject.language;
       
       if (closedCaptions.closed_captions_dfxp != null)
@@ -709,16 +732,18 @@ package
     public function onSetVideoClosedCaptionsMode(event:DynamicEvent):void
     {
       _mode = (String)(event.args);
-
-      if(_mode == "disabled")
+      _captioningEnabled = false;
+      if(_mode == "disabled" && _previousCaptionMode == "hidden")
       {
         _captionLabel.visible = false;
+        var eventObject:Object = new Object();
+        eventObject.text = "" ;
+        dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
       }
-      else if(_mode == "showing")
+      else if(_mode == "disabled" && _previousCaptionMode == "showing")
       {
-        _captionLabel.visible = true;
-      }
-       
+        _captionLabel.visible = false;
+      }      
       SendToDebugger("Set Video Closed Captions Mode :" + _mode, "onSetVideoClosedCaptionsMode");
     }
     
@@ -750,7 +775,7 @@ package
         totalTime = 0;
       }
       eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime;
-      eventObject.duration = duration
+      eventObject.duration = totalTime;
       eventObject.buffer = _mediaPlayerSprite.mediaPlayer.bufferLength + _mediaPlayerSprite.mediaPlayer.currentTime;
       eventObject.seekRange_start = 0;
       eventObject.seekRange_end = totalTime;
@@ -777,6 +802,37 @@ package
             captionFlag = true;
             break;
           }
+        }
+      }
+      else if(_captionObject != null && _mode == "hidden")
+      {
+        for each(var captionObject:Caption in _captionObject[_selectedCaptionLanguage])
+        {  
+          _hiddenCaptionFlag =false;  
+          var eventObject:Object = new Object();
+          var caption:Caption = captionObject;
+          if(caption.end > _mediaPlayerSprite.mediaPlayer.currentTime && caption.start <= _mediaPlayerSprite.mediaPlayer.currentTime)
+          { 
+            _hiddenCaptionFlag =true;  
+            if ( (caption.text != _previousCaption) || (_captioningEnabled && (caption.text == _previousCaption) ) )
+            {
+              var removeHtmlRegExp:RegExp = new RegExp("<[^<]+?>", "gi");
+              var ccText = (caption.text).replace(removeHtmlRegExp, "");
+              eventObject.text = ccText;
+              dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
+              _previousCaption = caption.text;
+              _captioningEnabled = false;
+            }
+            captionFlag = false;
+            break;
+          }
+        }
+        if(!_hiddenCaptionFlag &&  _previousCaption != "" )
+        {
+          eventObject.text = "" ;
+          _previousCaption = "" ;
+          dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
+          _hiddenCaptionFlag = false;
         }
       }
       if (!captionFlag)
@@ -884,14 +940,16 @@ package
      */
     public function  totalBitratesAvailable():void
     { 
-      var eventObject:Object=new Object();
+      if (_bitrateIdArray.length > 0 ) return;
+      var eventObject:Object = new Object();
       var id:String;
       if (getStreamsCount() > 0)
       {
-        for (var i:int = 0; i < _bitrateIdArray.length; i++)
+        for (var i:int = 0; i < getStreamsCount(); i++)
         {
+          _bitrateIdArray.push((_mediaPlayerSprite.mediaPlayer.getBitrateForDynamicStreamIndex(i)) + "kbps");
           id = _bitrateIdArray[i];
-          var bitrateObject = new Object();
+          var bitrateObject:Object = new Object();
           bitrateObject.id = id;
           bitrateObject.height = 0;
           bitrateObject.width = 0;
@@ -921,6 +979,7 @@ package
          _mediaPlayerSprite.mediaPlayer.maxAllowedDynamicStreamIndex =  _mediaPlayerSprite.mediaPlayer.numDynamicStreams - 1;
          //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
          _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
+         _bitrateFlag = 1;
        }
        else 
        {
@@ -931,6 +990,7 @@ package
            eventObject.width = 0;
            eventObject.bitrate = 0;
            dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
+           _bitrateFlag = 0;
        }
       }
       catch(error:Error)

@@ -13,7 +13,6 @@ require("../html5-common/js/utils/constants.js");
    * @class TemplateVideoFactory
    * @classdesc Factory for creating video player objects that use HTML5 video tags.
    * @property {string} name The name of the plugin
-   * @property {boolean} ready The readiness of the plugin for use.  True if elements can be created.
    * @property {object} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
    * @property {object} features An array of supported features (ex. OO.VIDEO.FEATURE.CLOSED_CAPTIONS)
    * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
@@ -24,9 +23,6 @@ require("../html5-common/js/utils/constants.js");
     this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
                       OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
-
-    // This module defaults to ready because no setup or external loading is required
-    this.ready = true;
 
     /**
      * Creates a video player instance using TemplateVideoWrapper.
@@ -57,8 +53,7 @@ require("../html5-common/js/utils/constants.js");
     * @param {string} playerId The unique player identifier of the player creating this instance
     * @returns {object} A reference to the wrapper for the video element
     */
-    this.createFromExisting = function(domId, ooyalaVideoController, playerId)
-    {
+    this.createFromExisting = function(domId, ooyalaVideoController, playerId) {
       var sharedVideoElement = $("#" + domId)[0];
       var wrapper = new TemplateVideoWrapper(domId, sharedVideoElement);
       wrapper.controller = ooyalaVideoController;
@@ -72,7 +67,6 @@ require("../html5-common/js/utils/constants.js");
      * @method TemplateVideoFactory#destroy
      */
     this.destroy = function() {
-      this.ready = false;
       this.encodings = [];
       this.create = function() {};
     };
@@ -168,6 +162,17 @@ require("../html5-common/js/utils/constants.js");
     var unsubscribeAllEvents = _.bind(function() {
       _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
     }, this);
+
+    /**
+     * Set DRM data
+     * @public
+     * @method TemplateVideoWrapper#setDRM
+     * @param {object} drm DRM data object contains widevine, playready and fairplay as keys and object as value that includes
+     * la_url {string} (optional for playready), and certificate_url {string} (for fairplay only).
+     * (ex. {"widevine": {"la_url":"https://..."},"playready": {}, "fairplay": {"la_url":"https://...", "certificate_url":"https://..."}}})
+     */
+    this.setDRM = function(drm) {
+    };
 
     /**
      * Sets the url of the video.
@@ -421,6 +426,11 @@ require("../html5-common/js/utils/constants.js");
                              [{"id": "low", "height": 1080, "width": 1920, "bitrate": 3750000},
                               {"id": "medium", "height": 1080, "width": 1920, "bitrate": 7500000},
                               {"id": "high","height": 1080, "width": 1920, "bitrate": 15000000}]);
+    };
+
+    // The VTC should be notified with new cue text whenever a plugin closed caption cue changes.
+    var raiseClosedCaptionCueChanged = function(cueText) {
+      this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueText);
     };
   };
 
