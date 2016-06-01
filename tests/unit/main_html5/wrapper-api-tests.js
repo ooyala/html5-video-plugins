@@ -400,7 +400,7 @@ describe('main_html5 wrapper tests', function () {
     expect(element.src).to.eql("");
   });
 
-  it('should set closed captions', function(){
+  it('should set external closed captions', function(){
     OO.CONSTANTS = {
       CLOSED_CAPTIONS: {
         SHOWING: "showing",
@@ -431,7 +431,7 @@ describe('main_html5 wrapper tests', function () {
     expect(element.children[0].getAttribute("srclang")).to.eql("en");
   });
 
-  it('should remove closed captions if language is null', function(){
+  it('should set closed captions mode for in-stream captions', function(){
     OO.CONSTANTS = {
       CLOSED_CAPTIONS: {
         SHOWING: "showing",
@@ -439,6 +439,48 @@ describe('main_html5 wrapper tests', function () {
         DISABLED: "disabled"
       }
     };
+
+    element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, kind: "captions" }];
+    $(element).triggerHandler("playing");
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+    wrapper.setClosedCaptions("CC", null, { mode: "showing" });
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+  });
+
+  it('should set both in-stream and external closed captions and switches between them', function(){
+    OO.CONSTANTS = {
+      CLOSED_CAPTIONS: {
+        SHOWING: "showing",
+        HIDDEN: "hidden",
+        DISABLED: "disabled"
+      }
+    };
+    var closedCaptions = {
+      closed_captions_vtt: {
+        en: {
+          name: "English",
+          url: "http://ooyala.com"
+        }
+      }
+    };
+    
+    element.textTracks = [{ kind: "captions" }, { kind: "captions" }];
+    $(element).triggerHandler("playing"); // this adds in-stream captions
+
+    wrapper.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+    expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+
+    wrapper.setClosedCaptions("CC", null, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING}); 
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+    expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+
+    wrapper.setClosedCaptions("en", closedCaptions, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN}); // this adds external captions
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+    expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+  });
+
+  it('should remove closed captions if language is null', function(){
     var language = "en";
     var closedCaptions = {
       closed_captions_vtt: {
