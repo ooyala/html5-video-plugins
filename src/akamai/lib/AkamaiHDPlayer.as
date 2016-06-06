@@ -9,6 +9,7 @@ package
   import flash.events.Event;
   import flash.events.MouseEvent;
   import flash.events.TimerEvent;
+  import flash.events.NetStatusEvent;
   import flash.external.ExternalInterface;
   import flash.system.Security;
   import flash.utils.Timer;
@@ -39,8 +40,11 @@ package
     private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
     private var _playQueue:Boolean = false;
-    private var _bitrateMap:Object = new Object();
+    private var _initialPlay:Boolean = true;
+    private var _initalSeekTime:Number = 0;
+    public var _bitrateArray:Array=new Array();
     private var _bitrateIdArray:Array = new Array();
+    private var _currentBitrate:Number = -1;
 
     /**
      * Constructor
@@ -67,6 +71,7 @@ package
       _streamController.mediaPlayer.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                      onPlayerStateChange);
       _streamController.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
+      _streamController.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       Logger.log("events added", "registerListeners");
     }
     
@@ -82,6 +87,8 @@ package
       _streamController.mediaPlayer.removeEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                         onPlayerStateChange);
       _streamController.mediaPlayer.removeEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
+      _streamController.mediaPlayer.removeEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
+      _netStream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
     }
     
     /**
@@ -152,6 +159,7 @@ package
     {
       Logger.log("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
+      _netStream.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
       _akamaiVideoSurface.attachNetStream(_netStream);
       if (_playQueue)
       {
@@ -160,6 +168,56 @@ package
       }
     }
     
+    /**
+     * Event listner for NetStatusEvent
+     * @private
+     * @method AkamaiHD3Player#onNetStatus
+     * @param {NetStatusEvent} event
+     */
+    private function onNetStatus(event:NetStatusEvent):void
+    {
+      if (event.info.code == "NetStream.Buffer.Full")
+      {
+        if (_initialPlay)
+          {
+            //Sets initial time to duration when it is greater than duration
+            if (_initalSeekTime > _streamController.mediaPlayer.duration)
+            {
+              _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
+            }
+            //Sets initial time to zero when it is less than zero
+            else if (_initalSeekTime < 0)
+            {
+              _initalSeekTime = 0;
+            }
+          }
+        if (_initalSeekTime != 0)
+        {
+          if (_streamController.mediaPlayer.canSeek &&
+              (_streamController.mediaPlayer.canSeekTo(_initalSeekTime)))
+          {
+            _streamController.seek(_initalSeekTime);
+          }
+          _initalSeekTime = 0;
+        }
+      }
+      else if (event.info.code == "NetStream.Seek.Notify")
+      {
+        if(_initialPlay == false)
+        {
+          dispatchEvent(new DynamicEvent(DynamicEvent.SEEKED,null));
+        }
+        else
+        {
+          _initialPlay = false;
+        }
+      }
+      else if (event.info.code == "NetStream.Seek.Failed")
+      {
+        Logger.log("Error:Seeking Operation failed", "onNetStatus");
+      }
+    }
+
     /**
      * Adds the display object to the streamcontroller.
      * @private
@@ -255,16 +313,6 @@ package
     }
     
     /**
-     * Sends the SEEKED event to the controller, after seeking is completed successfully.
-     * @protected
-     * @method AkamaiHDPlayer#onSeekingChange
-     * @param {SeekEvent} event
-     */
-    protected function onSeekingChange(event:SeekEvent):void
-    {
-    }
-    
-    /**
      * Initiates the play functionality through the plugin.
      * @public
      * @method AkamaiHDPlayer#onVideoPlay
@@ -316,6 +364,24 @@ package
      */
     public function onVideoSeek(event:DynamicEvent):void
     {
+      var time:Number = (Number)(event.args);
+
+      if (_initialPlay) 
+      {
+        _initalSeekTime = time;
+        return;
+      }
+
+      if (_streamController.mediaPlayer.canSeek &&
+        (_streamController.mediaPlayer.canSeekTo(time)))
+      {
+        _streamController.seek(time);
+        Logger.log("Seek to: " + time, "onVideoSeek");
+      }
+      else
+      {
+        Logger.log("Error:Cannot seek to : " + time, "onVideoSeek");
+      }
     }
     
     /**
@@ -415,16 +481,6 @@ package
     }
     
     /**
-     * Sets the initial time from where the video should begin the play.
-     * @public
-     * @method AkamaiHDPlayer#onSetInitialTime
-     * @param {Event} event The event passed from the external interface.
-     */
-    public function onSetInitialTime(event:DynamicEvent):void
-    {
-    }
-    
-    /**
      * Returns the current time of the video.
      * @public
      * @method AkamaiHDPlayer#onGetCurrentTime
@@ -465,13 +521,13 @@ package
           bitrateObject.height = 0;
           bitrateObject.width = 0;
           bitrateObject.bitrate = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
-          _bitrateMap.id = [ bitrateObject, i];
+          _bitrateArray[id] = [ bitrateObject, i];
           eventObject[i] = bitrateObject;
         }
         dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
       } 
     }
-
+    
     /**
      * Sets the bitrate and dispatches BITRATE_CHANGED event.
      * @public
@@ -479,7 +535,33 @@ package
      * @param {DynamicEvent} event The event passed from the external interface.
      */
     public function onSetTargetBitrate(event:DynamicEvent):void
-    { 
+    {
+      var eventObject:Object = new Object();
+      var bitrateId:String= (String)(event.args);
+      try
+      {
+       if (bitrateId != "auto")
+       {
+         _streamController.mediaPlayer.autoDynamicStreamSwitch = false;
+         _streamController.mediaPlayer.maxAllowedDynamicStreamIndex =  _streamController.mediaPlayer.numDynamicStreams - 1;
+         //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
+         _streamController.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
+       }
+       else 
+       {
+         _streamController.mediaPlayer.autoDynamicStreamSwitch = true;
+
+         eventObject.id = "auto";
+         eventObject.height = 0;
+         eventObject.width = 0;
+         eventObject.bitrate = 0;
+         dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
+       }
+      }
+      catch(error:Error)
+      {
+        Logger.log("onSetTargetBitrate Error :"+error.errorID,"onSetTargetBitrate");
+      } 
     }
 
     /**
@@ -490,6 +572,28 @@ package
      */
     private function onBitrateChanged(event:DynamicStreamEvent):void
     {
+      var eventObject:Object = new Object();
+      var id:String;
+    
+      if (!event.switching)
+      {
+        var bitrateIndex:int = _streamController.mediaPlayer.currentDynamicStreamIndex;
+        var newBitrate:Number = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(bitrateIndex);
+
+        if (newBitrate != 0 && _currentBitrate != newBitrate)
+        {
+          for (var i:int = 0; i < _bitrateIdArray.length; i++)
+          {
+            id = _bitrateIdArray[i];
+            if (newBitrate == (_bitrateArray[id][0].bitrate)/1000)
+            {
+              dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(_bitrateArray[id][0])));
+              _currentBitrate = newBitrate;
+              break;
+            }
+          }
+        }
+      }
     }
     
     /**
