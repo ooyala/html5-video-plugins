@@ -96,6 +96,32 @@ package
     private function bufferingChangeHandler(e:BufferEvent):void
     {
     }
+
+    /**
+     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
+     * @private
+     * @method AkamaiHDPlayer#SendToDebugger
+     * @param {string} value The value to be passed to the browser console.
+     * @param {string} referrer The fuction or process which passed the value.
+     * @param {string} channelBranch It can be info, debug, warn, error or log.
+     * @returns {boolean} True or false indicating success
+     */
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
+    {
+      var channel:String; 
+      if (channelBranch == "log") 
+      {
+        channel = "OO." + channelBranch;
+      }
+      else 
+      {
+        channel = "console." + channelBranch;
+      }
+      if (referrer) referrer = "[" + referrer + "]";
+      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
+                                                        referrer + ": " + value);
+      return debugMessage;
+    }
     
     /**
      * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
