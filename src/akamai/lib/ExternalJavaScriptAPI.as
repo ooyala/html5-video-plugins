@@ -183,6 +183,7 @@ package
     */
     private function onVideoSeek(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onVideoSeek(event);
     }
 
    /**
@@ -245,16 +246,6 @@ package
     * @param {Event} event
     */
     private function onSetVideoClosedCaptionsMode(event:DynamicEvent):void
-    {
-    }
-
-   /**
-    * Passes the initial time to the player, from which the playback is to be started.
-    * @private
-    * @method ExternalJavaScriptAPI#onSetInitialTime
-    * @param {DynamicEvent} event
-    */
-    private function onSetInitialTime(event:DynamicEvent):void
     {
     }
 

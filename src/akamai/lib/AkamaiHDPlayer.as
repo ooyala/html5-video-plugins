@@ -9,6 +9,7 @@ package
   import flash.events.Event;
   import flash.events.MouseEvent;
   import flash.events.TimerEvent;
+  import flash.events.NetStatusEvent;
   import flash.external.ExternalInterface;
   import flash.system.Security;
   import flash.utils.Timer;
@@ -41,6 +42,8 @@ package
     private var _playQueue:Boolean = false;
     private var _bitrateMap:Object = new Object();
     private var _bitrateIdArray:Array = new Array();
+    private var _initialPlay:Boolean = true;
+    private var _initalSeekTime:Number = 0;
 
     /**
      * Constructor
@@ -67,7 +70,7 @@ package
       _streamController.mediaPlayer.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                      onPlayerStateChange);
       _streamController.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
-      Logger.log("events added", "registerListeners");
+      SendToDebugger("events added", "registerListeners");
     }
     
     /**
@@ -82,6 +85,7 @@ package
       _streamController.mediaPlayer.removeEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                         onPlayerStateChange);
       _streamController.mediaPlayer.removeEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
+      _netStream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
     }
     
     /**
@@ -120,13 +124,39 @@ package
     }
     
     /**
+     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
+     * @private
+     * @method AkamaiHDPlayer#SendToDebugger
+     * @param {string} value The value to be passed to the browser console.
+     * @param {string} referrer The fuction or process which passed the value.
+     * @param {string} channelBranch It can be info, debug, warn, error or log.
+     * @returns {boolean} True or false indicating success
+     */
+    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
+    {
+      var channel:String; 
+      if (channelBranch == "log") 
+      {
+        channel = "OO." + channelBranch;
+      }
+      else 
+      {
+        channel = "console." + channelBranch;
+      }
+      if (referrer) referrer = "[" + referrer + "]";
+      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
+                                                        referrer + ": " + value);
+      return debugMessage;
+    }
+    
+    /**
      * Creates the MediaPlayerSprite and DefaultMediaFactory instances.
      * @public
      * @method AkamaiHDPlayer#initMediaPlayer
      */
     public function initMediaPlayer():void
     {
-      Logger.log("initMediaPlayer()", "initMediaPlayer");
+      SendToDebugger("initMediaPlayer()", "initMediaPlayer");
       
       /* Creates a timer to keep track of the TIME_UPDATE event.
       The triggering value can be changed as per the specifications. */
@@ -150,8 +180,9 @@ package
      */
     private function onNetStreamReady(event:AkamaiHDSEvent):void
     {
-      Logger.log("onNetStreamReady" , "onNetStreamReady");
+      SendToDebugger("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
+      _netStream.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
       _akamaiVideoSurface.attachNetStream(_netStream);
       if (_playQueue)
       {
@@ -160,6 +191,56 @@ package
       }
     }
     
+    /**
+     * Event listner for NetStatusEvent
+     * @private
+     * @method AkamaiHD3Player#onNetStatus
+     * @param {NetStatusEvent} event
+     */
+    private function onNetStatus(event:NetStatusEvent):void
+    {
+      if (event.info.code == "NetStream.Buffer.Full")
+      {
+        if (_initialPlay)
+        {
+          //Sets initial time to duration when it is greater than duration
+          if (_initalSeekTime > _streamController.mediaPlayer.duration)
+          {
+            _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
+          }
+          //Sets initial time to zero when it is less than zero
+          else if (_initalSeekTime < 0)
+          {
+            _initalSeekTime = 0;
+          }
+        }
+        if (_initalSeekTime != 0)
+        {
+          if (_streamController.mediaPlayer.canSeek &&
+              (_streamController.mediaPlayer.canSeekTo(_initalSeekTime)))
+          {
+            _streamController.seek(_initalSeekTime);
+          }
+          _initalSeekTime = 0;
+        }
+      }
+      else if (event.info.code == "NetStream.Seek.Notify")
+      {
+        if(_initialPlay == false)
+        {
+          dispatchEvent(new DynamicEvent(DynamicEvent.SEEKED,null));
+        }
+        else
+        {
+          _initialPlay = false;
+        }
+      }
+      else if (event.info.code == "NetStream.Seek.Failed")
+      {
+        SendToDebugger("Error:Seeking Operation failed", "onNetStatus");
+      }
+    }
+
     /**
      * Adds the display object to the streamcontroller.
      * @private
@@ -178,7 +259,7 @@ package
      */
     private function onPlayerStateChange(event:MediaPlayerStateChangeEvent):void
     {
-      Logger.log("akamaiHD state changed: " + event.state, "onPlayerStateChange");
+      SendToDebugger("akamaiHD state changed: " + event.state, "onPlayerStateChange");
       
       switch(event.state)
       {
@@ -251,17 +332,7 @@ package
         default:
           break;
       }
-      Logger.log("Error: " + event.error["errorID"], " " + event.error.detail);
-    }
-    
-    /**
-     * Sends the SEEKED event to the controller, after seeking is completed successfully.
-     * @protected
-     * @method AkamaiHDPlayer#onSeekingChange
-     * @param {SeekEvent} event
-     */
-    protected function onSeekingChange(event:SeekEvent):void
-    {
+      SendToDebugger("Error: " + event.error["errorID"], " " + event.error.detail);
     }
     
     /**
@@ -304,7 +375,7 @@ package
       }
       else
       {
-        Logger.log("Error in pausing video: Player State: ", "onVideoPause");
+        SendToDebugger("Error in pausing video: Player State: ", "onVideoPause");
       }
     }
     
@@ -316,6 +387,23 @@ package
      */
     public function onVideoSeek(event:DynamicEvent):void
     {
+      var time:Number = (Number)(event.args);
+      if (_initialPlay) 
+      {
+        _initalSeekTime = time;
+        return;
+      }
+
+      if (_streamController.mediaPlayer.canSeek &&
+          (_streamController.mediaPlayer.canSeekTo(time)))
+      {
+        _streamController.seek(time);
+        SendToDebugger("Seek to: " + time, "onVideoSeek");
+      }
+      else
+      {
+        SendToDebugger("Error:Cannot seek to : " + time, "onVideoSeek");
+      }
     }
     
     /**
@@ -411,16 +499,6 @@ package
      * @param {Event} event The event passed from the external interface.
      */
     public function onPlayheadUpdate(event:Event):void
-    {
-    }
-    
-    /**
-     * Sets the initial time from where the video should begin the play.
-     * @public
-     * @method AkamaiHDPlayer#onSetInitialTime
-     * @param {Event} event The event passed from the external interface.
-     */
-    public function onSetInitialTime(event:DynamicEvent):void
     {
     }
     

@@ -212,6 +212,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
+      var urlChanged = false;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -228,7 +229,7 @@ require("../../../html5-common/js/utils/constants.js");
       }
       if (!_.isEmpty(currentUrl)) 
       {
-         this.callToFlash(url);
+        this.callToFlash(url);
       }
       return urlChanged;
     };
@@ -292,6 +293,9 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
+      if (!hasPlayed) {
+        this.seek(initialTime);
+      }
     };
 
     /**
@@ -324,6 +328,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      this.callToFlash("videoSeek("+time+")");
     };
 
     /**
@@ -408,6 +413,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
+      currentUrl = this.callToFlash("getUrl");
     };
 
     var onLoadedMetadata = function() {
@@ -428,9 +434,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseSeekingEvent = function() {
+      self.controller.notify(self.controller.EVENTS.SEEKING);
     };
 
     var raiseSeekedEvent = function() {
+      self.controller.notify(self.controller.EVENTS.SEEKED);
     };
 
     var raiseBufferingEvent = function() {
@@ -575,8 +583,14 @@ require("../../../html5-common/js/utils/constants.js");
        case "RATE_CHANGE":
         raiseRatechangeEvent();
         break;
+       case "STALLED":
+        raiseStalledEvent();
+        break;
        case "VOLUME_CHANGED":
         raiseVolumeEvent(data);
+        break;
+       case "WAITING":
+        raiseWaitingEvent();
         break;
        case "TIME_UPDATE":
         raiseTimeUpdate(data);
