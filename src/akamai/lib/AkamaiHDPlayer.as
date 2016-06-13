@@ -40,10 +40,11 @@ package
     private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
     private var _playQueue:Boolean = false;
-    private var _bitrateMap:Object = new Object();
-    private var _bitrateIdArray:Array = new Array();
     private var _initialPlay:Boolean = true;
     private var _initalSeekTime:Number = 0;
+    public var _bitrateArray:Array=new Array();
+    private var _bitrateIdArray:Array = new Array();
+    private var _currentBitrate:Number = -1;
 
     /**
      * Constructor
@@ -70,6 +71,7 @@ package
       _streamController.mediaPlayer.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                      onPlayerStateChange);
       _streamController.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
+      _streamController.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       SendToDebugger("events added", "registerListeners");
     }
     
@@ -85,6 +87,7 @@ package
       _streamController.mediaPlayer.removeEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                         onPlayerStateChange);
       _streamController.mediaPlayer.removeEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
+      _streamController.mediaPlayer.removeEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       _netStream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
     }
     
@@ -517,13 +520,13 @@ package
           bitrateObject.height = 0;
           bitrateObject.width = 0;
           bitrateObject.bitrate = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(i) * 1000;
-          _bitrateMap.id = [ bitrateObject, i];
+          _bitrateArray[id] = [ bitrateObject, i];
           eventObject[i] = bitrateObject;
         }
         dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
       } 
     }
-
+    
     /**
      * Sets the bitrate and dispatches BITRATE_CHANGED event.
      * @public
@@ -531,7 +534,33 @@ package
      * @param {DynamicEvent} event The event passed from the external interface.
      */
     public function onSetTargetBitrate(event:DynamicEvent):void
-    { 
+    {
+      var eventObject:Object = new Object();
+      var bitrateId:String= (String)(event.args);
+      try
+      {
+       if (bitrateId != "auto")
+       {
+         _streamController.mediaPlayer.autoDynamicStreamSwitch = false;
+         _streamController.mediaPlayer.maxAllowedDynamicStreamIndex =  _streamController.mediaPlayer.numDynamicStreams - 1;
+         //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
+         _streamController.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
+       }
+       else 
+       {
+         _streamController.mediaPlayer.autoDynamicStreamSwitch = true;
+
+         eventObject.id = "auto";
+         eventObject.height = 0;
+         eventObject.width = 0;
+         eventObject.bitrate = 0;
+         dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
+       }
+      }
+      catch(error:Error)
+      {
+        Logger.log("onSetTargetBitrate Error :"+error.errorID,"onSetTargetBitrate");
+      } 
     }
 
     /**
@@ -542,6 +571,28 @@ package
      */
     private function onBitrateChanged(event:DynamicStreamEvent):void
     {
+      var eventObject:Object = new Object();
+      var id:String;
+    
+      if (!event.switching)
+      {
+        var bitrateIndex:int = _streamController.mediaPlayer.currentDynamicStreamIndex;
+        var newBitrate:Number = _streamController.mediaPlayer.getBitrateForDynamicStreamIndex(bitrateIndex);
+
+        if (newBitrate != 0 && _currentBitrate != newBitrate)
+        {
+          for (var i:int = 0; i < _bitrateIdArray.length; i++)
+          {
+            id = _bitrateIdArray[i];
+            if (newBitrate == (_bitrateArray[id][0].bitrate)/1000)
+            {
+              dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(_bitrateArray[id][0])));
+              _currentBitrate = newBitrate;
+              break;
+            }
+          }
+        }
+      }
     }
     
     /**

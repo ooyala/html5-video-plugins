@@ -98,7 +98,7 @@ package
       _akamaiHDPlayer.addEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
-      //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       //_akamaiHDPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
       Logger.log("events added", "registerListeners");
@@ -249,7 +249,7 @@ package
     {
     }
 
-    /**
+   /**
     * Passes the target bitrate to the player.
     * @private
     * @method ExternalJavaScriptAPI#onSetTargetBitrate
@@ -257,6 +257,7 @@ package
     */
     private function onSetTargetBitrate(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onSetTargetBitrate(event);
     }
     
    /**

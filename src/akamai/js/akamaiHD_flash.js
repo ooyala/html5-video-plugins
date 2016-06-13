@@ -94,7 +94,7 @@ require("../../../html5-common/js/utils/constants.js");
     }
     this.encodings = testForFlash();
     this.technology = OO.VIDEO.TECHNOLOGY.FLASH;
-    this.features = [ ];
+    this.features = [ OO.VIDEO.FEATURE.BITRATE_CONTROL ];
 
     /**
      * Creates a video player instance using OoyalaAkamaiHDFlashVideoWrapper.
@@ -265,6 +265,7 @@ require("../../../html5-common/js/utils/constants.js");
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
      */
     this.setBitrate = function(id) {
+      this.callToFlash("setTargetBitrate("+id+")");
     };
 
     /**
@@ -495,6 +496,13 @@ require("../../../html5-common/js/utils/constants.js");
     };
   
     var raiseBitrateChanged = function(event) {
+      var vtcBitrate = {
+          id: event.eventObject.id,
+          width: event.eventObject.width,
+          height: event.eventObject.height,
+          bitrate: event.eventObject.bitrate
+      }
+      self.controller.notify(self.controller.EVENTS.BITRATE_CHANGED,vtcBitrate);
     };
 
     var raiseBitratesAvailable = function(event) {
@@ -612,6 +620,9 @@ require("../../../html5-common/js/utils/constants.js");
         break;
        case "BITRATES_AVAILABLE":
         raiseBitratesAvailable(data);
+        break;
+       case "BITRATE_CHANGED":
+        raiseBitrateChanged(data);
         break;
        case "ERROR":
         raiseErrorEvent(data);
