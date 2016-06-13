@@ -72,7 +72,7 @@ package
                                                      onPlayerStateChange);
       _streamController.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
       _streamController.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
-      Logger.log("events added", "registerListeners");
+      SendToDebugger("events added", "registerListeners");
     }
     
     /**
@@ -99,7 +99,7 @@ package
     private function bufferingChangeHandler(e:BufferEvent):void
     {
     }
-
+    
     /**
      * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
      * @private
@@ -133,7 +133,7 @@ package
      */
     public function initMediaPlayer():void
     {
-      Logger.log("initMediaPlayer()", "initMediaPlayer");
+      SendToDebugger("initMediaPlayer()", "initMediaPlayer");
       
       /* Creates a timer to keep track of the TIME_UPDATE event.
       The triggering value can be changed as per the specifications. */
@@ -157,7 +157,7 @@ package
      */
     private function onNetStreamReady(event:AkamaiHDSEvent):void
     {
-      Logger.log("onNetStreamReady" , "onNetStreamReady");
+      SendToDebugger("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
       _netStream.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
       _akamaiVideoSurface.attachNetStream(_netStream);
@@ -179,18 +179,18 @@ package
       if (event.info.code == "NetStream.Buffer.Full")
       {
         if (_initialPlay)
+        {
+          //Sets initial time to duration when it is greater than duration
+          if (_initalSeekTime > _streamController.mediaPlayer.duration)
           {
-            //Sets initial time to duration when it is greater than duration
-            if (_initalSeekTime > _streamController.mediaPlayer.duration)
-            {
-              _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
-            }
-            //Sets initial time to zero when it is less than zero
-            else if (_initalSeekTime < 0)
-            {
-              _initalSeekTime = 0;
-            }
+            _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
           }
+          //Sets initial time to zero when it is less than zero
+          else if (_initalSeekTime < 0)
+          {
+            _initalSeekTime = 0;
+          }
+        }
         if (_initalSeekTime != 0)
         {
           if (_streamController.mediaPlayer.canSeek &&
@@ -214,7 +214,7 @@ package
       }
       else if (event.info.code == "NetStream.Seek.Failed")
       {
-        Logger.log("Error:Seeking Operation failed", "onNetStatus");
+        SendToDebugger("Error:Seeking Operation failed", "onNetStatus");
       }
     }
 
@@ -236,7 +236,7 @@ package
      */
     private function onPlayerStateChange(event:MediaPlayerStateChangeEvent):void
     {
-      Logger.log("akamaiHD state changed: " + event.state, "onPlayerStateChange");
+      SendToDebugger("akamaiHD state changed: " + event.state, "onPlayerStateChange");
       
       switch(event.state)
       {
@@ -309,7 +309,7 @@ package
         default:
           break;
       }
-      Logger.log("Error: " + event.error["errorID"], " " + event.error.detail);
+      SendToDebugger("Error: " + event.error["errorID"], " " + event.error.detail);
     }
     
     /**
@@ -352,7 +352,7 @@ package
       }
       else
       {
-        Logger.log("Error in pausing video: Player State: ", "onVideoPause");
+        SendToDebugger("Error in pausing video: Player State: ", "onVideoPause");
       }
     }
     
@@ -365,7 +365,6 @@ package
     public function onVideoSeek(event:DynamicEvent):void
     {
       var time:Number = (Number)(event.args);
-
       if (_initialPlay) 
       {
         _initalSeekTime = time;
@@ -373,14 +372,14 @@ package
       }
 
       if (_streamController.mediaPlayer.canSeek &&
-        (_streamController.mediaPlayer.canSeekTo(time)))
+          (_streamController.mediaPlayer.canSeekTo(time)))
       {
         _streamController.seek(time);
-        Logger.log("Seek to: " + time, "onVideoSeek");
+        SendToDebugger("Seek to: " + time, "onVideoSeek");
       }
       else
       {
-        Logger.log("Error:Cannot seek to : " + time, "onVideoSeek");
+        SendToDebugger("Error:Cannot seek to : " + time, "onVideoSeek");
       }
     }
     

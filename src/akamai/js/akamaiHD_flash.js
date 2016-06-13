@@ -94,7 +94,7 @@ require("../../../html5-common/js/utils/constants.js");
     }
     this.encodings = testForFlash();
     this.technology = OO.VIDEO.TECHNOLOGY.FLASH;
-    this.features = [OO.VIDEO.FEATURE.BITRATE_CONTROL];
+    this.features = [ OO.VIDEO.FEATURE.BITRATE_CONTROL ];
 
     /**
      * Creates a video player instance using OoyalaAkamaiHDFlashVideoWrapper.
@@ -212,6 +212,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
+      var urlChanged = false;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -435,7 +436,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseSeekingEvent = function() {
-      self.controller.notify(sef.controller.EVENTS.SEEKING);
+      self.controller.notify(self.controller.EVENTS.SEEKING);
     };
 
     var raiseSeekedEvent = function() {
