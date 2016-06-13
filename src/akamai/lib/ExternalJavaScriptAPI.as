@@ -249,7 +249,7 @@ package
     {
     }
 
-    /**
+   /**
     * Passes the target bitrate to the player.
     * @private
     * @method ExternalJavaScriptAPI#onSetTargetBitrate
@@ -257,6 +257,7 @@ package
     */
     private function onSetTargetBitrate(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onSetTargetBitrate(event);
     }
     
    /**
