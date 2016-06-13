@@ -23,6 +23,9 @@
  
   <!-- Build closed caption swc -->
   <target name="build-CCswc">
+    <delete>
+      <fileset file="${basedir}/src/osmf/lib/closedCaption.swc" />
+    </delete>
     <compc output="${basedir}/src/osmf/lib/closedCaption.swc" >
       <source-path path-element="${basedir}/utils/ClosedCaption/"/>
         <include-sources dir="${basedir}/utils/ClosedCaption/" includes="*.as"/>
