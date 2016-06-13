@@ -133,7 +133,7 @@ package
       _akamaiHDPlayer.removeEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
-      //_akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       //_akamaiHDPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
     }
