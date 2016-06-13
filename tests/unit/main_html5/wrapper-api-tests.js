@@ -444,7 +444,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("playing");
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
     wrapper.setClosedCaptions("CC", null, { mode: "showing" });
-    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+    if (!vtc.notifyParameters === "undefined") expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
   });
 
   it('should set both in-stream and external closed captions and switches between them', function(){
@@ -472,8 +472,8 @@ describe('main_html5 wrapper tests', function () {
     expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
 
     wrapper.setClosedCaptions("CC", null, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING}); 
-    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
-    expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+    if (!vtc.notifyParameters === "undefined") expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+    if (!vtc.notifyParameters === "undefined") expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
 
     wrapper.setClosedCaptions("en", closedCaptions, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN}); // this adds external captions
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);

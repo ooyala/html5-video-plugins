@@ -185,7 +185,7 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks = [{ kind: "captions" }];
     vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
     $(element).triggerHandler("playing");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+    if (!vtc.notifyParameters === "undefined") expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC'],
       locale: {
         CC: 'In-Stream'
@@ -206,7 +206,7 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks = [{ kind: "captions" }];
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
     $(element).triggerHandler("playing");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+    if (!vtc.notifyParameters === "undefined") expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC'],
       locale: {
         en: 'English',
