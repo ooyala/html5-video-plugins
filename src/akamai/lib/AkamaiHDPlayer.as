@@ -42,7 +42,7 @@ package
     private var _playQueue:Boolean = false;
     private var _initialPlay:Boolean = true;
     private var _initalSeekTime:Number = 0;
-    public var _bitrateArray:Array=new Array();
+    private var _bitrateArray:Array=new Array();
     private var _bitrateIdArray:Array = new Array();
     private var _currentBitrate:Number = -1;
 
@@ -241,6 +241,10 @@ package
       switch(event.state)
       {
         case MediaPlayerState.PLAYING:
+          if (_playheadTimer.running == false)
+          {
+            _playheadTimer.start();
+          }
           dispatchEvent(new DynamicEvent(DynamicEvent.PLAYING,null));
           break;
         case MediaPlayerState.PAUSED:
@@ -268,6 +272,8 @@ package
      */
     private function onPlayComplete(event:TimeEvent):void
     {
+      _playheadTimer.stop();
+      dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
     
     /**
@@ -348,6 +354,7 @@ package
     {
       if (_streamController.canPause)
       {
+        _playheadTimer.stop();
         _streamController.pause();
       }
       else
@@ -429,7 +436,6 @@ package
     {
       _akamaiVideoSurface.width = stage.stageWidth;
       _akamaiVideoSurface.height = stage.stageHeight;
-
       _streamController.mediaPlayer.autoPlay = false;
     }
     
@@ -477,8 +483,42 @@ package
      */
     public function onPlayheadUpdate(event:Event):void
     {
+      if (!_streamController.mediaPlayer.seeking) 
+      { 
+        dispatchTimeUpdateEvent(_streamController.mediaPlayer.currentTime); 
+      }
     }
     
+    /**
+     * As the video plays, this method updates the duration,current time and
+     * also the buffer length of the video.
+     * @public
+     * @method AkamaiHDPlayer#dispatchTimeUpdateEvent
+     * @param {Number} time The value of current playhead time.
+     */
+    public function dispatchTimeUpdateEvent(time:Number):void
+    {
+      var eventObject:Object = new Object();
+      var seekRange:Object = new Object();
+      var duration:Number = _streamController.mediaPlayer.duration;
+      var totalTime :Number = 0;
+      
+      if (_streamController.mediaPlayer.canSeek && (_streamController.mediaPlayer.canSeekTo(duration)))
+      {
+        totalTime = duration;
+      }
+      else
+      {
+        totalTime = 0;
+      }
+      eventObject.currentTime = time;
+      eventObject.duration = duration;
+      eventObject.buffer = _streamController.mediaPlayer.bufferLength + _streamController.mediaPlayer.currentTime;
+      eventObject.seekRange_start = 0;
+      eventObject.seekRange_end = totalTime;
+      dispatchEvent(new DynamicEvent(DynamicEvent.TIME_UPDATE,(eventObject)));
+    }
+
     /**
      * Returns the current time of the video.
      * @public
