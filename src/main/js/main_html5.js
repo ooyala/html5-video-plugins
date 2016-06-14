@@ -681,7 +681,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video.textTracks && _video.textTracks.length > 0) {
         var languages = [];
         for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].kind === "captions" && !_video.textTracks[i].src === "undefined") {
+          if (_video.textTracks[i].kind === "captions") {
             var captionInfo = {
               language: "CC",
               inStream: true,
