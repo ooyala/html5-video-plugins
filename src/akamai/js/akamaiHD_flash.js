@@ -349,6 +349,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
+      this.callToFlash("getCurrentTime");
+      return currentTime;
     }
 
     /**
@@ -465,6 +467,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseTimeUpdate = function(event) {
+      raisePlayhead(self.controller.EVENTS.TIME_UPDATE, event);
     };
 
     var raiseDurationChange = function(event) {
@@ -476,6 +479,11 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaVideoWrapper#raisePlayhead
      */
     var raisePlayhead = _.bind(function(eventname, event) {
+      self.controller.notify(eventname,
+                             { "currentTime" : currentTime,
+                               "duration" : totalTime,
+                               "buffer" : buffer,
+                               "seekRange" : { "begin" : seekRange_start, "end" : seekRange_end } });
     }, this);
 
     /**
@@ -485,6 +493,11 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} event The event from the video
      */
     var raiseProgress = function(event) {
+      self.controller.notify(self.controller.EVENTS.PROGRESS,
+                             { "currentTime": currentTime,
+                               "duration": totalTime,
+                               "buffer": buffer,
+                               "seekRange": { "begin": seekRange_start, "end": seekRange_end } });
     };
 
     var raiseCanPlayThrough = function() {
