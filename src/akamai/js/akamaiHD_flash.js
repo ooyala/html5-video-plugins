@@ -358,6 +358,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} css The css to apply in key value pairs
      */
     this.applyCss = function(css) {
+      $(videoItem).css(css);
     };
 
     /**

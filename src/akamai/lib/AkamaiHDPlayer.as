@@ -429,7 +429,6 @@ package
     {
       _akamaiVideoSurface.width = stage.stageWidth;
       _akamaiVideoSurface.height = stage.stageHeight;
-
       _streamController.mediaPlayer.autoPlay = false;
     }
     
