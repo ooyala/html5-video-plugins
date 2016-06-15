@@ -52,6 +52,7 @@ package
     private var _seekTrait:SeekTrait = null;
     private var _playerState:String = "";
     private var _playQueue:Boolean = false;
+    private var _seekToEnd:Boolean = false;
     private var _initialPlay:Boolean = true;
     private var _selectedCaptionLanguage:String = "";
     private var _captionObject:Object = new Object();
@@ -309,6 +310,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          _seekToEnd=false;
           totalBitratesAvailable();
           if (_playQueue)
           {
@@ -493,6 +495,10 @@ package
       {
         _initialTime = time;
         return;
+      }
+      if (time == _mediaPlayerSprite.mediaPlayer.duration)
+      {
+        _seekToEnd = true;
       }
       _seekTrait = _mediaPlayerSprite.mediaPlayer.media.getTrait(MediaTraitType.SEEK) as SeekTrait;
       if (_mediaPlayerSprite.mediaPlayer.canSeek &&
@@ -890,7 +896,15 @@ package
     public function onGetCurrentTime(event:Event):void
     {
       var eventObject:Object = new Object();
-      eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
+      if (_seekToEnd == true)
+      {
+        eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.duration.toString();
+        _seekToEnd = false;
+      }
+      else
+      {
+        eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
+      }
       dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
     }
     
