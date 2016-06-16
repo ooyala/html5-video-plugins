@@ -85,7 +85,6 @@ package
       addEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       addEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       addEventListener("setTargetBitrate", onSetTargetBitrate);
-      addEventListener("setInitialTime", onSetInitialTime);
       addEventListener("getCurrentTime", onGetCurrentTime);
       addEventListener("destroy", onDestroy);
       _akamaiHDPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
@@ -99,8 +98,8 @@ package
       _akamaiHDPlayer.addEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
-      //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
-      //_akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       //_akamaiHDPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
       Logger.log("events added", "registerListeners");
     }
@@ -122,7 +121,6 @@ package
       removeEventListener("setVideoClosedCaptions", onSetVideoClosedCaptions);
       removeEventListener("setVideoClosedCaptionsMode", onSetVideoClosedCaptionsMode);
       removeEventListener("setTargetBitrate", onSetTargetBitrate);
-      removeEventListener("setInitialTime", onSetInitialTime);
       removeEventListener("getCurrentTime", onGetCurrentTime);
       removeEventListener("destroy", onDestroy);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);
@@ -135,8 +133,8 @@ package
       _akamaiHDPlayer.removeEventListener(DynamicEvent.TIME_UPDATE, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.VOLUME_CHANGED, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.CURRENT_TIME, onFlashEvent);
-      //_akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
-      //_akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       //_akamaiHDPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
     }
 
@@ -185,6 +183,7 @@ package
     */
     private function onVideoSeek(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onVideoSeek(event);
     }
 
    /**
@@ -195,6 +194,7 @@ package
     */
     private function onChangeVolume(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onChangeVolume(event);
     }
 
    /**
@@ -250,16 +250,6 @@ package
     }
 
    /**
-    * Passes the initial time to the player, from which the playback is to be started.
-    * @private
-    * @method ExternalJavaScriptAPI#onSetInitialTime
-    * @param {DynamicEvent} event
-    */
-    private function onSetInitialTime(event:DynamicEvent):void
-    {
-    }
-
-    /**
     * Passes the target bitrate to the player.
     * @private
     * @method ExternalJavaScriptAPI#onSetTargetBitrate
@@ -267,6 +257,7 @@ package
     */
     private function onSetTargetBitrate(event:DynamicEvent):void
     {
+      _akamaiHDPlayer.onSetTargetBitrate(event);
     }
     
    /**

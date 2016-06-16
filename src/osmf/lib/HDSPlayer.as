@@ -52,6 +52,7 @@ package
     private var _seekTrait:SeekTrait = null;
     private var _playerState:String = "";
     private var _playQueue:Boolean = false;
+    private var _seekToEnd:Boolean = false;
     private var _initialPlay:Boolean = true;
     private var _selectedCaptionLanguage:String = "";
     private var _captionObject:Object = new Object();
@@ -78,6 +79,8 @@ package
     public var _bitrateArray:Array = new Array();
     public var _bitrateIdArray:Array = new Array();
     private var _currentBitrate:Number = -1;
+    private var _previousBitrate:Number = -1;
+    private var _bitrateFlag:Number = 0;
     private var _hiddenCaptionFlag:Boolean = false;
     private var _previousCaptionMode:String;
     
@@ -307,6 +310,7 @@ package
         case MediaPlayerState.LOADING:
           break;
         case MediaPlayerState.READY:
+          _seekToEnd=false;
           totalBitratesAvailable();
           if (_playQueue)
           {
@@ -327,6 +331,7 @@ package
     private function onPlayComplete(event:TimeEvent):void
     {
       _playheadTimer.stop();
+      _previousBitrate=_currentBitrate;
       _resource = null;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
@@ -419,12 +424,34 @@ package
       
       //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
       _playQueue = false;
-
+      if(_playerState == MediaPlayerState.READY)
+      {
+        _mediaPlayerSprite.mediaPlayer.play();
+        var id:String;
+        if(_previousBitrate != -1)
+        {
+          if(_bitrateFlag != 0)
+          {
+            for (var i:int = 0; i < _bitrateIdArray.length; i++)
+            {
+              id = _bitrateIdArray[i];
+              if (_previousBitrate == (_bitrateArray[id][0].bitrate)/1000)
+              {
+                _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = false;
+                _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[id][1]);
+              }
+            }
+          }
+          else
+          {
+            _mediaPlayerSprite.mediaPlayer.autoDynamicStreamSwitch = true;
+          }
+        }
+      }
       //Included MediaPlayerState.BUFFERING in the condition to handle the play requests that occurs
       //when the player is in buffering state.
       
-      if (_playerState == MediaPlayerState.READY || _playerState == MediaPlayerState.PAUSED 
-          || _playerState == MediaPlayerState.BUFFERING)
+      else if (_playerState == MediaPlayerState.PAUSED || _playerState == MediaPlayerState.BUFFERING)
       {
         _mediaPlayerSprite.mediaPlayer.play();
       }
@@ -468,6 +495,10 @@ package
       {
         _initialTime = time;
         return;
+      }
+      if (time == _mediaPlayerSprite.mediaPlayer.duration)
+      {
+        _seekToEnd = true;
       }
       _seekTrait = _mediaPlayerSprite.mediaPlayer.media.getTrait(MediaTraitType.SEEK) as SeekTrait;
       if (_mediaPlayerSprite.mediaPlayer.canSeek &&
@@ -865,7 +896,15 @@ package
     public function onGetCurrentTime(event:Event):void
     {
       var eventObject:Object = new Object();
-      eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
+      if (_seekToEnd == true)
+      {
+        eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.duration.toString();
+        _seekToEnd = false;
+      }
+      else
+      {
+        eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime.toString();
+      }
       dispatchEvent(new DynamicEvent(DynamicEvent.CURRENT_TIME,(eventObject)));
     }
     
@@ -954,6 +993,7 @@ package
          _mediaPlayerSprite.mediaPlayer.maxAllowedDynamicStreamIndex =  _mediaPlayerSprite.mediaPlayer.numDynamicStreams - 1;
          //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
          _mediaPlayerSprite.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
+         _bitrateFlag = 1;
        }
        else 
        {
@@ -964,6 +1004,7 @@ package
            eventObject.width = 0;
            eventObject.bitrate = 0;
            dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
+           _bitrateFlag = 0;
        }
       }
       catch(error:Error)

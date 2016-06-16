@@ -94,7 +94,7 @@ require("../../../html5-common/js/utils/constants.js");
     }
     this.encodings = testForFlash();
     this.technology = OO.VIDEO.TECHNOLOGY.FLASH;
-    this.features = [ ];
+    this.features = [ OO.VIDEO.FEATURE.BITRATE_CONTROL ];
 
     /**
      * Creates a video player instance using OoyalaAkamaiHDFlashVideoWrapper.
@@ -153,6 +153,7 @@ require("../../../html5-common/js/utils/constants.js");
     var videoItem = video;
     var currentUrl = '';
     var loaded = false;
+    var hasPlayed = false;
     var urlChanged = false;
     var self=this;
     var currentTime;
@@ -211,6 +212,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
+      var urlChanged = false;
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url)
       {
         currentUrl = url || "";
@@ -221,12 +223,13 @@ require("../../../html5-common/js/utils/constants.js");
           currentUrl = currentUrl + (/\?/.test(currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
         urlChanged = true;
+        hasPlayed = false;
         loaded = false;
         url = "setVideoUrl("+currentUrl+")";
       }
       if (!_.isEmpty(currentUrl)) 
       {
-         this.callToFlash(url);
+        this.callToFlash(url);
       }
       return urlChanged;
     };
@@ -262,6 +265,7 @@ require("../../../html5-common/js/utils/constants.js");
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
      */
     this.setBitrate = function(id) {
+      this.callToFlash("setTargetBitrate("+id+")");
     };
 
     /**
@@ -271,7 +275,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      if (loaded) return;
+      if (loaded && !rewind) return;
       else {
         try {
           this.callToFlash("load("+rewind+")");
@@ -290,6 +294,9 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
+      if (!hasPlayed) {
+        this.seek(initialTime);
+      }
     };
 
     /**
@@ -303,6 +310,7 @@ require("../../../html5-common/js/utils/constants.js");
       }
       this.callToFlash("videoPlay");
       loaded = true;
+      hasPlayed = true;
     };
 
     /**
@@ -321,6 +329,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      this.callToFlash("videoSeek("+time+")");
     };
 
     /**
@@ -330,6 +339,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+      this.callToFlash("changeVolume("+volume+")");
     };
 
     /**
@@ -339,6 +349,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
+      this.callToFlash("getCurrentTime");
+      return currentTime;
     }
 
     /**
@@ -348,6 +360,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} css The css to apply in key value pairs
      */
     this.applyCss = function(css) {
+      $(videoItem).css(css);
     };
 
     /**
@@ -404,6 +417,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#onLoadStart
      */
     var onLoadStart = function() {
+      currentUrl = this.callToFlash("getUrl");
     };
 
     var onLoadedMetadata = function() {
@@ -424,9 +438,11 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseSeekingEvent = function() {
+      self.controller.notify(self.controller.EVENTS.SEEKING);
     };
 
     var raiseSeekedEvent = function() {
+      self.controller.notify(self.controller.EVENTS.SEEKED);
     };
 
     var raiseBufferingEvent = function() {
@@ -444,12 +460,14 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseVolumeEvent = function(event) {
+      self.controller.notify(self.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
     };
 
     var raiseWaitingEvent = function() {
     };
 
     var raiseTimeUpdate = function(event) {
+      raisePlayhead(self.controller.EVENTS.TIME_UPDATE, event);
     };
 
     var raiseDurationChange = function(event) {
@@ -461,6 +479,11 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaVideoWrapper#raisePlayhead
      */
     var raisePlayhead = _.bind(function(eventname, event) {
+      self.controller.notify(eventname,
+                             { "currentTime" : currentTime,
+                               "duration" : totalTime,
+                               "buffer" : buffer,
+                               "seekRange" : { "begin" : seekRange_start, "end" : seekRange_end } });
     }, this);
 
     /**
@@ -470,6 +493,11 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} event The event from the video
      */
     var raiseProgress = function(event) {
+      self.controller.notify(self.controller.EVENTS.PROGRESS,
+                             { "currentTime": currentTime,
+                               "duration": totalTime,
+                               "buffer": buffer,
+                               "seekRange": { "begin": seekRange_start, "end": seekRange_end } });
     };
 
     var raiseCanPlayThrough = function() {
@@ -482,9 +510,27 @@ require("../../../html5-common/js/utils/constants.js");
     };
   
     var raiseBitrateChanged = function(event) {
+      var vtcBitrate = {
+          id: event.eventObject.id,
+          width: event.eventObject.width,
+          height: event.eventObject.height,
+          bitrate: event.eventObject.bitrate
+      }
+      self.controller.notify(self.controller.EVENTS.BITRATE_CHANGED,vtcBitrate);
     };
 
     var raiseBitratesAvailable = function(event) {
+      var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
+      for (var i in event.eventObject) {
+        var vtcBitrate = {
+          id: event.eventObject[i].id,
+          width: event.eventObject[i].width,
+          height: event.eventObject[i].height,
+          bitrate: event.eventObject[i].bitrate
+        }
+        vtcBitrates.push(vtcBitrate);
+      }
+      self.controller.notify(self.controller.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
     };
 
     var raiseSizeChanged = function(event) {
@@ -492,7 +538,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
-     OO.log("[AKAMIHD]:onCallback: ", data);
+      OO.log('[Akamai HD]:onCallback: ', data);
       var eventtitle =" ";
 
       for (var key in data) {
@@ -526,8 +572,8 @@ require("../../../html5-common/js/utils/constants.js");
 
       switch (eventtitle)
       {
-        case "JSREADY":
-         while(0 < actionscriptCommandQueue.length) {
+       case "JSREADY":
+        while(0 < actionscriptCommandQueue.length) {
           this.callToFlash(actionscriptCommandQueue[0][0],actionscriptCommandQueue[0][1]);
           actionscriptCommandQueue.shift();
         }
@@ -556,8 +602,17 @@ require("../../../html5-common/js/utils/constants.js");
        case "PAUSED":
         raisePauseEvent();
         break;
+       case "RATE_CHANGE":
+        raiseRatechangeEvent();
+        break;
+       case "STALLED":
+        raiseStalledEvent();
+        break;
        case "VOLUME_CHANGED":
         raiseVolumeEvent(data);
+        break;
+       case "WAITING":
+        raiseWaitingEvent();
         break;
        case "TIME_UPDATE":
         raiseTimeUpdate(data);
@@ -576,6 +631,12 @@ require("../../../html5-common/js/utils/constants.js");
         break;
        case "FULLSCREEN_CHANGED_END":
         raiseFullScreenEnd(data);
+        break;
+       case "BITRATES_AVAILABLE":
+        raiseBitratesAvailable(data);
+        break;
+       case "BITRATE_CHANGED":
+        raiseBitrateChanged(data);
         break;
        case "ERROR":
         raiseErrorEvent(data);
