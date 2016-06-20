@@ -395,7 +395,7 @@ describe('main_html5 wrapper tests', function () {
   it('should notify SEEKED on video \'seeked\' event', function(){
     vtc.interface.EVENTS.SEEKED = "seeked";
     $(element).triggerHandler("seeked");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.SEEKED]);
+    expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.SEEKED);
   });
 
   it('should not raise seeked when initial time is set to non-zero', function(){
@@ -406,9 +406,9 @@ describe('main_html5 wrapper tests', function () {
     element.seekable.length = 1;
     wrapper.setInitialTime(10);
     $(element).triggerHandler("seeked");
-    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.SEEKED);
+    expect(vtc.notified[0]).to.not.eql(vtc.interface.EVENTS.SEEKED);
     $(element).triggerHandler("seeked");
-    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.SEEKED);
+    expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.SEEKED);
   });
 
   it('should raise seeked before initial time has seeked if initialtime is 0', function(){
@@ -419,7 +419,7 @@ describe('main_html5 wrapper tests', function () {
     element.seekable.length = 1;
     wrapper.setInitialTime(0);
     $(element).triggerHandler("seeked");
-    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.SEEKED);
+    expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.SEEKED);
   });
 
   it('should not undo seek if disableNativeSeek=false on video \'seeked\' event', function(){
