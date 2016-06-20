@@ -50,6 +50,7 @@ package
 		public function addCaptionsArray(captionArray:Object,captionslength:Number,availableLanguage:Array):void
 		{			
 			_captionsArray=captionArray;
+			_captionsObject=captionArray;
 			_captionsLength=captionslength;
 			_availableLanguage=availableLanguage;
 			dispatchEvent(new Event(CAPTION_READY));
@@ -115,6 +116,7 @@ package
 		private var _captions:Vector.<Caption>;
 		public var _captionsLength:Number; 
 		public var _availableLanguage:Array= new Array();
+		public var _captionsObject:Object = new Object();
 		public  static var _captionsArray:Object= new Object();
 	}
 }
