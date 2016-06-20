@@ -516,7 +516,6 @@ require("../../../html5-common/js/utils/environment.js");
     this.setClosedCaptions = _.bind(function(language, closedCaptions, params) {
       //Remove and disable current captions before setting new ones.
       $(_video).find('.' + TRACK_CLASS).remove();
-      this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
       if (language == null) return;
 
       var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
@@ -549,6 +548,7 @@ require("../../../html5-common/js/utils/environment.js");
             }
           }
         } else if (!captions.inStream) {
+          this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
           $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
           if (_video.textTracks && _video.textTracks[0]) {
             _video.textTracks[0].mode = captionMode;
