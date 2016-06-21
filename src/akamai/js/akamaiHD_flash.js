@@ -94,7 +94,8 @@ require("../../../html5-common/js/utils/constants.js");
     }
     this.encodings = testForFlash();
     this.technology = OO.VIDEO.TECHNOLOGY.FLASH;
-    this.features = [ OO.VIDEO.FEATURE.BITRATE_CONTROL ];
+    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
+                      OO.VIDEO.FEATURE.BITRATE_CONTROL ];
 
     /**
      * Creates a video player instance using OoyalaAkamaiHDFlashVideoWrapper.
@@ -243,6 +244,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} params The parameters object
      */
     this.setClosedCaptions = function(language,closedCaptions,params){
+      var parameters = {language:language, closedCaptions:closedCaptions, params:params};
+      this.callToFlash("setVideoClosedCaptions()" , parameters);
     };
 
     /**
@@ -253,6 +256,7 @@ require("../../../html5-common/js/utils/constants.js");
      */
 
     this.setClosedCaptionsMode = function(mode){
+      this.callToFlash("setVideoClosedCaptionsMode(" + mode + ")");
     };
 
     /**
@@ -536,6 +540,11 @@ require("../../../html5-common/js/utils/constants.js");
     var raiseSizeChanged = function(event) {
     };
 
+    var raiseHiddenCaption = function(event) {
+      var captionText = event.eventObject.text;
+      self.controller.notify(self.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED,captionText);
+    }
+
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
       OO.log('[Akamai HD]:onCallback: ', data);
@@ -637,6 +646,9 @@ require("../../../html5-common/js/utils/constants.js");
         break;
        case "BITRATE_CHANGED":
         raiseBitrateChanged(data);
+        break;
+       case "CLOSED_CAPTION_CUE_CHANGED":
+        raiseHiddenCaption(data);
         break;
        case "ERROR":
         raiseErrorEvent(data);
