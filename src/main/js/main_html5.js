@@ -579,7 +579,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {string} mode The mode to set the text tracks element.
      * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
-    this.setClosedCaptionsMode = function(mode) {
+    this.setClosedCaptionsMode = _.bind(function(mode) {
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
           _video.textTracks[i].mode = mode;
@@ -587,8 +587,9 @@ require("../../../html5-common/js/utils/environment.js");
       }
       if (mode == OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
         raiseClosedCaptionCueChanged("");
+        this.setClosedCaptions(null);
       }
-    };
+    }, this);
 
     /**
      * Sets the crossorigin attribute on the video element.
