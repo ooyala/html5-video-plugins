@@ -187,6 +187,14 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
+     * Callback to handle notifications that ad finished playing
+     * @private
+     * @method TemplateVideoWrapper#onAdsPlayed
+     */
+    this.onAdsPlayed = function() {
+    };
+
+    /**
      * Loads the current stream url in the video element; the element should be left paused.  This function
      * is generally called when preloading a stream before triggering play.  Load may not be called before
      * play.

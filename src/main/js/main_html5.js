@@ -327,6 +327,14 @@ require("../../../html5-common/js/utils/environment.js");
     }, this);
 
     /**
+     * Callback to handle notifications that ad finished playing
+     * @private
+     * @method OoyalaVideoWrapper#onAdsPlayed
+     */
+    this.onAdsPlayed = function() {
+    };
+
+    /**
      * Loads the current stream url in the video element; the element should be left paused.
      * @public
      * @method OoyalaVideoWrapper#load
