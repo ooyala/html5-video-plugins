@@ -984,8 +984,9 @@ require("../../../html5-common/js/utils/environment.js");
       if (isPriming) {
         return;
       }
-
-      this.controller.notify(this.controller.EVENTS.PAUSED);
+      if (!(OO.isIpad && _video.currentTime === 0)) {
+        this.controller.notify(this.controller.EVENTS.PAUSED);
+      }
       forceEndOnPausedIfRequired();
     }, this);
 
