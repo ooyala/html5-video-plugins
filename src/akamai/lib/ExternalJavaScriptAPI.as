@@ -101,6 +101,7 @@ package
       _akamaiHDPlayer.addEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.CAPTIONS_FOUND_ON_PLAYING, onFlashEvent);
       //_akamaiHDPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
       Logger.log("events added", "registerListeners");
     }
@@ -137,6 +138,7 @@ package
       _akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATE_CHANGED, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.CAPTIONS_FOUND_ON_PLAYING, onFlashEvent);
       //_akamaiHDPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
     }
 

@@ -545,6 +545,15 @@ require("../../../html5-common/js/utils/constants.js");
       self.controller.notify(self.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED,captionText);
     }
 
+    var raiseCaptionFound = function(event) {
+      var captionInfo = {
+              language: "CC",
+              inStream: true,
+              label: "In-Stream"
+            };
+      self.controller.notify(self.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING,captionInfo);
+    }
+
     // Receives a callback from Flash 
     onCallback = _.bind(function(data) {
       OO.log('[Akamai HD]:onCallback: ', data);
@@ -649,6 +658,9 @@ require("../../../html5-common/js/utils/constants.js");
         break;
        case "CLOSED_CAPTION_CUE_CHANGED":
         raiseHiddenCaption(data);
+        break;
+       case "CAPTIONS_FOUND_ON_PLAYING":
+        raiseCaptionFound(data);
         break;
        case "ERROR":
         raiseErrorEvent(data);
