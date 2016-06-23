@@ -22,6 +22,7 @@ package
     public static const BITRATES_AVAILABLE:String = "BITRATES_AVAILABLE";
     public static const BITRATE_CHANGED:String = "BITRATE_CHANGED";
     public static const CLOSED_CAPTION_CUE_CHANGED:String = "CLOSED_CAPTION_CUE_CHANGED";
+    public static const CAPTIONS_FOUND_ON_PLAYING:String = "CAPTIONS_FOUND_ON_PLAYING";
     private var _eventObject:Object;
 
    /**

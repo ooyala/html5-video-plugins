@@ -36,6 +36,8 @@ package
   import org.osmf.events.MediaErrorEvent;
   import org.osmf.events.TimeEvent;
   import org.osmf.events.SeekEvent;
+  import org.osmf.net.NetStreamCodes;
+  import org.osmf.net.NetClient;
   
   public class AkamaiHDPlayer extends Sprite
   {
@@ -102,6 +104,7 @@ package
       _streamController.mediaPlayer.addEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
       _streamController.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
+      _streamController.addEventListener(AkamaiHDSEvent.IS_PLAYING_LIVE, isLive);
       SendToDebugger("events added", "registerListeners");
     }
     
@@ -119,6 +122,7 @@ package
       _streamController.mediaPlayer.removeEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
       _streamController.mediaPlayer.removeEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.removeEventListener(CaptioningDocument.CAPTION_READY,onCaptionready);
+      _streamController.removeEventListener(AkamaiHDSEvent.IS_PLAYING_LIVE, isLive);
       _netStream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
     }
     
@@ -183,7 +187,7 @@ package
     /**
      * Event listner for AkamaiHDSEvent
      * @private
-     * @method AkamaiHD3Player#onNetStreamReady
+     * @method AkamaiHDPlayer#onNetStreamReady
      * @param {AkamaiHDSEvent} event
      */
     private function onNetStreamReady(event:AkamaiHDSEvent):void
@@ -200,9 +204,46 @@ package
     }
     
     /**
+     * Event handler for AkamaiHDSEvent
+     * @private
+     * @method AkamaiHDPlayer#isLive
+     * @param {Event} event
+     */
+    private function isLive(event:Event):void
+    {
+      NetClient(_netStream.client).addHandler(NetStreamCodes.ON_CUE_POINT, onCuePoint);
+    }
+
+    /**
+     * Event handler for NetStreamCodes Event
+     * @private
+     * @method AkamaiHDPlayer#onCuePoint
+     * @param {Object} info event info object
+     */
+    private function onCuePoint(info:Object):void
+    {
+      if(_captionFlag == false)
+      {
+        dispatchEvent(new DynamicEvent(DynamicEvent.CAPTIONS_FOUND_ON_PLAYING,null));
+        _captionFlag = true;
+      }
+      var eventObject:Object = new Object();
+      var caption : Object = info["parameters"];
+      for (var key:String in caption)
+      {
+        var captionText : String = caption[key];
+        if (captionText != null && _mode !="disabled")
+        {
+          eventObject.text = captionText;
+          dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
+        }
+      }
+    }
+
+    /**
      * Event listner for NetStatusEvent
      * @private
-     * @method AkamaiHD3Player#onNetStatus
+     * @method AkamaiHDPlayer#onNetStatus
      * @param {NetStatusEvent} event
      */
     private function onNetStatus(event:NetStatusEvent):void
@@ -252,7 +293,7 @@ package
     /**
      * Adds the display object to the streamcontroller.
      * @private
-     * @method AkamaiHD3Player#configureStreamProperties
+     * @method AkamaiHDPlayer#configureStreamProperties
      */
     private function configureStreamProperties():void
     {
@@ -262,7 +303,7 @@ package
     /**
      * Event listner for MediaPlayerStateChangeEvent
      * @private
-     * @method AkamaiHD3Player#onPlayerStateChange
+     * @method AkamaiHDPlayer#onPlayerStateChange
      * @param {MediaPlayerStateChangeEvent} event
      */
     private function onPlayerStateChange(event:MediaPlayerStateChangeEvent):void
