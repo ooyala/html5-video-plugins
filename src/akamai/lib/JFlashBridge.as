@@ -36,7 +36,7 @@ package
         eventData.eventtype = "JSREADY";
         eventData.eventObject = null;
 
-        ExternalInterface.call("onCallback",eventData);
+        call("onCallback", eventData);
         try
         {
           if (checkReady()) 
@@ -84,9 +84,12 @@ package
      * @method JFlashBridge#call
      * @param {string} method Name of the method to be called.
      */
-    public function call(method:String, data:Object = null):*
-    {
-      return ExternalInterface.call(method, data);
+    public function call(method:String, ...parameters):* {
+      var args:Array = [];
+      args.push("call");
+      args.push(objectName);
+      args.push(method);
+      return ExternalInterface.call.apply(ExternalInterface, args.concat(parameters));
     }
 
     /**
