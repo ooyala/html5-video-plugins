@@ -6,7 +6,10 @@ package
   
   import flash.display.Sprite;
   import flash.display.StageDisplayState;
+  import flash.display.StageScaleMode;
+  import flash.display.StageAlign;
   import flash.events.Event;
+  import flash.events.FullScreenEvent;
   import flash.events.MouseEvent;
   import flash.events.TimerEvent;
   import flash.events.NetStatusEvent;
@@ -30,12 +33,9 @@ package
   import org.osmf.events.BufferEvent;
   import org.osmf.events.DynamicStreamEvent;
   import org.osmf.media.MediaPlayerState;
-  import org.osmf.traits.MediaTraitType;
-  import org.osmf.traits.SeekTrait;
   import org.osmf.events.MediaErrorCodes;
   import org.osmf.events.MediaErrorEvent;
   import org.osmf.events.TimeEvent;
-  import org.osmf.events.SeekEvent;
   import org.osmf.net.NetStreamCodes;
   import org.osmf.net.NetClient;
   
@@ -46,12 +46,16 @@ package
     private var _akamaiVideoSurface:AkamaiVideoSurface;
     private var _akamaiStreamURL:String;
     private var _playheadTimer:Timer = null;
+
     private var _playQueue:Boolean = false;
     private var _initialPlay:Boolean = true;
     private var _initalSeekTime:Number = 0;
+    private var _playerState:String = "";
     private var _bitrateArray:Array=new Array();
     private var _bitrateIdArray:Array = new Array();
     private var _currentBitrate:Number = -1;
+    private var _previousBitrate:Number = -1;
+
     private var _selectedCaptionLanguage:String = "";
     private var _captionObject:Object = new Object();
     private static const CAPTIONING_PLUGIN_INFO:String = "CaptioningPluginInfo";
@@ -60,7 +64,6 @@ package
     private var _defaultCaptionFormat:TextFormat;
     private var _captionsURL:String;
     private var _captionFlag:Boolean = false;
-    private var _loadFlag:Boolean = false;
     private var _mode:String;
     private var _captionRegionWidth:Number;
     private var _captionRegionHeight:Number;
@@ -68,7 +71,6 @@ package
     private var _previousCaption:String = "";
     private var _previousSelectedCaptionLanguage:String = "";
     private var _selectedCaptionObject:Object = new Object();
-    private var _currentCaption:Caption;
     public static const BASE_SCALE_FACTOR_HEIGHT:Number = 400;
     public static const BASE_SCALE_FACTOR:Number = 1;;
     private var _hiddenCaptionFlag:Boolean = false;
@@ -96,7 +98,7 @@ package
      */
     private function registerListeners():void
     {
-      _streamController.addEventListener(AkamaiHDSEvent.COMPLETE, onPlayComplete);
+      _streamController.mediaPlayer.addEventListener(AkamaiHDSEvent.COMPLETE, onPlayComplete);
       _streamController.mediaPlayer.addEventListener(MediaErrorEvent.MEDIA_ERROR, onMediaError);
       _streamController.addEventListener(AkamaiHDSEvent.NETSTREAM_READY, onNetStreamReady); 
       _streamController.mediaPlayer.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
@@ -105,7 +107,9 @@ package
       _streamController.mediaPlayer.addEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.addEventListener(CaptioningDocument.CAPTION_READY, onCaptionready);
       _streamController.addEventListener(AkamaiHDSEvent.IS_PLAYING_LIVE, isLive);
-      SendToDebugger("events added", "registerListeners");
+      stage.addEventListener(FullScreenEvent.FULL_SCREEN, resizeListener);
+      stage.addEventListener(Event.RESIZE, resizeListener);
+      Logger.log("events added", "registerListeners");
     }
     
     /**
@@ -115,14 +119,15 @@ package
      */
     private function unregisterListeners():void
     {
-      _streamController.removeEventListener(AkamaiHDSEvent.COMPLETE, onPlayComplete);
-      _streamController.mediaPlayer.removeEventListener(MediaErrorEvent.MEDIA_ERROR, onMediaError);
+      _streamController.mediaPlayer.removeEventListener(AkamaiHDSEvent.COMPLETE, onPlayComplete);
       _streamController.mediaPlayer.removeEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE,
                                                         onPlayerStateChange);
       _streamController.mediaPlayer.removeEventListener(BufferEvent.BUFFERING_CHANGE, bufferingChangeHandler);
       _streamController.mediaPlayer.removeEventListener(DynamicStreamEvent.SWITCHING_CHANGE, onBitrateChanged);
       CaptioningDocument.removeEventListener(CaptioningDocument.CAPTION_READY,onCaptionready);
       _streamController.removeEventListener(AkamaiHDSEvent.IS_PLAYING_LIVE, isLive);
+      stage.addEventListener(FullScreenEvent.FULL_SCREEN, resizeListener);
+      stage.addEventListener(Event.RESIZE, resizeListener);
       _netStream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
     }
     
@@ -133,32 +138,10 @@ package
      */
     private function bufferingChangeHandler(e:BufferEvent):void
     {
-    }
-    
-    /**
-     * Send messages to the browser console log.In future this can be hooked to any other Debugging tools.
-     * @private
-     * @method AkamaiHDPlayer#SendToDebugger
-     * @param {string} value The value to be passed to the browser console.
-     * @param {string} referrer The fuction or process which passed the value.
-     * @param {string} channelBranch It can be info, debug, warn, error or log.
-     * @returns {boolean} True or false indicating success
-     */
-    private function SendToDebugger(value:String, referrer:String = null, channelBranch:String = "log"):Boolean
-    {
-      var channel:String; 
-      if (channelBranch == "log") 
+      if (!_streamController.mediaPlayer.buffering)
       {
-        channel = "OO." + channelBranch;
+        dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERED,null));
       }
-      else 
-      {
-        channel = "console." + channelBranch;
-      }
-      if (referrer) referrer = "[" + referrer + "]";
-      var debugMessage:Boolean = ExternalInterface.call(channel, "HDSFlash " + channelBranch + " " +
-                                                        referrer + ": " + value);
-      return debugMessage;
     }
     
     /**
@@ -168,7 +151,7 @@ package
      */
     public function initMediaPlayer():void
     {
-      SendToDebugger("initMediaPlayer()", "initMediaPlayer");
+      Logger.log("initMediaPlayer()", "initMediaPlayer");
       
       /* Creates a timer to keep track of the TIME_UPDATE event.
       The triggering value can be changed as per the specifications. */
@@ -192,17 +175,18 @@ package
      */
     private function onNetStreamReady(event:AkamaiHDSEvent):void
     {
-      SendToDebugger("onNetStreamReady" , "onNetStreamReady");
+      Logger.log("onNetStreamReady" , "onNetStreamReady");
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
       _netStream.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
       _akamaiVideoSurface.attachNetStream(_netStream);
+
       if (_playQueue)
       {
         _playQueue = false;
         _streamController.resume();
       }
     }
-    
+
     /**
      * Event handler for AkamaiHDSEvent
      * @private
@@ -251,18 +235,18 @@ package
       if (event.info.code == "NetStream.Buffer.Full")
       {
         if (_initialPlay)
-        {
-          //Sets initial time to duration when it is greater than duration
-          if (_initalSeekTime > _streamController.mediaPlayer.duration)
           {
-            _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
+            //Sets initial time to duration when it is greater than duration
+            if (_initalSeekTime > _streamController.mediaPlayer.duration)
+            {
+              _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
+            }
+            //Sets initial time to zero when it is less than zero
+            else if (_initalSeekTime < 0)
+            {
+              _initalSeekTime = 0;
+            }
           }
-          //Sets initial time to zero when it is less than zero
-          else if (_initalSeekTime < 0)
-          {
-            _initalSeekTime = 0;
-          }
-        }
         if (_initalSeekTime != 0)
         {
           if (_streamController.mediaPlayer.canSeek &&
@@ -286,7 +270,7 @@ package
       }
       else if (event.info.code == "NetStream.Seek.Failed")
       {
-        SendToDebugger("Error:Seeking Operation failed", "onNetStatus");
+        Logger.log("Error:Seeking Operation failed", "onNetStatus");
       }
     }
 
@@ -299,7 +283,7 @@ package
     {
       _streamController.displayObject = this;
     }
-  
+    
     /**
      * Event listner for MediaPlayerStateChangeEvent
      * @private
@@ -308,7 +292,8 @@ package
      */
     private function onPlayerStateChange(event:MediaPlayerStateChangeEvent):void
     {
-      SendToDebugger("akamaiHD state changed: " + event.state, "onPlayerStateChange");
+      Logger.log("akamaiHD state changed: " + event.state, "onPlayerStateChange");
+      _playerState = event.state;
       
       switch(event.state)
       {
@@ -323,6 +308,7 @@ package
           dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
           break;
         case MediaPlayerState.BUFFERING:
+          dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING,null));
           break;
         case MediaPlayerState.PLAYBACK_ERROR:
           break;
@@ -356,6 +342,7 @@ package
      */
     private function onMediaError(event:MediaErrorEvent):void
     {
+      var eventObject:Object = new Object();
       switch(event.error["errorID"])
       {
         case MediaErrorCodes.HTTP_GET_FAILED:
@@ -364,9 +351,11 @@ package
         case MediaErrorCodes.NETCONNECTION_REJECTED:
         case MediaErrorCodes.NETCONNECTION_TIMEOUT:
         case MediaErrorCodes.SECURITY_ERROR:
+          eventObject.errorCode = 2;
           break;
         case MediaErrorCodes.NETSTREAM_STREAM_NOT_FOUND:
         case MediaErrorCodes.MEDIA_LOAD_FAILED:
+          eventObject.errorCode = 4;
           break;
         case MediaErrorCodes.ARGUMENT_ERROR:
         case MediaErrorCodes.ASYNC_ERROR:
@@ -376,18 +365,24 @@ package
         case MediaErrorCodes.DVRCAST_SUBSCRIBE_FAILED:
         case MediaErrorCodes.PLUGIN_IMPLEMENTATION_INVALID:
         case MediaErrorCodes.PLUGIN_VERSION_INVALID:
+          eventObject.errorCode = -1;
           break;
         case MediaErrorCodes.F4M_FILE_INVALID:
         case MediaErrorCodes.NETSTREAM_FILE_STRUCTURE_INVALID:
         case MediaErrorCodes.NETSTREAM_PLAY_FAILED:
         case MediaErrorCodes.SOUND_PLAY_FAILED:
+          eventObject.errorCode = 3;
           break;
         case MediaErrorCodes.NETSTREAM_NO_SUPPORTED_TRACK_FOUND:
+          eventObject.errorCode = 0;
           break;
         default:
+          eventObject.errorCode = -1;  
           break;
       }
-      SendToDebugger("Error: " + event.error["errorID"], " " + event.error.detail);
+      Logger.log("Error: " + event.error["errorID"], " " + event.error.detail);
+      dispatchEvent(new DynamicEvent(DynamicEvent.ERROR,(eventObject)));
+      unregisterListeners();
     }
     
     /**
@@ -405,7 +400,8 @@ package
       //Disables the playQueue whenever new play request comes, to avoid unwanted auto play. 
       _playQueue = false;
 
-      if (_streamController.netStream == null)
+      if ( _streamController.netStream == null || _playerState == MediaPlayerState.READY 
+                                            || _playerState == MediaPlayerState.BUFFERING)
       {
         _playQueue = true;
         _streamController.play(_akamaiStreamURL);
@@ -431,7 +427,7 @@ package
       }
       else
       {
-        SendToDebugger("Error in pausing video: Player State: ", "onVideoPause");
+        Logger.log("Error in pausing video: Player State: ", "onVideoPause");
       }
     }
     
@@ -444,6 +440,7 @@ package
     public function onVideoSeek(event:DynamicEvent):void
     {
       var time:Number = (Number)(event.args);
+
       if (_initialPlay) 
       {
         _initalSeekTime = time;
@@ -451,14 +448,15 @@ package
       }
 
       if (_streamController.mediaPlayer.canSeek &&
-          (_streamController.mediaPlayer.canSeekTo(time)))
+        (_streamController.mediaPlayer.canSeekTo(time)))
       {
         _streamController.seek(time);
-        SendToDebugger("Seek to: " + time, "onVideoSeek");
+        dispatchTimeUpdateEvent(time);
+        Logger.log("Seek to: " + time, "onVideoSeek");
       }
       else
       {
-        SendToDebugger("Error:Cannot seek to : " + time, "onVideoSeek");
+        Logger.log("Error:Cannot seek to : " + time, "onVideoSeek");
       }
     }
     
@@ -481,10 +479,10 @@ package
       }
       else
       {
-        SendToDebugger("Error in changing volume: " +_streamController.volume,"onChangeVolume");
+        Logger.log("Error in changing volume: " +_streamController.volume,"onChangeVolume");
         return;
       }
-      SendToDebugger("Set Volume to: " + volume, "onChangeVolume");
+      Logger.log("Set Volume to: " + volume, "onChangeVolume");
     }
     
     /**
@@ -508,6 +506,9 @@ package
     {
       _akamaiVideoSurface.width = stage.stageWidth;
       _akamaiVideoSurface.height = stage.stageHeight;
+      stage.scaleMode = StageScaleMode.NO_SCALE;
+      stage.align = StageAlign.TOP_LEFT;
+
       _streamController.mediaPlayer.autoPlay = false;
     }
     
@@ -703,9 +704,9 @@ package
       {
         _captionLabel.visible = false;
       }      
-      SendToDebugger("Set Video Closed Captions Mode :" + _mode, "onSetVideoClosedCaptionsMode");
+      Logger.log("Set Video Closed Captions Mode :" + _mode, "onSetVideoClosedCaptionsMode");
     }
-
+    
     /**
      * As the video plays, this method updates the duration,current time and
      * also the buffer length of the video.
@@ -864,7 +865,7 @@ package
         dispatchEvent(new DynamicEvent(DynamicEvent.BITRATES_AVAILABLE,(eventObject)));
       } 
     }
-    
+
     /**
      * Sets the bitrate and dispatches BITRATE_CHANGED event.
      * @public
@@ -897,7 +898,7 @@ package
       }
       catch(error:Error)
       {
-        SendToDebugger("onSetTargetBitrate Error :"+error.errorID,"onSetTargetBitrate");
+        Logger.log("onSetTargetBitrate Error :"+error.errorID,"onSetTargetBitrate");
       } 
     }
 
@@ -932,7 +933,7 @@ package
         }
       }
     }
-    
+
     /**
      * Returns the total number of streams
      * @private
@@ -941,8 +942,31 @@ package
     private function getStreamsCount():int
     {
       return _streamController.mediaPlayer.numDynamicStreams;
-    } 
+    }
 
+    /**
+     * Sets the player height and width according to the stage's dimensions on resize.
+     * @private
+     * @method AkamaiHDPlayer#resizeListener
+     * @param {Event} event The event dispatched on player resize
+     */
+    private function resizeListener (event:Event):void
+    {
+      _akamaiVideoSurface.width = stage.stageWidth;
+      _akamaiVideoSurface.height = stage.stageHeight;
+
+      if (_mode == "showing")
+      {
+        _captionLabel.autoSize = TextFieldAutoSize.CENTER;
+        setCaptionArea(stage.stageWidth, stage.stageHeight, stage.stageHeight, this.captionScaleFactor);
+      }
+
+      var sizeObject:Object = new Object();
+      sizeObject.height = _akamaiVideoSurface.height;
+      sizeObject.width = _akamaiVideoSurface.width;
+      dispatchEvent(new DynamicEvent(DynamicEvent.SIZE_CHANGED,(sizeObject)));
+    } 
+    
     /**
      * Unregisters events and removes media player child.
      * @public
