@@ -17,6 +17,7 @@ package
     private var _akamaiHDPlayer:AkamaiHDPlayer = null;
     private var _jsBridge:JFlashBridge = null;
     private var _dynamicEvent:DynamicEvent = null;
+    private var thisVideoId:String = null;
 
     /**
      * Constructor
@@ -64,7 +65,7 @@ package
       _akamaiHDPlayer.initMediaPlayer();
       registerListeners();
       _jsBridge = new JFlashBridge();
-      _jsBridge.addMethod("jSBound", jSBound);
+      _jsBridge.addMethod("onCallback", onCallback);
       _jsBridge.initialize();
     }
 
@@ -102,7 +103,7 @@ package
       _akamaiHDPlayer.addEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.CAPTIONS_FOUND_ON_PLAYING, onFlashEvent);
-      //_akamaiHDPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.addEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
       Logger.log("events added", "registerListeners");
     }
 
@@ -139,7 +140,7 @@ package
       _akamaiHDPlayer.removeEventListener(DynamicEvent.BITRATES_AVAILABLE, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.CAPTIONS_FOUND_ON_PLAYING, onFlashEvent);
-      //_akamaiHDPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
+      _akamaiHDPlayer.removeEventListener(DynamicEvent.SIZE_CHANGED, onFlashEvent);
     }
 
     /**
@@ -153,6 +154,7 @@ package
       var eventData : Object = new Object();
       eventData.eventtype = event.type;
       eventData.eventObject = event.eventObject;
+      eventData.thisVideoId = thisVideoId;
       Logger.log(eventData.eventtype, "onFlashEvent");
       sendToJavaScript(eventData);
     }
@@ -255,7 +257,7 @@ package
       _akamaiHDPlayer.onSetVideoClosedCaptionsMode(event);
     }
 
-   /**
+    /**
     * Passes the target bitrate to the player.
     * @private
     * @method ExternalJavaScriptAPI#onSetTargetBitrate
@@ -274,6 +276,7 @@ package
     */
     private function onGetCurrentTime(event:Event):void
     {
+      _akamaiHDPlayer.onGetCurrentTime(event);
     }
 
    /**
@@ -300,20 +303,8 @@ package
       var eventData : Object = new Object();
       eventData.eventtype = data;
       eventData.eventObject = null;
+      eventData.videoId = thisVideoId;
       _jsBridge.call("onCallback", eventData);
-    }
-
-    /**
-     * This method is bound to the ExternalInterface to
-     * receive data from the JavaScript application
-     * @method ExternalJavaScriptAPI#jSBound
-     * @param {String} data
-     */
-    private function jSBound(data:String):Object
-    {
-      Logger.log(data, "swf jSBound");
-      onCallback(data);
-      return data;
     }
 
    /**
@@ -336,9 +327,10 @@ package
     * @param {string} value The value to be send to the java script page.
     * @param {object} dataObj The object to be send to the java script page.
     */
-    private function receivedFromJavaScript(value:String , dataObj:Object = null):void
+    private function receivedFromJavaScript(value:String , dataObj:Object = null, videoId:String = null):void
     {
       var eventArgs:String = "";
+      if (videoId != null && thisVideoId == null) thisVideoId = videoId;
 
       if (value.indexOf("(") != -1)
       {
