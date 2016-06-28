@@ -78,6 +78,13 @@ package
     private var _dfxp:XML = new XML();
     private var _loader:URLLoader;
     private var _captioningDocument:CaptioningDocument;
+    private var _akamaiEdgeAuthTokenAuthorizer:AkamaiEdgeAuthTokenAuthorizer;
+    private var _pCode:String = "";
+    private var _embebCode:String = "";
+    private var _secureHDToken:Boolean = false;
+    private var _sasServerWithProtocolAndPort:String = "http://player.ooyala.com/sas";
+    private var _tokenFetched:Boolean = false;
+    private var _playSecurestream:Boolean = false;
 
     /**
      * Constructor
@@ -404,7 +411,14 @@ package
                                             || _playerState == MediaPlayerState.BUFFERING)
       {
         _playQueue = true;
-        _streamController.play(_akamaiStreamURL);
+        if(!_secureHDToken || (_secureHDToken && _tokenFetched))
+        {
+          _streamController.play(_akamaiStreamURL);
+        }
+        else
+        {
+          _playSecurestream = true;
+        }
       }
       else
       {
@@ -494,6 +508,48 @@ package
     public function onSetVideoURL(event:DynamicEvent):void
     {
       _akamaiStreamURL = (String)(event.args);
+    }
+    
+    /**
+     * Sets the embebCode, pcode, and whether its a secure stream for the secureHD stream.
+     * @public
+     * @method AkamaiHDPlayer#setSecureContent
+     * @param {Event} event The event passed from the external interface.
+     */
+    public function setSecureContent(event:DynamicEvent):void
+    {
+      _embebCode =event.args.assetId;
+      _pCode = event.args.accountId;
+      _secureHDToken = event.args.secureContent;
+      // implementation for secureHD stream for appending the secure token to the stream.
+      if(_secureHDToken)
+      {
+        _akamaiEdgeAuthTokenAuthorizer =  new AkamaiEdgeAuthTokenAuthorizer(_sasServerWithProtocolAndPort);
+        _akamaiEdgeAuthTokenAuthorizer.addEventListener(AkamaiEdgeAuthTokenAuthorizer.AUTH_COMPLETE,
+          onEdgeTokenComplete);
+        _akamaiEdgeAuthTokenAuthorizer.fetchEdgeAuthToken(_embebCode, _pCode);
+      }
+    }
+
+    /**
+     * Event listner for AkamaiEdgeAuthTokenAuthorizer.AUTH_COMPLETE which is used to append the token
+     * to the akamai stream url.
+     * @private
+     * @method AkamaiHDPlayer#onEdgeTokenComplete
+     * @param {Event} event
+     */
+    private function onEdgeTokenComplete(event:Event):void
+    {  
+      var delimiter:String = _akamaiStreamURL.indexOf("?") < 0 ? "?" : "&";
+      _akamaiStreamURL =_akamaiStreamURL + delimiter + "hdnea=" +
+      _akamaiEdgeAuthTokenAuthorizer.EdgeAuthToken;
+      _akamaiEdgeAuthTokenAuthorizer.removeEventListener(AkamaiEdgeAuthTokenAuthorizer.AUTH_COMPLETE,
+        onEdgeTokenComplete);
+      _tokenFetched = true;
+      if(_playSecurestream)
+      {
+        _streamController.play(_akamaiStreamURL);
+      }
     }
     
     /**
