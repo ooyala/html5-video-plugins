@@ -251,6 +251,17 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     /**
+     * Set the embed code and player id for the secure HD stream.
+     * @public
+     * @method OoyalaAkamaiHDFlashVideoWrapper#setSecureContent
+     * @param {object} contentMetadata The object with the content metadata info.
+     */
+    this.setSecureContent = function(contentMetadata)
+    {      
+      this.callToFlash("setSecureContent()", contentMetadata);
+    };
+
+    /**
      * Sets the closed captions on the video element.
      * @public
      * @method OoyalaAkamaiHDFlashVideoWrapper#setClosedCaptions
@@ -258,10 +269,10 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} closedCaptions The captions object
      * @param {object} params The parameters object
      */
-    this.setClosedCaptions = function(language,closedCaptions,params) {
-       var parameters = {language:language, closedCaptions:closedCaptions, params:params};
-       this.callToFlash("setVideoClosedCaptions()" , parameters);
-     };
+    this.setClosedCaptions = function(language,closedCaptions,params){
+      var parameters = {language:language, closedCaptions:closedCaptions, params:params};
+      this.callToFlash("setVideoClosedCaptions()" , parameters);
+    };
 
     /**
      * Sets the closed captions mode of the video playback.

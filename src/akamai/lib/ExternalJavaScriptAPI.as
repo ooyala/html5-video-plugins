@@ -88,6 +88,7 @@ package
       addEventListener("setTargetBitrate", onSetTargetBitrate);
       addEventListener("getCurrentTime", onGetCurrentTime);
       addEventListener("destroy", onDestroy);
+      addEventListener("setSecureContent", setSecureContent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.PLAYING, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.ENDED, onFlashEvent);
@@ -126,6 +127,7 @@ package
       removeEventListener("setTargetBitrate", onSetTargetBitrate);
       removeEventListener("getCurrentTime", onGetCurrentTime);
       removeEventListener("destroy", onDestroy);
+      removeEventListener("setSecureContent", setSecureContent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAYING, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.ENDED, onFlashEvent);
@@ -291,6 +293,17 @@ package
       destroy();
     }
 
+   /**
+    * Sets the embed code and pcode for fetching the secure token.
+    * @private
+    * @method ExternalJavaScriptAPI#setSecureContent
+    * @param {Event} event
+    */
+    private function setSecureContent(event:DynamicEvent):void
+    {
+      _akamaiHDPlayer.setSecureContent(event);
+    }
+    
     /**
      * This is an internal callback that passes data to
      * the JavaScript application
