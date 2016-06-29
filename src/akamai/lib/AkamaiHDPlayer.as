@@ -55,6 +55,7 @@ package
     private var _bitrateIdArray:Array = new Array();
     private var _currentBitrate:Number = -1;
     private var _previousBitrate:Number = -1;
+    private var _bitrateFlag:Number = 0;
 
     private var _selectedCaptionLanguage:String = "";
     private var _captionObject:Object = new Object();
@@ -186,6 +187,27 @@ package
       _netStream = _streamController.netStream as AkamaiHTTPNetStream;
       _netStream.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
       _akamaiVideoSurface.attachNetStream(_netStream);
+
+      var id:String;
+        if(_previousBitrate != -1)
+        {
+          if(_bitrateFlag != 0)
+          {
+            for (var i:int = 0; i < _bitrateIdArray.length; i++)
+            {
+              id = _bitrateIdArray[i];
+              if (_previousBitrate == (_bitrateArray[id][0].bitrate)/1000)
+              {
+                _streamController.mediaPlayer.autoDynamicStreamSwitch = false;
+                _streamController.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[id][1]);
+              }
+            }
+          }
+          else
+          {
+            _streamController.mediaPlayer.autoDynamicStreamSwitch = true;
+          }
+        }
 
       if (_playQueue)
       {
@@ -338,6 +360,7 @@ package
     private function onPlayComplete(event:TimeEvent):void
     {
       _playheadTimer.stop();
+      _previousBitrate = _currentBitrate;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
     }
     
@@ -940,6 +963,7 @@ package
          _streamController.mediaPlayer.maxAllowedDynamicStreamIndex =  _streamController.mediaPlayer.numDynamicStreams - 1;
          //Switches to the stream with the index of bitrate (bitrate of selected bitrate ID)
          _streamController.mediaPlayer.switchDynamicStreamIndex(_bitrateArray[bitrateId][1]);
+         _bitrateFlag = 1;
        }
        else 
        {
@@ -950,6 +974,7 @@ package
          eventObject.width = 0;
          eventObject.bitrate = 0;
          dispatchEvent(new DynamicEvent(DynamicEvent.BITRATE_CHANGED,(eventObject)));
+         _bitrateFlag = 0;
        }
       }
       catch(error:Error)
