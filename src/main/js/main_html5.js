@@ -420,6 +420,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      if (resolveDuration(_video.duration) == 0) { // stream is not seekable
+        return false;
+      }
       var safeTime = getSafeSeekTimeIfPossible(_video, time);
       if (safeTime !== null) {
         _video.currentTime = safeTime;
