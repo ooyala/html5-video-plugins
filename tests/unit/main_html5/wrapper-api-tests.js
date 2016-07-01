@@ -236,6 +236,22 @@ describe('main_html5 wrapper tests', function () {
     expect(returns).to.be(false);
   });
 
+  it('should ignore seek if duration of video is zero or Infinity or NaN', function(){
+    element.duration = 0;
+    var returns = wrapper.seek(1);
+    expect(returns).to.be(false);
+    element.duration = Infinity;
+    returns = wrapper.seek(1);
+    expect(returns).to.be(false);
+    element.duration = "abcde";
+    returns = wrapper.seek(1);
+    expect(returns).to.be(false);
+
+    setFullSeekRange(10);
+    returns = wrapper.seek(1);
+    expect(returns).to.be(true);
+  });
+
   it('should enqueue seeking if seekvalue invalid', function(){
     var duration = 10;
     setFullSeekRange(duration);
