@@ -219,6 +219,14 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.seek.wasCalled).to.be(false);
   });
 
+  it('should act on initialTime if has played and video ended', function(){
+    spyOn(wrapper, "seek");
+    wrapper.play();
+    $(element).triggerHandler("ended");
+    wrapper.setInitialTime(10);
+    expect(wrapper.seek.wasCalled).to.be(true);
+  });
+
   it('should call pause on element when wrapper paused', function(){
     spyOn(wrapper, "pause");
     wrapper.pause();

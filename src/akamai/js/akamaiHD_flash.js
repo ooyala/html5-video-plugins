@@ -324,7 +324,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} initialTime The initial time of the video (seconds)
      */
     this.setInitialTime = function(initialTime) {
-      if (!hasPlayed) {
+      if (!hasPlayed || videoEnded) {
         this.seek(initialTime);
       }
     };
