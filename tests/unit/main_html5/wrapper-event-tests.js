@@ -40,6 +40,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should dequeue seek on \'loadedmetadata\' event', function(){
+    element.duration = 10;
     wrapper.setInitialTime(10);
     spyOn(wrapper, "seek");
     $(element).triggerHandler("loadedmetadata");
@@ -670,6 +671,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should dequeue seek and fail on video \'timeupdate\' event if not seekable', function(){
     vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
+    element.duration = 10;
     wrapper.setInitialTime(10);
     spyOn(wrapper, "seek").andCallThrough();
     $(element).triggerHandler("timeupdate");
@@ -681,8 +683,8 @@ describe('main_html5 wrapper tests', function () {
 
   it('should dequeue seek and succeed on video \'timeupdate\' event if seekable', function(){
     vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
-    wrapper.setInitialTime(10);
     element.duration = 20;
+    wrapper.setInitialTime(10);
     spyOn(element.seekable, "start").andReturn(0);
     spyOn(element.seekable, "end").andReturn(20);
     element.seekable.length = 1;
