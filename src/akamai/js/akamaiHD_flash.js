@@ -81,7 +81,7 @@ require("../../../html5-common/js/utils/constants.js");
         console.error("NO FLASH DETECTED");
         return [];
       } else {
-        return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS ];
+        return [ OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HDS, OO.VIDEO.ENCODING.AKAMAI_HD2_HDS ];
       }
     }
     this.encodings = testForFlash();
