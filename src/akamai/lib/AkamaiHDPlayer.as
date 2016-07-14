@@ -265,21 +265,17 @@ package
     {
       if (event.info.code == "NetStream.Buffer.Full")
       {
-        if (_initialPlay)
-          {
-            //Sets initial time to duration when it is greater than duration
-            if (_initalSeekTime > _streamController.mediaPlayer.duration)
-            {
-              _initalSeekTime = (int) (_streamController.mediaPlayer.duration); 
-            }
-            //Sets initial time to zero when it is less than zero
-            else if (_initalSeekTime < 0)
-            {
-              _initalSeekTime = 0;
-            }
-          }
         if (_initalSeekTime != 0)
         {
+          if (_initalSeekTime > _streamController.mediaPlayer.duration)
+          {
+            _initalSeekTime = (int) (_streamController.mediaPlayer.duration);
+            dispatchTimeUpdateEvent(_initalSeekTime); 
+          }
+          else if (_initalSeekTime < 0)
+          {
+            return;
+          }
           if (_streamController.mediaPlayer.canSeek &&
               (_streamController.mediaPlayer.canSeekTo(_initalSeekTime)))
           {
