@@ -288,11 +288,6 @@ require("../../../html5-common/js/utils/constants.js");
 
       if (_currentUrl.replace(/[\?&]_=[^&]+$/,'') != url) {
         _currentUrl = url || "";
-
-        // bust the chrome caching bug
-        if (_currentUrl.length > 0) {
-          _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
-        }
         _readyToPlay = false;
         urlChanged = true;
         hasPlayed = false;
