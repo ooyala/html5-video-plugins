@@ -233,11 +233,6 @@ require("../../../html5-common/js/utils/constants.js");
     this.setVideoUrl = function(url, encoding) {
       if (currentUrl.replace(/[\?&]_=[^&]+$/,'') != url) {
         currentUrl = url || "";
-
-        // bust the chrome caching bug
-        if (currentUrl.length > 0) {
-          currentUrl = currentUrl + (/\?/.test(currentUrl) ? "&" : "?") + "_=" + getRandomString();
-        }
         urlChanged = true;
         hasPlayed = false;
         loaded = false;
