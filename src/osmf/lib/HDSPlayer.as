@@ -57,6 +57,7 @@ package
     private var _playQueue:Boolean = false;
     private var _seekToEnd:Boolean = false;
     private var _initialPlay:Boolean = true;
+    private var _isReinitialize:Boolean = false;
     private var _selectedCaptionLanguage:String = "";
     private var _captionObject:Object = new Object();
     private static const CAPTIONING_PLUGIN_INFO:String = "CaptioningPluginInfo";
@@ -353,6 +354,11 @@ package
           }
           break;
         case MediaPlayerState.UNINITIALIZED:
+          if(_isReinitialize)
+          {
+            _playQueue = true;
+            _isReinitialize = false;
+          }
           break;
       }
     }
@@ -734,6 +740,7 @@ package
       if (_resource != null)
       {
         _resource.addMetadataValue(CaptioningPluginInfo.CAPTIONING_METADATA_NAMESPACE, metadata);
+        _isReinitialize = true;
         _element = _mediaFactory.createMediaElement(_resource);
         _mediaPlayerSprite.media = _element;
       }
