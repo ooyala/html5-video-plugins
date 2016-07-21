@@ -17,7 +17,10 @@ package
   import flash.text.TextFieldAutoSize;
   import flash.text.TextFormat;
   import flash.utils.Timer;
-  
+
+  import org.osmf.events.DRMEvent;
+  import org.osmf.traits.DRMState
+  import org.osmf.traits.DRMTrait;
   import org.osmf.events.BufferEvent;
   import org.osmf.events.MediaElementEvent;
   import org.osmf.events.MediaErrorCodes;
@@ -83,6 +86,8 @@ package
     private var _bitrateFlag:Number = 0;
     private var _hiddenCaptionFlag:Boolean = false;
     private var _previousCaptionMode:String;
+    private var _authToken:String = "";
+    private var _isAuthTokenNotEmpty:Boolean = false;
     
     /**
      * Constructor
@@ -113,6 +118,7 @@ package
       stage.addEventListener(FullScreenEvent.FULL_SCREEN, resizeListener);
       stage.addEventListener(Event.RESIZE, resizeListener);
       SendToDebugger("events added", "registerListeners");
+      _mediaPlayerSprite.mediaPlayer.addEventListener (DRMEvent.DRM_STATE_CHANGE, onDRMStateChangeHandler);
     }
     
     /**
@@ -221,6 +227,27 @@ package
     }
     
     /**
+     * Authenticates the Auth Token.
+     * @private
+     * @method HDSPlayer#onDRMStateChangeHandler
+     * @param {DRMEvent} DRMEvent that notifies the current drm state.
+     */
+    protected function onDRMStateChangeHandler (evt: DRMEvent): void
+    {
+      if(_isAuthTokenNotEmpty)
+      {
+        switch (evt.drmState) {
+          case DRMState.AUTHENTICATION_NEEDED:
+            _mediaPlayerSprite.mediaPlayer.authenticateWithToken(_authToken); 
+            break;
+          case DRMState.UNINITIALIZED:
+            _mediaPlayerSprite.mediaPlayer.authenticateWithToken(_authToken); 
+            break;
+        }
+      }
+    }
+
+    /**
      * Loads the plugin using plugin's resource.
      * @private
      * @method HDSPlayer#loadPluginFromResource
@@ -312,6 +339,14 @@ package
         case MediaPlayerState.READY:
           _seekToEnd=false;
           totalBitratesAvailable();
+          if(_isAuthTokenNotEmpty)
+          {
+            var drmTrait:DRMTrait = _mediaPlayerSprite.mediaPlayer.media.getTrait(MediaTraitType.DRM) as DRMTrait; 
+            if (drmTrait != null) 
+            { 
+              drmTrait.authenticateWithToken(_authToken); 
+            } 
+          }
           if (_playQueue)
           {
             onVideoPlay(event);
@@ -334,6 +369,21 @@ package
       _previousBitrate=_currentBitrate;
       _resource = null;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
+    }
+    
+    /**
+     * Recieve the auth Token from VTC and use the same for authentication. 
+     * @private
+     * @method HDSPlayer#onSetAuthToken
+     * @param {DynamicEvent} event
+     */
+    public function onSetAuthToken(event:DynamicEvent):void
+    {
+      if((String)(event.args) != "undefined")
+      {
+        _isAuthTokenNotEmpty = true;
+        _authToken = "auth_token=" + (String)(event.args);
+      }
     }
     
     /**
