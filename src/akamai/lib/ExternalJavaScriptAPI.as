@@ -89,6 +89,7 @@ package
       addEventListener("getCurrentTime", onGetCurrentTime);
       addEventListener("destroy", onDestroy);
       addEventListener("setSecureContent", setSecureContent);
+      addEventListener("onLiveClick", onLiveClick);
       _akamaiHDPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.PLAYING, onFlashEvent);
       _akamaiHDPlayer.addEventListener(DynamicEvent.ENDED, onFlashEvent);
@@ -128,6 +129,7 @@ package
       removeEventListener("getCurrentTime", onGetCurrentTime);
       removeEventListener("destroy", onDestroy);
       removeEventListener("setSecureContent", setSecureContent);
+      removeEventListener("onLiveClick", onLiveClick);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.PLAYING, onFlashEvent);
       _akamaiHDPlayer.removeEventListener(DynamicEvent.ENDED, onFlashEvent);
@@ -203,6 +205,17 @@ package
     private function onChangeVolume(event:DynamicEvent):void
     {
       _akamaiHDPlayer.onChangeVolume(event);
+    }
+
+   /**
+    * Notifies the live point of live sftream.
+    * @private
+    * @method ExternalJavaScriptAPI#onLiveClick
+    * @param {DynamicEvent} event
+    */
+    private function onLiveClick(event:DynamicEvent):void
+    {
+      _akamaiHDPlayer.onLiveClick(event);
     }
 
    /**
