@@ -180,6 +180,7 @@ require("../../../html5-common/js/utils/environment.js");
     var initialTime = { value: 0, reached: true };
     var canSeek = true;
     var isPriming = false;
+    var isLive = false;
     var lastCueText = null;
     var availableClosedCaptions = {};
 
@@ -285,7 +286,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @returns {boolean} True or false indicating success
      */
     // Allow for the video src to be changed without loading the video
-    this.setVideoUrl = function(url, encoding) {
+    this.setVideoUrl = function(url, encoding, live) {
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
       var urlChanged = false;
@@ -298,6 +299,7 @@ require("../../../html5-common/js/utils/environment.js");
         }
 
         isM3u8 = (encoding == OO.VIDEO.ENCODING.HLS);
+        isLive = live;
         urlChanged = true;
         resetStreamData();
         if (_currentUrl === "") {
@@ -430,7 +432,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      if (resolveDuration(_video.duration) == 0) { // stream is not seekable
+      if (isLive) {
         return false;
       }
       var safeTime = getSafeSeekTimeIfPossible(_video, time);
