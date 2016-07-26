@@ -86,6 +86,8 @@ package
     private var _sasServerWithProtocolAndPort:String = "http://player.ooyala.com/sas";
     private var _tokenFetched:Boolean = false;
     private var _playSecurestream:Boolean = false;
+    private var _goLiveFlag:Boolean = true;
+    private var _liveFlag:Boolean = true;
 
     /**
      * Constructor
@@ -476,6 +478,15 @@ package
      */
     public function onVideoSeek(event:DynamicEvent):void
     {
+      if(_liveFlag == true)
+      {
+        _goLiveFlag = true;
+        _liveFlag = false;
+      }
+      else
+      {
+        _goLiveFlag = false;
+      }
       var time:Number = (Number)(event.args);
 
       if (_initialPlay) 
@@ -552,6 +563,17 @@ package
           onEdgeTokenComplete);
         _akamaiEdgeAuthTokenAuthorizer.fetchEdgeAuthToken(_embebCode, _pCode);
       }
+    }
+
+    /**
+     * Notifies the live button click.
+     * @public
+     * @method AkamaiHDPlayer#onLiveClick
+     * @param {Event} event The event passed from the external interface.
+     */
+    public function onLiveClick(event:DynamicEvent):void
+    {
+      _liveFlag = true;
     }
 
     /**
@@ -797,7 +819,7 @@ package
     {
       if (!_streamController.mediaPlayer.seeking) 
       { 
-        if(_streamController.isLiveStream && _streamController.isPlayingLive)
+        if(_streamController.isLiveStream && _goLiveFlag)
         {
           dispatchTimeUpdateEvent(_streamController.mediaPlayer.duration);
           return;
