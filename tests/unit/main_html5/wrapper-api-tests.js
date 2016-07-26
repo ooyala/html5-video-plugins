@@ -244,18 +244,22 @@ describe('main_html5 wrapper tests', function () {
     expect(returns).to.be(false);
   });
 
-  it('should ignore seek if duration of video is zero or Infinity or NaN', function(){
-    element.duration = 0;
+  it('should ignore seek for live streams', function(){
+    wrapper.setVideoUrl("url", "mp4", false);
+    element.duration = 100;
     var returns = wrapper.seek(1);
     expect(returns).to.be(false);
+  });
+
+  it('should NOT ignore seek for VOD stream even if duration of video is zero or Infinity or NaN', function(){
+    wrapper.setVideoUrl("url", "mp4", false);
+    element.duration = 0;
+    var returns = wrapper.seek(1);
+    expect(returns).to.be(true);
     element.duration = Infinity;
     returns = wrapper.seek(1);
-    expect(returns).to.be(false);
+    expect(returns).to.be(true);
     element.duration = "abcde";
-    returns = wrapper.seek(1);
-    expect(returns).to.be(false);
-
-    setFullSeekRange(10);
     returns = wrapper.seek(1);
     expect(returns).to.be(true);
   });
