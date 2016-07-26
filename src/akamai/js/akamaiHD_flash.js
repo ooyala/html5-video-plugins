@@ -246,6 +246,18 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     /**
+     * Notifies video is at live point.
+     * @public
+     * @method OoyalaAkamaiHDFlashVideoWrapper#onLiveClick
+     * @param {string} id The video id.
+     */
+    this.onLiveClick = function(id)
+    {
+      var livePoint = true;
+      this.callToFlash("onLiveClick()", livePoint);
+    };
+
+    /**
      * Set the embed code and player id for the secure HD stream.
      * @public
      * @method OoyalaAkamaiHDFlashVideoWrapper#setSecureContent
