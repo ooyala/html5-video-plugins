@@ -793,6 +793,11 @@ package
     {
       if (!_streamController.mediaPlayer.seeking) 
       { 
+        if(_streamController.isLiveStream && _streamController.isPlayingLive)
+        {
+          dispatchTimeUpdateEvent(_streamController.mediaPlayer.duration);
+          return;
+        }
         dispatchTimeUpdateEvent(_streamController.mediaPlayer.currentTime); 
       }
     }
