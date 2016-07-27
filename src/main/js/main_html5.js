@@ -49,11 +49,13 @@ require("../../../html5-common/js/utils/environment.js");
           // 2012 models of Samsung and LG smart TV's do not support HLS even if reported
           // Mac OS must be lion or later
           list.push(OO.VIDEO.ENCODING.HLS);
+          list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
         }
 
         // Sony OperaTV supports HLS but doesn't properly report it so we are forcing it here
         if (window.navigator.userAgent.match(/SonyCEBrowser/)) {
           list.push(OO.VIDEO.ENCODING.HLS);
+          list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
         }
       }
 
