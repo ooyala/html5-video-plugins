@@ -245,7 +245,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should ignore seek for live streams', function(){
-    wrapper.setVideoUrl("url", "mp4", false);
+    wrapper.setVideoUrl("url", "mp4", true);
     element.duration = 100;
     var returns = wrapper.seek(1);
     expect(returns).to.be(false);
@@ -254,7 +254,8 @@ describe('main_html5 wrapper tests', function () {
   it('should NOT ignore seek for VOD stream even if duration of video is zero or Infinity or NaN', function(){
     wrapper.setVideoUrl("url", "mp4", false);
     element.duration = 0;
-    var returns = wrapper.seek(1);
+    setFullSeekRange(10);
+    var returns = wrapper.seek(1);    
     expect(returns).to.be(true);
     element.duration = Infinity;
     returns = wrapper.seek(1);
