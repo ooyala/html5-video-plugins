@@ -228,6 +228,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
      * @param {string} encoding The encoding of video stream
+     * @param {string} isLive Notifies whether the stream is live (unused here). 
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {

@@ -280,13 +280,10 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaFlashVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
      * @param {string} encoding The encoding of video stream
+     * @param {boolean} isLive Notifies whether the stream is live. 
      * @returns {boolean} True or false indicating success
      */
-    this.setVideoUrl = function(url, encoding, authToken) {
-      if(authToken != "")
-      {
-        this.callToFlash("setAuthToken("+authToken+")");
-      }
+    this.setVideoUrl = function(url, encoding, isLive) {
       var urlChanged = false;
            newController = this.controller;
 
@@ -297,15 +294,28 @@ require("../../../html5-common/js/utils/constants.js");
         hasPlayed = false;
         loaded = false;
         firstPlay = true;
-        url = "setVideoUrl(" + _currentUrl + ")";
+        url = _currentUrl;
+        var parameters = {url:url, isLive:isLive};
       }
       if (_.isEmpty(_currentUrl)) {
       //if (!_currentUrl) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); //0 -> no stream
       } else {
-        this.callToFlash(url);
+        this.callToFlash("setVideoUrl()",parameters);
       }
       return urlChanged;
+    };
+
+    /**
+     * Notifies video is at live point.
+     * @public
+     * @method OoyalaFlashVideoWrapper#onLiveClick
+     * @param {string} id The video id.
+     */
+    this.onLiveClick = function(id)
+    {
+      var livePoint = true;
+      this.callToFlash("onLiveClick()", livePoint);
     };
 
     /**
