@@ -180,9 +180,10 @@ require("../html5-common/js/utils/constants.js");
      * @method TemplateVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
      * @param {string} encoding The encoding of video stream, possible values are found in OO.VIDEO.ENCODING
+     * @param {boolean} isLive True if it is a live asset, false otherwise
      * @returns {boolean} True or false indicating success
      */
-    this.setVideoUrl = function(url, encoding) {
+    this.setVideoUrl = function(url, encodingi, isLive) {
       return true;
     };
 
