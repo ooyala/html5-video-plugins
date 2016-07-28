@@ -183,7 +183,7 @@ require("../html5-common/js/utils/constants.js");
      * @param {boolean} isLive True if it is a live asset, false otherwise
      * @returns {boolean} True or false indicating success
      */
-    this.setVideoUrl = function(url, encodingi, isLive) {
+    this.setVideoUrl = function(url, encoding, isLive) {
       return true;
     };
 
