@@ -79,7 +79,7 @@ package
       addEventListener("setInitialTime", onSetInitialTime);
       addEventListener("getCurrentTime", onGetCurrentTime);
       addEventListener("destroy", onDestroy);
-      addEventListener("setAuthToken", onSetAuthToken);
+      addEventListener("onLiveClick", onLiveClick);
       _hdsPlayer.addEventListener(DynamicEvent.PLAY, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.PLAYING, onFlashEvent);
       _hdsPlayer.addEventListener(DynamicEvent.ENDED, onFlashEvent);
@@ -118,7 +118,7 @@ package
       removeEventListener("setInitialTime", onSetInitialTime);
       removeEventListener("getCurrentTime", onGetCurrentTime);
       removeEventListener("destroy", onDestroy);
-      removeEventListener("setAuthToken", onSetAuthToken);
+      removeEventListener("onLiveClick", onLiveClick);
       _hdsPlayer.removeEventListener(DynamicEvent.PLAY, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.PLAYING, onFlashEvent);
       _hdsPlayer.removeEventListener(DynamicEvent.ENDED, onFlashEvent);
@@ -180,15 +180,15 @@ package
       _hdsPlayer.onVideoSeek(event);
     }
 
-   /**
-    * Passes the authToken to the player
+    /**
+    * Notifies the live point of live sftream.
     * @private
-    * @method ExternalJavaScriptAPI#onSetAuthToken
+    * @method ExternalJavaScriptAPI#onLiveClick
     * @param {DynamicEvent} event
     */
-    private function onSetAuthToken(event:DynamicEvent):void
+    private function onLiveClick(event:DynamicEvent):void
     {
-      _hdsPlayer.onSetAuthToken(event);
+      _hdsPlayer.onLiveClick(event);
     }
 
    /**
