@@ -280,6 +280,11 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaFlashVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
      * @param {string} encoding The encoding of video stream
+     * @param {boolean} isLive True if it is a live asset, false otherwise (unused here)
+     * XXX Sarita Singh - you added argument to public API and it is not documented anywhere
+     * XXX authToken argument is in conflict with current usage of this funciton by main_html5 plugin, which is using isLive boolean flag
+     * XXX This should be fixed, and comments to all plugin instances of this function (including templates)
+     * XXX should be updated.  
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding, authToken) {
