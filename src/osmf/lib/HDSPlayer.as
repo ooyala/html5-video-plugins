@@ -18,9 +18,6 @@ package
   import flash.text.TextFormat;
   import flash.utils.Timer;
 
-  import org.osmf.events.DRMEvent;
-  import org.osmf.traits.DRMState
-  import org.osmf.traits.DRMTrait;
   import org.osmf.events.BufferEvent;
   import org.osmf.events.MediaElementEvent;
   import org.osmf.events.MediaErrorCodes;
@@ -87,8 +84,9 @@ package
     private var _bitrateFlag:Number = 0;
     private var _hiddenCaptionFlag:Boolean = false;
     private var _previousCaptionMode:String;
-    private var _authToken:String = "";
-    private var _isAuthTokenNotEmpty:Boolean = false;
+    private var _goLive:Boolean = true;
+    private var _liveButtonClicked:Boolean = true;
+    private var _isLiveStream:Boolean = false;
     
     /**
      * Constructor
@@ -119,7 +117,6 @@ package
       stage.addEventListener(FullScreenEvent.FULL_SCREEN, resizeListener);
       stage.addEventListener(Event.RESIZE, resizeListener);
       SendToDebugger("events added", "registerListeners");
-      _mediaPlayerSprite.mediaPlayer.addEventListener (DRMEvent.DRM_STATE_CHANGE, onDRMStateChangeHandler);
     }
     
     /**
@@ -228,27 +225,6 @@ package
     }
     
     /**
-     * Authenticates the Auth Token.
-     * @private
-     * @method HDSPlayer#onDRMStateChangeHandler
-     * @param {DRMEvent} DRMEvent that notifies the current drm state.
-     */
-    protected function onDRMStateChangeHandler (evt: DRMEvent): void
-    {
-      if(_isAuthTokenNotEmpty)
-      {
-        switch (evt.drmState) {
-          case DRMState.AUTHENTICATION_NEEDED:
-            _mediaPlayerSprite.mediaPlayer.authenticateWithToken(_authToken); 
-            break;
-          case DRMState.UNINITIALIZED:
-            _mediaPlayerSprite.mediaPlayer.authenticateWithToken(_authToken); 
-            break;
-        }
-      }
-    }
-
-    /**
      * Loads the plugin using plugin's resource.
      * @private
      * @method HDSPlayer#loadPluginFromResource
@@ -340,14 +316,6 @@ package
         case MediaPlayerState.READY:
           _seekToEnd=false;
           totalBitratesAvailable();
-          if(_isAuthTokenNotEmpty)
-          {
-            var drmTrait:DRMTrait = _mediaPlayerSprite.mediaPlayer.media.getTrait(MediaTraitType.DRM) as DRMTrait; 
-            if (drmTrait != null) 
-            { 
-              drmTrait.authenticateWithToken(_authToken); 
-            } 
-          }
           if (_playQueue)
           {
             onVideoPlay(event);
@@ -375,21 +343,6 @@ package
       _previousBitrate=_currentBitrate;
       _resource = null;
       dispatchEvent(new DynamicEvent(DynamicEvent.ENDED,null));
-    }
-    
-    /**
-     * Recieve the auth Token from VTC and use the same for authentication. 
-     * @private
-     * @method HDSPlayer#onSetAuthToken
-     * @param {DynamicEvent} event
-     */
-    public function onSetAuthToken(event:DynamicEvent):void
-    {
-      if((String)(event.args) != "undefined")
-      {
-        _isAuthTokenNotEmpty = true;
-        _authToken = "auth_token=" + (String)(event.args);
-      }
     }
     
     /**
@@ -544,6 +497,15 @@ package
      */
     public function onVideoSeek(event:DynamicEvent):void
     {
+      if(_liveButtonClicked == true)
+      {
+        _goLive = true;
+        _liveButtonClicked = false;
+      }
+      else
+      {
+        _goLive = false;
+      }
       //Seeks the video to the specified position. Also check for the ability to seek to avoid error situations.
       var time:Number = (Number)(event.args);
       _initialTimeReference = -1;
@@ -569,6 +531,17 @@ package
       {
         SendToDebugger("Error:Failed to seek to: " + time, "onVideoSeek");
       }
+    }
+
+    /**
+     * Notifies the live button click.
+     * @public
+     * @method HDSPlayer#onLiveClick
+     * @param {Event} event The event passed from the external interface.
+     */
+    public function onLiveClick(event:DynamicEvent):void
+    {
+      _liveButtonClicked = true;
     }
     
     /**
@@ -604,7 +577,9 @@ package
      */
     public function onSetVideoURL(event:DynamicEvent):void
     {
-      _videoUrl = (String)(event.args);
+      var videoObject:Object =(Object)(event.args);
+      _videoUrl = videoObject.url;
+      _isLiveStream = videoObject.isLive;
       SendToDebugger("Set Video URL: " + _videoUrl, "onSetVideoURL");
     }
     
@@ -853,6 +828,13 @@ package
         totalTime = 0;
       }
       eventObject.currentTime = time;
+      if(_isLiveStream && _goLive)
+      {
+        eventObject.currentTime = duration;
+      }
+      else{
+        eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime;
+      }      
       eventObject.duration = totalTime;
       eventObject.buffer = _mediaPlayerSprite.mediaPlayer.bufferLength + _mediaPlayerSprite.mediaPlayer.currentTime;
       eventObject.seekRange_start = 0;
