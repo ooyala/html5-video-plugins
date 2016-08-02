@@ -562,6 +562,7 @@ package
       {
         _seekTrait.addEventListener(SeekEvent.SEEKING_CHANGE, onSeekingChange);
         _mediaPlayerSprite.mediaPlayer.seek(time);
+        dispatchTimeUpdateEvent(time);
         SendToDebugger("Seek to: " + time, "onVideoSeek");
       }
       else
@@ -811,13 +812,27 @@ package
     }
     
     /**
-     * As the video plays, this method updates the duration,current time and
-     * also the buffer length of the video.
+     * Calls dispatchTimeUpdateEvent() with curent playhead time, if the video is not seeking.
      * @public
      * @method HDSPlayer#onPlayheadUpdate
      * @param {Event} event The event passed from the external interface.
      */
     public function onPlayheadUpdate(event:Event):void
+    {
+      if (!_mediaPlayerSprite.mediaPlayer.seeking) 
+      { 
+        dispatchTimeUpdateEvent(_mediaPlayerSprite.mediaPlayer.currentTime); 
+      }
+    }
+    
+    /**
+     * As the video plays, this method updates the duration,current time and
+     * also the buffer length of the video.
+     * @public
+     * @method HDSPlayer#dispatchTimeUpdateEvent
+     * @param {Number} time The value of current playhead time.
+     */
+    public function dispatchTimeUpdateEvent(time:Number):void
     {
       var eventObject:Object = new Object();
       var seekRange:Object = new Object();
@@ -837,7 +852,7 @@ package
       {
         totalTime = 0;
       }
-      eventObject.currentTime = _mediaPlayerSprite.mediaPlayer.currentTime;
+      eventObject.currentTime = time;
       eventObject.duration = totalTime;
       eventObject.buffer = _mediaPlayerSprite.mediaPlayer.bufferLength + _mediaPlayerSprite.mediaPlayer.currentTime;
       eventObject.seekRange_start = 0;
