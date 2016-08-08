@@ -1163,7 +1163,12 @@ require("../../../html5-common/js/utils/environment.js");
     var convertToSafeSeekTime = function(time, duration) {
       // If seeking within some threshold of the end of the stream, seek to end of stream directly
       if (duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) {
-        time = duration;
+        // iOS has a bug when seeking to the exact end of a video, the player will lock up and become unresponsive.
+        if (OO.isIos) {
+          time = (duration - 0.01);
+        }
+        else
+          time = duration;
       }
 
       var safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
