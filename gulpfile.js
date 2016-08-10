@@ -60,27 +60,31 @@ gulp.task('init_module', function(callback) {
 });
 
 gulp.task('build_flash_osmf', function(callback) {
-  exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-CC-osmf", function(err) {
-    exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-osmf", function(err) { 
-      if (err) console.log("Error occured in building osmf plugin : " + err);
-      else {osmf_fn();}
-      exec("ant -buildfile build_flash.xml -Dbuild=build/classes clean-osmf", function(err) {
-        if (err) return callback(err);
-          callback();
+  exec("ant -buildfile build_flash.xml -Dbuild=build/classes wrapper", function(err) {
+    exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-CC-osmf", function(err) {
+      exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-osmf", function(err) { 
+        if (err) console.log("Error occured in building osmf plugin : " + err);
+        else {osmf_fn();}
+        exec("ant -buildfile build_flash.xml -Dbuild=build/classes clean-osmf", function(err) {
+          if (err) return callback(err);
+            callback();
+        });
       });
     });
   });
 });
 
 gulp.task('build_flash_akamai', function(callback) {
-  exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-CC-akamai", function(err) {
-    exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-akamai", function(err) {
-      if (err) console.log("Error occured in building akamai plugin : " + err);
-      else {akamai_fn();}
-        exec("ant -buildfile build_flash.xml -Dbuild=build/classes clean-akamai", function(err) {
-          if (err) return callback(err);
-            callback();
-        });
+  exec("ant -buildfile build_flash.xml -Dbuild=build/classes wrapper", function(err) {
+    exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-CC-akamai", function(err) {
+      exec("ant -buildfile build_flash.xml -Dbuild=build/classes build-akamai", function(err) {
+        if (err) console.log("Error occured in building akamai plugin : " + err);
+        else {akamai_fn();}
+          exec("ant -buildfile build_flash.xml -Dbuild=build/classes clean-akamai", function(err) {
+            if (err) return callback(err);
+              callback();
+          });
+      });
     });
   });
 });
