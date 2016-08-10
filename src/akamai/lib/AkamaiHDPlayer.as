@@ -246,12 +246,15 @@ package
       var caption : Object = info["parameters"];
       for (var key:String in caption)
       {
-        var captionText : String = caption[key];
-        if (captionText != null && _mode !="disabled")
+        if(key.substr(0,4)=="data")
         {
-          eventObject.text = captionText;
-          dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
-        }
+          var captionText : String = caption[key];
+          if (captionText != null && _mode !="disabled")
+          {
+            eventObject.text = captionText;
+            dispatchEvent(new DynamicEvent(DynamicEvent.CLOSED_CAPTION_CUE_CHANGED,(eventObject)));
+          }
+        }  
       }
     }
 
