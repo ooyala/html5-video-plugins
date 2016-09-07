@@ -438,6 +438,14 @@ describe('main_html5 wrapper tests', function () {
     expect(element.src).to.eql("url");
   });
 
+  it('should NOT unset the src on destroy for Edge', function(){
+    OO.isEdge = true;
+    element.src = "url";
+    expect(element.src).to.eql("url");
+    wrapper.destroy();
+    expect(element.src).to.eql("url");
+  });
+
   it('should set external closed captions', function(){
     OO.CONSTANTS = {
       CLOSED_CAPTIONS: {
