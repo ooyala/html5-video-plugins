@@ -494,7 +494,11 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.destroy = function() {
       _video.pause();
-      _video.src = '';
+      //On IE and Edge, setting the video source to an empty string has the unwanted effect
+      //of a network request to the base url
+      if (!OO.isIE && !OO.isEdge) {
+        _video.src = '';
+      }
       unsubscribeAllEvents();
       $(_video).remove();
       if (_playerId && currentInstances[_playerId] && currentInstances[_playerId] > 0) {
