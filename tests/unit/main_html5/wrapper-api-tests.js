@@ -29,6 +29,7 @@ describe('main_html5 wrapper tests', function () {
   afterEach(function() {
     OO.isEdge = false;
     OO.isAndroid = false;
+    OO.isIE = false;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     if (wrapper) { wrapper.destroy(); }
   });
@@ -427,6 +428,22 @@ describe('main_html5 wrapper tests', function () {
     expect(element.src).to.eql("url");
     wrapper.destroy();
     expect(element.src).to.eql("");
+  });
+
+  it('should NOT unset the src on destroy for IE11', function(){
+    OO.isIE = true;
+    element.src = "url";
+    expect(element.src).to.eql("url");
+    wrapper.destroy();
+    expect(element.src).to.eql("url");
+  });
+
+  it('should NOT unset the src on destroy for Edge', function(){
+    OO.isEdge = true;
+    element.src = "url";
+    expect(element.src).to.eql("url");
+    wrapper.destroy();
+    expect(element.src).to.eql("url");
   });
 
   it('should set external closed captions', function(){
