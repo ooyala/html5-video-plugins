@@ -529,7 +529,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} closedCaptions The closedCaptions object
      * @param {object} params The params to set with closed captions
      */
-    this.setClosedCaptions = _.bind(function(language, closedCaptions, params) {
+    this.setClosedCaptions = _.bind(function(language, closedCaptions, params, availableLanguages) {
       //Remove and disable current captions before setting new ones.
       $(_video).find('.' + TRACK_CLASS).remove();
       if (language == null) return;
@@ -566,6 +566,15 @@ require("../../../html5-common/js/utils/environment.js");
         } else if (!captions.inStream) {
           this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
           $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
+          for(i=0;i<availableLanguages.languages.length;i++)
+          {
+            if(language != availableLanguages.languages[i])
+            {
+              var labels = availableLanguages.locale[availableLanguages.languages[i]];
+              var source = availableLanguages.url[availableLanguages.languages[i]];
+              $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + labels + "' src='" + source + "' srclang='" + availableLanguages.languages[i] + "' >");
+            }
+          }
           if (_video.textTracks && _video.textTracks[0]) {
             _video.textTracks[0].mode = captionMode;
             //We only want to let the controller know of cue change if we aren't rendering cc from the plugin.
