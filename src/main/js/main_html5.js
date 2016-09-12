@@ -50,12 +50,14 @@ require("../../../html5-common/js/utils/environment.js");
           // Mac OS must be lion or later
           list.push(OO.VIDEO.ENCODING.HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
+          list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_HLS);
         }
 
         // Sony OperaTV supports HLS but doesn't properly report it so we are forcing it here
         if (window.navigator.userAgent.match(/SonyCEBrowser/)) {
           list.push(OO.VIDEO.ENCODING.HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
+          list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_HLS);
         }
       }
 
@@ -299,7 +301,10 @@ require("../../../html5-common/js/utils/environment.js");
           _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
         }
 
-        isM3u8 = (encoding == OO.VIDEO.ENCODING.HLS);
+        isM3u8 = (encoding == OO.VIDEO.ENCODING.HLS ||
+          encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS ||
+          encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_HLS
+        );
         isLive = live;
         urlChanged = true;
         resetStreamData();
