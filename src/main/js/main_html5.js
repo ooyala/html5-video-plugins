@@ -392,11 +392,11 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.setInitialTime = function(time) {
       var canSetInitialTime = (!hasPlayed || videoEnded) && (time !== 0);
-      // [PBW-5539] On iOS, when triggering replay after the current browser tab looses focus, the
+      // [PBW-5539] On Safari (iOS and Desktop), when triggering replay after the current browser tab looses focus, the
       // current time seems to fall a few milliseconds behind the video duration, which
       // makes the video play for a fraction of a second and then stop again at the end.
       // In this case we allow setting the initial time back to 0 as a workaround for this
-      var initialTimeRequired = OO.isIos && videoEnded && time === 0;
+      var initialTimeRequired = OO.isSafari && videoEnded && time === 0;
 
       if (canSetInitialTime || initialTimeRequired) {
         initialTime.value = time;
@@ -405,7 +405,8 @@ require("../../../html5-common/js/utils/environment.js");
         // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
         // never raised, even if the seekable property returns an endtime greater than the seek time.
         // To avoid this, save seeking information for use later.
-        if (OO.isAndroid) {
+        // [PBW-5539] Same issue with desktop Safari
+        if (OO.isAndroid || (OO.isSafari && !OO.isIos)) {
           queueSeek(initialTime.value);
         }
         else {
