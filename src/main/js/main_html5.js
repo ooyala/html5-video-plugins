@@ -405,8 +405,8 @@ require("../../../html5-common/js/utils/environment.js");
         // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
         // never raised, even if the seekable property returns an endtime greater than the seek time.
         // To avoid this, save seeking information for use later.
-        // [PBW-5539] Same issue with desktop Safari
-        if (OO.isAndroid || (OO.isSafari && !OO.isIos)) {
+        // [PBW-5539] Same issue with desktop Safari when setting initialTime after video ends
+        if (OO.isAndroid || (initialTimeRequired && !OO.isIos)) {
           queueSeek(initialTime.value);
         }
         else {
