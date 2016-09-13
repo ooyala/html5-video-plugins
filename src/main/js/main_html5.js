@@ -872,6 +872,10 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
     var raiseWaitingEvent = _.bind(function() {
+      // WAITING event is not raised if no video is assigned yet
+      if (_video.currentSrc === "" || _video.currentSrc === null) { 
+        return; 
+      }
       waitingEventRaised = true;
       this.controller.notify(this.controller.EVENTS.WAITING, {"url":_video.currentSrc});
     }, this);
