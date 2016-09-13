@@ -391,7 +391,14 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The initial time of the video (seconds)
      */
     this.setInitialTime = function(time) {
-      if ((!hasPlayed || videoEnded) && (time !== 0)) {
+      var canSetInitialTime = (!hasPlayed || videoEnded) && (time !== 0);
+      // [PBW-5539] On iOS, when triggering replay after the current browser tab looses focus, the
+      // current time seems to fall a few milliseconds behind the video duration, which
+      // makes the video play for a fraction of a second and then stop again at the end.
+      // In this case we allow setting the initial time back to 0 as a workaround for this
+      var initialTimeRequired = OO.isIos && videoEnded && time === 0;
+
+      if (canSetInitialTime || initialTimeRequired) {
         initialTime.value = time;
         initialTime.reached = false;
 
