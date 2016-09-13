@@ -36,7 +36,7 @@ describe('main_html5 factory tests', function () {
 
   it('should provide a list of supported encodings', function(){
     // This is controlled by document.createElement("video").canPlayType(type);
-    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.MP4, OO.VIDEO.ENCODING.WEBM, OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS]);
+    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.MP4, OO.VIDEO.ENCODING.WEBM, OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS, OO.VIDEO.ENCODING.AKAMAI_HD2_HLS]);
   });
 
   it('should provide a list of supported features', function(){
