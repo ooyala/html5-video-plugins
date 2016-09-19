@@ -86,7 +86,16 @@ require("../../../html5-common/js/utils/environment.js");
       var video = $("<video>");
       video.attr("class", "video");
       video.attr("id", domId);
-      video.attr("preload", "none");
+
+      // [PBW-5470] On Safari, when preload is set to 'none' and the user switches to a
+      // different tab while the video is about to auto play, the browser stops playback but
+      // doesn't fire a 'pause' event, which causes the player to get stuck in 'buffering' state.
+      // Setting preload to 'metadata' (or 'auto') allows Safari to auto resume when the tab is refocused.
+      if (OO.isSafari && !OO.isIos) {
+        video.attr("preload", "metadata");
+      } else {
+        video.attr("preload", "none");
+      }
 
       video.css(css);
 

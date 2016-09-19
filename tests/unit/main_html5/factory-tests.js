@@ -30,6 +30,10 @@ describe('main_html5 factory tests', function () {
   var vtc = { EVENTS: { CAN_PLAY: "can_play" },
                         notify: function(){} };
 
+  afterEach(function() {
+    OO.isSafari = false;
+  });
+
   it('should contain parameter \'name\'', function () {
     expect(pluginFactory.name).to.be.ok();
   });
@@ -140,6 +144,15 @@ describe('main_html5 factory tests', function () {
     expect(element.getAttribute("preload")).to.eql("none");
     expect(element.getAttribute("loop")).to.not.be.ok();;
     expect(element.getAttribute("autoplay")).to.not.be.ok();;
+  });
+
+  // [PBW-5470]
+  it('should set preload to "metadata" on desktop Safari', function(){
+    OO.isSafari = true;
+    var parentElement = $("<div>");
+    pluginFactory.create(parentElement, "test", vtc, {});
+    var element = parentElement.children()[0];
+    expect(element.getAttribute("preload")).to.eql("metadata");
   });
 
   it('should remove list of encodings on destroy', function(){
