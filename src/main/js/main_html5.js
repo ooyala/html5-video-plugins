@@ -873,7 +873,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var raiseWaitingEvent = _.bind(function() {
       // WAITING event is not raised if no video is assigned yet
-      if (_video.currentSrc === "" || _video.currentSrc === null) { 
+      if (_.isEmpty(_video.currentSrc)) { 
         return; 
       }
       waitingEventRaised = true;

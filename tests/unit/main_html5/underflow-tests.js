@@ -476,6 +476,7 @@ describe('main_html5 chrome underflow tests', function () {
   });
 
   it('should raise buffered event when canplay is raised after waiting on iOS', function(){
+    element.currentSrc = "url";
     vtc.interface.EVENTS.BUFFERED = "buffered";
     vtc.interface.EVENTS.WAITING = "waiting";
     OO.isIos = true;
@@ -489,6 +490,7 @@ describe('main_html5 chrome underflow tests', function () {
   });
 
   it('should raise buffered event when canplay is raised after waiting on firefox', function(){
+    element.currentSrc = "url";
     vtc.interface.EVENTS.BUFFERED = "buffered";
     vtc.interface.EVENTS.WAITING = "waiting";
     OO.isFirefox = true;
