@@ -343,6 +343,13 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
   });
 
+  it('should not notify WAITING on video \'waiting\' event if source is null', function(){
+    vtc.interface.EVENTS.WAITING = "waiting";
+    element.currentSrc = "";
+    $(element).triggerHandler("waiting");
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
+  });
+  
   it('should notify SEEKING on video \'seeking\' event', function(){
     vtc.interface.EVENTS.SEEKING = "seeking";
     $(element).triggerHandler("seeking");
