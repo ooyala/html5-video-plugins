@@ -19,20 +19,20 @@ var path = {
 
 var main_html5_fn = function() {
   uglify_fn(path.mainJs);
-}
+};
 
 var osmf_fn = function() {
   uglify_fn(path.flashOSMFJs);
-}
+};
 
 var akamai_fn = function() {
   uglify_fn(path.flashAkamaiJs);
-}
+};
 
 var uglify_fn = function(srcFile) {
   var b = browserify({
     entries: srcFile,
-    debug: false,
+    debug: false
   });
 
   b.bundle()
@@ -44,12 +44,12 @@ var uglify_fn = function(srcFile) {
       extname: '.min.js'
     }))
     .pipe(gulp.dest('./build/'));
-}
+};
 
 var getFileNameFromPath = function(path) {
   var start = path.lastIndexOf('/') + 1;
   return path.substring(start);
-}
+};
 
 // Dependency task
 gulp.task('init_module', function(callback) {

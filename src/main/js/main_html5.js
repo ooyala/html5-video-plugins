@@ -25,7 +25,8 @@ require("../../../html5-common/js/utils/environment.js");
     this.name = pluginName;
 
     this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-                      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
+                      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE,
+                      OO.VIDEO.FEATURE.AUDIO_CONTROL ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     // Determine supported encodings
@@ -194,6 +195,8 @@ require("../../../html5-common/js/utils/environment.js");
     var isLive = false;
     var lastCueText = null;
     var availableClosedCaptions = {};
+    var vtcAudioData = {};
+    var currentAudioTrack = null;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -217,7 +220,7 @@ require("../../../html5-common/js/utils/environment.js");
         if (document.hidden) {
           canSeek = false;
         }
-      }, this)
+      }, this);
       document.addEventListener("visibilitychange", watchHidden);
     }
 
@@ -571,7 +574,7 @@ require("../../../html5-common/js/utils/environment.js");
             src: captions.url,
             language: languageKey,
             inStream: false
-          }
+          };
           addClosedCaptions(captionInfo);
         });
       }
@@ -630,6 +633,23 @@ require("../../../html5-common/js/utils/environment.js");
       if (mode == OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
         raiseClosedCaptionCueChanged("");
         this.setClosedCaptions(null);
+      }
+    }, this);
+
+    /**
+     * Sets the stream to play back based on given audio object. Plugin must support the
+     * AUDIO_CONTROL feature to have this method called.
+     * @public
+     * @method OoyalaVideoWrapper#setAudio
+     * @param {string} string Id representing audio track id, list with valid IDs was retrieved by player.
+     *
+     */
+    this.setAudio = _.bind(function(audioTrackId) {
+      if (_video && _video.audioTracks && audioTrackId > -1 && audioTrackId < _video.audioTracks.length && audioTrackId !== currentAudioTrack) {
+        _video.audioTracks[currentAudioTrack].enabled = false;
+        currentAudioTrack = audioTrackId;
+        _video.audioTracks[currentAudioTrack].enabled = true;
+        this.controller.notify(this.controller.EVENTS.AUDIO_CHANGED, currentAudioTrack);
       }
     }, this);
 
@@ -761,7 +781,7 @@ require("../../../html5-common/js/utils/environment.js");
       var closedCaptionInfo = {
         languages: [],
         locale: {}
-      }
+      };
       _.each(availableClosedCaptions, function(value, key) {
         closedCaptionInfo.languages.push(key);
         closedCaptionInfo.locale[key] = value.label;
@@ -846,9 +866,28 @@ require("../../../html5-common/js/utils/environment.js");
       }
       canPlay = true;
 
-      //Notify controller of video width and height.
       if (firstPlay) {
+        // notify controller of video width and height.
         this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, {width: _video.videoWidth, height: _video.videoHeight});
+
+        // multi-audio
+        var audioTracks = _video.audioTracks;
+        if (audioTracks.length > 0) {
+          var audioTrackArray = [];
+          // format audioData object to send to vtc
+          for (var i = 0; i < audioTracks.length; i++) {
+            // audio track must have id
+            if (audioTracks[i] && audioTracks[i].id) {
+              audioTrackArray.push(audioTracks[i]); // only add audio tracks to array
+              if (audioTracks[i].enabled) {
+                currentAudioTrack = audioTracks[i].id;
+              }
+            }
+          }
+          vtcAudioData['audioTracks'] = audioTrackArray;
+          vtcAudioData['currentAudioTrack'] = currentAudioTrack;
+          this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, vtcAudioData);
+        }
       }
     }, this);
 
