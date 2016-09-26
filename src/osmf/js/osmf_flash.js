@@ -197,7 +197,8 @@ require("../../../html5-common/js/utils/constants.js");
     attributes.style = 'position:absolute;';
     // Combine the css object into a string for swfobject.
     if (cssFromContainer.length) {
-      for(i in cssFromContainer) {
+      //for(var i=0; i < cssFromContainer.length; i++) {
+        for(i in cssFromContainer) {
         attributes.style += i + ":" + cssFromContainer[i] + "; ";
       }
     }
@@ -619,7 +620,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     var raiseBitratesAvailable = function(event) {
       var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
-      for (var i in event.eventObject) {
+      for (var i = 0; i < event.eventObject.length; i++) {
         var vtcBitrate = {
           id: event.eventObject[i].id,
           width: event.eventObject[i].width,
@@ -1233,7 +1234,7 @@ var swfobject = function() {
       }
       if (ua.ie && ua.win) { // Internet Explorer + the HTML object element + W3C DOM methods do not combine: fall back to outerHTML
         var att = "";
-        for (var i in attObj) {
+        for (var i=0; i < attObj.length; i++) {
           if (attObj[i] != Object.prototype[i]) { // filter out prototype additions from other potential libraries
             if (i.toLowerCase() == "data") {
               parObj.movie = attObj[i];
@@ -1314,7 +1315,7 @@ var swfobject = function() {
   function removeObjectInIE(id) {
     var obj = getElementById(id);
     if (obj) {
-      for (var i in obj) {
+      for (var i = 0; i < obj.length; i++) {
         if (typeof obj[i] == "function") {
           obj[i] = null;
         }
@@ -1427,11 +1428,11 @@ var swfobject = function() {
           removeSWF(objIdArr[j]);
         }
         // cleanup library's main closures to avoid memory leaks
-        for (var k in ua) {
+        for (var k = 0; k < ua.length; k++) {
           ua[k] = null;
         }
         ua = null;
-        for (var l in swfobject) {
+        for (var l = 0; l < swfobject.length; l++) {
           swfobject[l] = null;
         }
         swfobject = null;
