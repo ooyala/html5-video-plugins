@@ -45,7 +45,8 @@ describe('main_html5 factory tests', function () {
 
   it('should provide a list of supported features', function(){
     expect(pluginFactory.features).to.eql([OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-                                           OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE]);
+                                           OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE,
+                                           OO.VIDEO.FEATURE.AUDIO_CONTROL]);
   });
 
   it('should report the core technology of the video element', function(){
