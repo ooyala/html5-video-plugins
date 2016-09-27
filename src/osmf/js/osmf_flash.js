@@ -197,8 +197,7 @@ require("../../../html5-common/js/utils/constants.js");
     attributes.style = 'position:absolute;';
     // Combine the css object into a string for swfobject.
     if (cssFromContainer.length) {
-      //for(var i=0; i < cssFromContainer.length; i++) {
-        for(i in cssFromContainer) {
+      for(i in cssFromContainer) {
         attributes.style += i + ":" + cssFromContainer[i] + "; ";
       }
     }
