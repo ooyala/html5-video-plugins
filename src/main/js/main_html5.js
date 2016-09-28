@@ -644,10 +644,10 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {string} string Id representing audio track id, list with valid IDs was retrieved by player.
      *
      */
-    this.setAudio = _.bind(function(audioTrackId) {
-      if (_video && _video.audioTracks && audioTrackId > -1 && audioTrackId < _video.audioTracks.length && audioTrackId !== currentAudioTrack) {
+    this.setAudio = _.bind(function(audioTrackIndex) {
+      if (_video && _video.audioTracks && audioTrackIndex > -1 && audioTrackIndex < _video.audioTracks.length && audioTrackIndex !== currentAudioTrack) {
         _video.audioTracks[currentAudioTrack].enabled = false;
-        currentAudioTrack = audioTrackId;
+        currentAudioTrack = audioTrackIndex;
         _video.audioTracks[currentAudioTrack].enabled = true;
         this.controller.notify(this.controller.EVENTS.AUDIO_CHANGED, currentAudioTrack);
       }
@@ -876,12 +876,24 @@ require("../../../html5-common/js/utils/environment.js");
           var audioTrackArray = [];
           // format audioData object to send to vtc
           for (var i = 0; i < audioTracks.length; i++) {
-            // audio track must have id
-            if (audioTracks[i] && audioTracks[i].id) {
-              audioTrackArray.push(audioTracks[i]); // only add audio tracks to array
-              if (audioTracks[i].enabled) {
-                currentAudioTrack = audioTracks[i].id;
+            if (audioTracks[i]) {
+              // format read/write audio track object, set id to index
+              var tempAudioTrack = {
+                "enabled": false,
+                "id": i.toString(),
+                "kind": audioTracks[i].kind,
+                "label": audioTracks[i].label ? audioTracks[i].label : audioTracks[i].language,
+                "lang": audioTracks[i].language
+              };
+
+              // enable first audio track, disable the rest
+              if (i == 0) {
+                audioTracks[i].enabled = tempAudioTrack.enabled = true;
+                currentAudioTrack = i.toString();
+              } else {
+                audioTracks[i].enabled = false;
               }
+              audioTrackArray.push(tempAudioTrack);
             }
           }
           vtcAudioData['audioTracks'] = audioTrackArray;
