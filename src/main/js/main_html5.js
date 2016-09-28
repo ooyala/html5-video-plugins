@@ -1340,6 +1340,7 @@ require("../../../html5-common/js/utils/environment.js");
         {
           this.controller.notify(this.controller.EVENTS.SEEKED);
           videoEnded = true;
+          initialTime.value = 0;
           this.controller.notify(this.controller.EVENTS.ENDED);
         }
       }
