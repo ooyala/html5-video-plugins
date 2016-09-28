@@ -872,7 +872,7 @@ require("../../../html5-common/js/utils/environment.js");
 
         // multi-audio
         var audioTracks = _video.audioTracks;
-        if (audioTracks.length > 0) {
+        if (audioTracks && audioTracks.length > 0) {
           var audioTrackArray = [];
           // format audioData object to send to vtc
           for (var i = 0; i < audioTracks.length; i++) {
