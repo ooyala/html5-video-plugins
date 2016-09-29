@@ -1165,7 +1165,8 @@ var swfobject = function() {
       if (ua.ie && ua.win) { // Internet Explorer + the HTML object element + W3C DOM methods do not combine: fall back to outerHTML
         var att = "";
         for (var i in attObj) {
-          if (attObj[i] != Object.prototype[i]) { // filter out prototype additions from other potential libraries
+
+          if (attObj.hasOwnProperty(i)) { // filter out prototype additions from other potential libraries
             if (i.toLowerCase() == "data") {
               parObj.movie = attObj[i];
             } else if (i.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
@@ -1177,7 +1178,7 @@ var swfobject = function() {
         }
         var par = "";
         for (var j in parObj) {
-          if (parObj[j] != Object.prototype[j]) { // filter out prototype additions from other potential libraries
+          if (parObj.hasOwnProperty(j)) { // filter out prototype additions from other potential libraries
             par += '<param name="' + j + '" value="' + parObj[j] + '" />';
           }
         }
@@ -1188,7 +1189,7 @@ var swfobject = function() {
         var o = createElement(OBJECT);
         o.setAttribute("type", FLASH_MIME_TYPE);
         for (var m in attObj) {
-          if (attObj[m] != Object.prototype[m]) { // filter out prototype additions from other potential libraries
+          if (attObj.hasOwnProperty(m)) { // filter out prototype additions from other potential libraries
             if (m.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
               o.setAttribute("class", attObj[m]);
             } else if (m.toLowerCase() != "classid") { // filter out IE specific attribute
@@ -1197,7 +1198,7 @@ var swfobject = function() {
           }
         }
         for (var n in parObj) {
-          if (parObj[n] != Object.prototype[n] && n.toLowerCase() != "movie") { // filter out prototype additions from other potential libraries and IE specific param element
+          if (parObj.hasOwnProperty(n) && n.toLowerCase() != "movie") { // filter out prototype additions from other potential libraries and IE specific param element
             createObjParam(o, n, parObj[n]);
           }
         }
