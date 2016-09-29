@@ -564,14 +564,16 @@ require("../../../html5-common/js/utils/constants.js");
 
     var raiseBitratesAvailable = function(event) {
       var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
-      for (var i in event.eventObject) {
-        var vtcBitrate = {
-          id: event.eventObject[i].id,
-          width: event.eventObject[i].width,
-          height: event.eventObject[i].height,
-          bitrate: event.eventObject[i].bitrate
+      if (event) {
+        for (var i = 0; i < event.eventObject.length; i++) {
+          var vtcBitrate = {
+            id: event.eventObject[i].id,
+            width: event.eventObject[i].width,
+            height: event.eventObject[i].height,
+            bitrate: event.eventObject[i].bitrate
+          }
+          vtcBitrates.push(vtcBitrate);
         }
-        vtcBitrates.push(vtcBitrate);
       }
       self.controller.notify(self.controller.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
     };
@@ -1163,7 +1165,7 @@ var swfobject = function() {
       if (ua.ie && ua.win) { // Internet Explorer + the HTML object element + W3C DOM methods do not combine: fall back to outerHTML
         var att = "";
         for (var i in attObj) {
-          if (attObj[i] != Object.prototype[i]) { // filter out prototype additions from other potential libraries
+          if (attObj.hasOwnProperty(i)) { // filter out prototype additions from other potential libraries
             if (i.toLowerCase() == "data") {
               parObj.movie = attObj[i];
             } else if (i.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
@@ -1175,7 +1177,7 @@ var swfobject = function() {
         }
         var par = "";
         for (var j in parObj) {
-          if (parObj[j] != Object.prototype[j]) { // filter out prototype additions from other potential libraries
+          if (parObj.hasOwnProperty(j)) { // filter out prototype additions from other potential libraries
             par += '<param name="' + j + '" value="' + parObj[j] + '" />';
           }
         }
@@ -1186,7 +1188,7 @@ var swfobject = function() {
         var o = createElement(OBJECT);
         o.setAttribute("type", FLASH_MIME_TYPE);
         for (var m in attObj) {
-          if (attObj[m] != Object.prototype[m]) { // filter out prototype additions from other potential libraries
+          if (attObj.hasOwnProperty(m)) { // filter out prototype additions from other potential libraries
             if (m.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
               o.setAttribute("class", attObj[m]);
             } else if (m.toLowerCase() != "classid") { // filter out IE specific attribute
@@ -1195,7 +1197,7 @@ var swfobject = function() {
           }
         }
         for (var n in parObj) {
-          if (parObj[n] != Object.prototype[n] && n.toLowerCase() != "movie") { // filter out prototype additions from other potential libraries and IE specific param element
+          if (parObj.hasOwnProperty(n) && n.toLowerCase() != "movie") { // filter out prototype additions from other potential libraries and IE specific param element
             createObjParam(o, n, parObj[n]);
           }
         }
@@ -1237,7 +1239,7 @@ var swfobject = function() {
   function removeObjectInIE(id) {
     var obj = getElementById(id);
     if (obj) {
-      for (var i in obj) {
+      for (var i = 0; i < obj.length; i++) {
         if (typeof obj[i] == "function") {
           obj[i] = null;
         }
@@ -1348,11 +1350,11 @@ var swfobject = function() {
           removeSWF(objIdArr[j]);
         }
         // cleanup library's main closures to avoid memory leaks
-        for (var k in ua) {
+        for (var k = 0; k < ua.length; k++) {
           ua[k] = null;
         }
         ua = null;
-        for (var l in swfobject) {
+        for (var l = 0; l < swfobject.length; l++) {
           swfobject[l] = null;
         }
         swfobject = null;
@@ -1510,3 +1512,4 @@ var swfobject = function() {
     }
   };
 }();
+
