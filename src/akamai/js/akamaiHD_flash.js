@@ -1165,7 +1165,6 @@ var swfobject = function() {
       if (ua.ie && ua.win) { // Internet Explorer + the HTML object element + W3C DOM methods do not combine: fall back to outerHTML
         var att = "";
         for (var i in attObj) {
-
           if (attObj.hasOwnProperty(i)) { // filter out prototype additions from other potential libraries
             if (i.toLowerCase() == "data") {
               parObj.movie = attObj[i];
