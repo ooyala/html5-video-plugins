@@ -150,7 +150,9 @@ package
     {
       if (!_streamController.mediaPlayer.buffering)
       {
-        dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERED,null));
+        var eventObject:Object = new Object();
+        eventObject.url = _akamaiStreamURL;
+        dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERED,eventObject));
       }
     }
     
@@ -338,7 +340,9 @@ package
           dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
           break;
         case MediaPlayerState.BUFFERING:
-          dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING,null));
+          var eventObject:Object = new Object();
+          eventObject.url = _akamaiStreamURL;
+          dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING,eventObject));
           break;
         case MediaPlayerState.PLAYBACK_ERROR:
           break;
