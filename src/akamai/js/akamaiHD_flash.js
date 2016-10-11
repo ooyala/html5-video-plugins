@@ -484,7 +484,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseBufferingEvent = function() {
-      self.controller.notify(self.controller.EVENTS.BUFFERING);
+      self.controller.notify(self.controller.EVENTS.BUFFERING, { url: event.eventObject.url });
     };
 
     var raisePauseEvent = function() {
@@ -539,7 +539,7 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseCanPlayThrough = function() {
-      self.controller.notify(self.controller.EVENTS.BUFFERED);
+      self.controller.notify(self.controller.EVENTS.BUFFERED, { url: event.eventObject.url });
     };
 
     var raiseFullScreenBegin = function(event) {
