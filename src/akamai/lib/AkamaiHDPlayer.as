@@ -606,8 +606,7 @@ package
     {
       _akamaiVideoSurface.width = stage.stageWidth;
       _akamaiVideoSurface.height = stage.stageHeight;
-      stage.scaleMode = StageScaleMode.NO_SCALE;
-      stage.align = StageAlign.TOP_LEFT;
+      stage.scaleMode = StageScaleMode.SHOW_ALL;
 
       _streamController.mediaPlayer.autoPlay = false;
     }
