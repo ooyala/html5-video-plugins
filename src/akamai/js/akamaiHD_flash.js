@@ -483,8 +483,8 @@ require("../../../html5-common/js/utils/constants.js");
       self.controller.notify(self.controller.EVENTS.SEEKED);
     };
 
-    var raiseBufferingEvent = function() {
-      self.controller.notify(self.controller.EVENTS.BUFFERING);
+    var raiseBufferingEvent = function(event) {
+      self.controller.notify(self.controller.EVENTS.BUFFERING, { url: event.eventObject.url });
     };
 
     var raisePauseEvent = function() {
@@ -538,8 +538,8 @@ require("../../../html5-common/js/utils/constants.js");
                                "seekRange": { "begin": seekRange_start, "end": seekRange_end } });
     };
 
-    var raiseCanPlayThrough = function() {
-      self.controller.notify(self.controller.EVENTS.BUFFERED);
+    var raiseCanPlayThrough = function(event) {
+      self.controller.notify(self.controller.EVENTS.BUFFERED, { url: event.eventObject.url });
     };
 
     var raiseFullScreenBegin = function(event) {
@@ -660,7 +660,7 @@ require("../../../html5-common/js/utils/constants.js");
         raisePauseEvent();
         break;
        case "BUFFERING":
-        raiseBufferingEvent();
+        raiseBufferingEvent(data);
         break;
        case "PLAY":
         raisePlayEvent(data);
@@ -702,7 +702,7 @@ require("../../../html5-common/js/utils/constants.js");
         raiseProgress(data);
         break;
        case "BUFFERED":
-        raiseCanPlayThrough();
+        raiseCanPlayThrough(data);
         break;
        case "FULLSCREEN_CHANGED":
         raiseFullScreenBegin(data);
