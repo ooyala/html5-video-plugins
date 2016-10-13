@@ -362,8 +362,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {boolean} rewind True if the stream should be set to time 0
      */
     this.load = function(rewind) {
-      if (loaded && !rewind) return;
-      if (!!rewind) {
+      if (loaded) return;
         try {
           this.callToFlash("load(" + rewind + ")");
           loaded = true;
@@ -371,8 +370,6 @@ require("../../../html5-common/js/utils/constants.js");
           // error because currentTime does not exist because stream hasn't been retrieved yet
           OO.log('HDSFlash ['+this.id+']: Failed to rewind video, probably ok; continuing');
         }
-      }
-
     };
 
     /**
