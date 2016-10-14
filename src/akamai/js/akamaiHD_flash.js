@@ -322,13 +322,13 @@ require("../../../html5-common/js/utils/constants.js");
           // JQuery height detect can fail if a height was not explicitly set.
           // So we try to find one up the tree, and failing that we use a default common
           // aspect ratio. Not ideal, but provides viewable result.
-          var wrapperWidth = $(videoItem).parent().parent().width();
+          var wrapperWidth = $(videoItem).parent().width();
           var wrapperHeight = $(videoItem).parent().height();
-          if (wrapperHeight < 1)
+          if (wrapperHeight < 1 && $(videoItem).parent().parent())
             wrapperHeight = $(videoItem).parent().parent().height();
-          if (wrapperHeight < 1)
+          if (wrapperHeight < 1 && $(videoItem).parent().parent().parent())
             wrapperHeight = $(videoItem).parent().parent().parent().height();
-          if (wrapperHeight < 1)
+          if (wrapperHeight < 1 && $(videoItem).parent().parent().parent().parent())
             wrapperHeight = $(videoItem).parent().parent().parent().parent().height();
           if (wrapperHeight > 1)
             originalAspectRatio = wrapperHeight / wrapperWidth;
