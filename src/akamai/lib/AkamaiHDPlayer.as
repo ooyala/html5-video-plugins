@@ -608,13 +608,17 @@ package
     public function onLoadVideo(event:DynamicEvent):void
     {
       originalAspectRatio = (Number)(event.args);
-      if (stage.stageWidth >= stage.stageHeight)
+      if (originalAspectRatio < 1)
       {
         _akamaiVideoSurface.width = stage.stageWidth;
         _akamaiVideoSurface.height = stage.stageWidth * originalAspectRatio;      
       } else {
+        // Flash must set its largest dimension to a stage value to prevent cropping.
+        // So we reverse engineer a fractional aspectRatio to form the smaller width.
+        originalHeight = stage.stageWidth * originalAspectRatio;
+        var pillarBoxRatio = stage.stageWidth / originalHeight;
         _akamaiVideoSurface.height = stage.stageHeight;
-        _akamaiVideoSurface.height = stage.stageHeight * originalAspectRatio;
+        _akamaiVideoSurface.width = stage.stageHeight * pillarBoxRatio;
       }
 
       stage.scaleMode = StageScaleMode.NO_SCALE;
