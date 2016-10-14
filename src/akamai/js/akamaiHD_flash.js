@@ -19,8 +19,8 @@ require("../../../html5-common/js/utils/constants.js");
   var pluginPath;
   var filename = "akamaiHD_flash.*\.js";
   var scripts = document.getElementsByTagName('script');
-  for (var index in scripts) {
-    var match = scripts[index].src.match(filename);
+  for (var i = 0; i < scripts.length; i++) {
+    var match = scripts[i].src.match(filename);
     if (match && match.length > 0) {
       pluginPath = match.input.match(/.*\//)[0];
       break;
@@ -100,7 +100,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, domId, controller, css, playerId) {
-      var video = $("<object>");
+      var video = $("<video>");
       video.attr("class", "video");
       video.attr("id", domId);
       video.attr("preload", "none");
@@ -316,7 +316,25 @@ require("../../../html5-common/js/utils/constants.js");
       if (loaded && !rewind) return;
       else {
         try {
-          this.callToFlash("load("+rewind+")");
+
+          var originalAspectRatio = (9/16);
+
+          // JQuery height detect can fail if a height was not explicitly set.
+          // So we try to find one up the tree, and failing that we use a default common
+          // aspect ratio. Not ideal, but provides viewable result.
+          var wrapperWidth = $(videoItem).parent().parent().width();
+          var wrapperHeight = $(videoItem).parent().height();
+          if (wrapperHeight < 1)
+            wrapperHeight = $(videoItem).parent().parent().height();
+          if (wrapperHeight < 1)
+            wrapperHeight = $(videoItem).parent().parent().parent().height();
+          if (wrapperHeight < 1)
+            wrapperHeight = $(videoItem).parent().parent().parent().parent().height();
+          if (wrapperHeight > 1)
+            originalAspectRatio = wrapperHeight / wrapperWidth;
+
+          this.callToFlash("load("+originalAspectRatio+")");
+
           loaded = true;
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
@@ -583,6 +601,37 @@ require("../../../html5-common/js/utils/constants.js");
         width: event.eventObject.width,
         height: event.eventObject.height,
       }
+        var objectHeight = event.eventObject.height;
+        var objectWidth = event.eventObject.width;
+        var wrapperHeight = $(videoItem).parent().height();
+        var wrapperWidth = $(videoItem).parent().width();
+
+        $(videoItem).css("height", objectHeight+'px');
+        var resizeStyles = {};
+
+        if (wrapperHeight > (objectHeight*1.1)) {
+          resizeStyles = {
+            "top": '50%',
+            "transform": 'translateY(-50%)',
+            "position": "relative"
+          };
+        } else if (wrapperHeight > 0 && wrapperWidth > (objectWidth*1.1)) {
+          resizeStyles = {
+            "left": '50%',
+            "transform": 'translateX(-50%)',
+            "position": "relative"
+          };
+        } else {
+          resizeStyles = {
+            "top": '0px',
+            "left": '0px',
+            "transform": 'translateY(0%)',
+            "transform": 'translateX(0%)',
+            "position": "absolute"
+          };
+        }
+        $(videoItem).css(resizeStyles);
+
       //notify VTC about the asset's dimentions
       if (firstPlay) {
         self.controller.notify(self.controller.EVENTS.ASSET_DIMENSION,assetDimension);
