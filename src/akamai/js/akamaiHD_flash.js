@@ -609,6 +609,11 @@ require("../../../html5-common/js/utils/constants.js");
         $(videoItem).css("height", objectHeight+'px');
         var resizeStyles = {};
 
+        // The event.eventObject.[size] values seem to randomly fluctuate a lot,
+        // so to prevent an accidental trigger of this formula from either that
+        // or a rounding error we pad the smaller value up a little (1.05) to be sure the
+        // larger value is large enough that the change is needed to ensure a
+        // good viewing experience.
         if (wrapperHeight > (objectHeight*1.05)) {
           resizeStyles = {
             "top": '50%',
