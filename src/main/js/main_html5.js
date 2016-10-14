@@ -556,6 +556,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} params The params to set with closed captions
      */
     this.setClosedCaptions = _.bind(function(language, closedCaptions, params) {
+      console.log("****************** this.setClosedCaptions", language, JSON.stringify(closedCaptions), JSON.stringify(params));
       //Remove and disable current captions before setting new ones.
       $(_video).find('.' + TRACK_CLASS).remove();
       if (language == null) return;
@@ -582,12 +583,12 @@ require("../../../html5-common/js/utils/environment.js");
         //If the captions are in-stream, we just need to enable them; Otherwise we must add them to the video ourselves.
         if (captions.inStream == true && _video.textTracks) {
           for (var i = 0; i < _video.textTracks.length; i++) {
-            if (_video.textTracks[i].kind === "captions") {
+            //if (_video.textTracks[i].kind === "captions") {
               _video.textTracks[i].mode = captionMode;
               _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
-            } else {
-             _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
-            }
+          //} else {
+            //_video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+          //}
           }
         } else if (!captions.inStream) {
           this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
@@ -622,6 +623,7 @@ require("../../../html5-common/js/utils/environment.js");
      * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
     this.setClosedCaptionsMode = _.bind(function(mode) {
+      console.log("****************** this.setClosedCaptionsMode", mode);
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
           _video.textTracks[i].mode = mode;
@@ -681,6 +683,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} event The event from the cue change
      */
     var onClosedCaptionCueChange = _.bind(function(event) {
+      console.log("****************** onClosedCaptionCueChange", JSON.stringify(event));
       var cueText = "";
       if (event && event.currentTarget && event.currentTarget.activeCues) {
         for (var i = 0; i < event.currentTarget.activeCues.length; i++) {
@@ -699,6 +702,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#checkForClosedCaptionsCueChange
      */
     var checkForClosedCaptionsCueChange = _.bind(function() {
+      console.log("****************** checkForClosedCaptionsCueChange");
       var cueText = "";
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
@@ -721,10 +725,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#checkForClosedCaptions
      */
     var checkForClosedCaptions = _.bind(function() {
+      console.log("****************** checkForClosedCaptions", JSON.stringify(_video.textTracks), _video.textTracks.length);
       if (_video.textTracks && _video.textTracks.length > 0) {
         var languages = [];
         for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].kind === "captions") {
+          //if (_video.textTracks[i].kind === "captions") {
             var captionInfo = {
               language: "CC",
               inStream: true,
@@ -734,7 +739,7 @@ require("../../../html5-common/js/utils/environment.js");
             if (availableClosedCaptions[captionInfo.language] == null) {
               addClosedCaptions(captionInfo);
             }
-          }
+        //}
         }
       }
     }, this);
@@ -745,6 +750,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#addClosedCaptions
      */
     var addClosedCaptions = _.bind(function(captionInfo) {
+      console.log("****************** addClosedCaptions");
       //Don't add captions if argument is null or we already have added these captions.
       if (captionInfo == null || captionInfo.language == null || (availableClosedCaptions[captionInfo.language] &&
         availableClosedCaptions[captionInfo.language].src == captionInfo.src)) return;
@@ -766,6 +772,7 @@ require("../../../html5-common/js/utils/environment.js");
         closedCaptionInfo.languages.push(key);
         closedCaptionInfo.locale[key] = value.label;
       });
+      console.log("****************** raiseCaptionsFoundOnPlaying", JSON.stringify(closedCaptionInfo));
       this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
     }, this);
 
@@ -776,6 +783,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {string} cueText The text of the new closed caption cue. Empty string signifies no active cue.
      */
     var raiseClosedCaptionCueChanged = _.bind(function(cueText) {
+      console.log("****************** raiseClosedCaptionCueChanged", cueText);
       cueText = cueText.trim();
       if (cueText != lastCueText) {
         lastCueText = cueText;
