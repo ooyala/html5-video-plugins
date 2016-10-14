@@ -330,7 +330,7 @@ require("../../../html5-common/js/utils/constants.js");
             wrapperHeight = $(videoItem).parent().parent().parent().height();
           if (wrapperHeight < 1 && $(videoItem).parent().parent().parent().parent())
             wrapperHeight = $(videoItem).parent().parent().parent().parent().height();
-          if (wrapperHeight > 1)
+          if (wrapperHeight > 1 && wrapperWidth > 1)
             originalAspectRatio = wrapperHeight / wrapperWidth;
 
           this.callToFlash("load("+originalAspectRatio+")");
@@ -607,13 +607,13 @@ require("../../../html5-common/js/utils/constants.js");
         $(videoItem).css("height", objectHeight+'px');
         var resizeStyles = {};
 
-        if (wrapperHeight > (objectHeight*1.1)) {
+        if (wrapperHeight > (objectHeight*1.05)) {
           resizeStyles = {
             "top": '50%',
             "transform": 'translateY(-50%)',
             "position": "relative"
           };
-        } else if (wrapperHeight > 0 && wrapperWidth > (objectWidth*1.1)) {
+        } else if (wrapperHeight > 0 && wrapperWidth > (objectWidth*1.05)) {
           resizeStyles = {
             "left": '50%',
             "transform": 'translateX(-50%)',
