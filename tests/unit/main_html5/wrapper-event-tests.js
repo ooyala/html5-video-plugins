@@ -17,6 +17,15 @@ describe('main_html5 wrapper tests', function () {
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
 
+  var closedCaptions = {
+    closed_captions_vtt: {
+      en: {
+        name: "English",
+        url: "http://ooyala.com"
+      }
+    }
+  };
+
   beforeEach(function() {
     vtc = new mock_vtc();
     parentElement = $("<div>");
@@ -25,8 +34,13 @@ describe('main_html5 wrapper tests', function () {
   });
 
   afterEach(function() {
-    OO.isSafari = false;
+    OO.isEdge = false;
     OO.isAndroid = false;
+    OO.isIos = false;
+    OO.isIE = false;
+    OO.isIE11Plus = false;
+    OO.isSafari = false;
+    OO.isChrome = false;
     OO.isFirefox = false;
     if (wrapper) { wrapper.destroy(); }
   });
@@ -196,14 +210,6 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event with all available cc', function(){
     vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
     element.textTracks = [{ kind: "captions" }];
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
     $(element).triggerHandler("playing");
@@ -216,16 +222,19 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
+  it('should notify CAPTIONS_FOUND_ON_PLAYING for live in-stream captions for Edge in a different way', function(){
+    OO.isEdge = true;
+    vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
+    element.textTracks = [{}];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    $(element).triggerHandler("playing"); // this adds in-stream captions
+
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['CC'], locale: { CC: 'In-Stream' }}]);
+  });
+
   it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack', function(){
     vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
     var event = {
       currentTarget: {
         activeCues: [{
@@ -243,14 +252,6 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack with all active cues', function(){
     vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
     var event = {
       currentTarget: {
         activeCues: [{
