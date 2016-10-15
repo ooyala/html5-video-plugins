@@ -582,16 +582,18 @@ require("../../../html5-common/js/utils/environment.js");
         //If the captions are in-stream, we just need to enable them; Otherwise we must add them to the video ourselves.
         if (captions.inStream == true && _video.textTracks) {
           for (var i = 0; i < _video.textTracks.length; i++) {
-            if (_video.textTracks[i].kind === "captions") {
+            if (((OO.isSafari || OO.isEdge) && isLive) || _video.textTracks[i].kind === "captions") {
               _video.textTracks[i].mode = captionMode;
               _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
             } else {
-             _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+              _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
             }
           }
         } else if (!captions.inStream) {
           this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
-          $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
+          if (!OO.isEdge && !OO.isSafari) { // on Edge / Safari track has already been added
+            $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
+          }
           if (_video.textTracks && _video.textTracks[0]) {
             _video.textTracks[0].mode = captionMode;
             //We only want to let the controller know of cue change if we aren't rendering cc from the plugin.
@@ -724,7 +726,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video.textTracks && _video.textTracks.length > 0) {
         var languages = [];
         for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].kind === "captions") {
+          if (((OO.isSafari || OO.isEdge) && isLive) || _video.textTracks[i].kind === "captions") {
             var captionInfo = {
               language: "CC",
               inStream: true,
