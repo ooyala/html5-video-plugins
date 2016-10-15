@@ -13,6 +13,29 @@ describe('main_html5 wrapper tests', function () {
   // Setup
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
+  OO.CONSTANTS = {
+    CLOSED_CAPTIONS: {
+      SHOWING: "showing",
+      HIDDEN: "hidden",
+      DISABLED: "disabled"
+    },
+    SEEK_TO_END_LIMIT: 3
+  };
+
+  var TRACK_CLASS = "track_cc";
+  var closedCaptions = {
+    closed_captions_vtt: {
+      en: {
+        name: "English",
+        url: "http://ooyala.com"
+      }
+    }
+  };
+  var params = {
+    mode: "showing"
+  };
+  var language = "en";
+
   // Load file under test
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
@@ -29,7 +52,12 @@ describe('main_html5 wrapper tests', function () {
   afterEach(function() {
     OO.isEdge = false;
     OO.isAndroid = false;
+    OO.isIos = false;
     OO.isIE = false;
+    OO.isIE11Plus = false;
+    OO.isSafari = false;
+    OO.isChrome = false;
+    OO.isFirefox = false;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     if (wrapper) { wrapper.destroy(); }
   });
@@ -287,12 +315,11 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should force seeks within SEEK_TO_END_LIMIT to seek to duration - 0.01', function(){
-    OO.CONSTANTS = { SEEK_TO_END_LIMIT: 3 };
     var duration = 10;
     setFullSeekRange(duration);
     var returns = wrapper.seek(duration - 3);
     expect(returns).to.be(true);
-    expect(element.currentTime).to.eql(duration - 3);
+    expect(element.currentTime).to.eql(duration - 0.01);
     var returns = wrapper.seek(duration - 2.99);
     expect(returns).to.be(true);
     expect(element.currentTime).to.eql(duration - 0.01);
@@ -447,26 +474,6 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set external closed captions', function(){
-    OO.CONSTANTS = {
-      CLOSED_CAPTIONS: {
-        SHOWING: "showing",
-        HIDDEN: "hidden",
-        DISABLED: "disabled"
-      }
-    };
-    var language = "en";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
-    var params = {
-      mode: "showing"
-    };
-
     wrapper.setClosedCaptions(language, closedCaptions, params);
     expect(element.children.length > 0).to.be(true);
     expect(element.children[0].tagName).to.eql("TRACK");
@@ -477,15 +484,19 @@ describe('main_html5 wrapper tests', function () {
     expect(element.children[0].getAttribute("srclang")).to.eql("en");
   });
 
-  it('should set closed captions mode for in-stream captions', function(){
-    OO.CONSTANTS = {
-      CLOSED_CAPTIONS: {
-        SHOWING: "showing",
-        HIDDEN: "hidden",
-        DISABLED: "disabled"
-      }
-    };
+  it('should NOT set external closed captions for Edge', function(){
+    OO.isEdge = true;
+    wrapper.setClosedCaptions(language, closedCaptions, params);
+    expect(element.children.length).to.eql(0);
+  });
 
+  it('should NOT set external closed captions for Safari', function(){
+    OO.isSafari = true;
+    wrapper.setClosedCaptions(language, closedCaptions, params);
+    expect(element.children.length).to.eql(0);
+  });
+
+  it('should set closed captions mode for in-stream captions', function(){
     element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, kind: "captions" }];
     $(element).triggerHandler("playing");
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
@@ -494,22 +505,6 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set both in-stream and external closed captions and switches between them', function(){
-    OO.CONSTANTS = {
-      CLOSED_CAPTIONS: {
-        SHOWING: "showing",
-        HIDDEN: "hidden",
-        DISABLED: "disabled"
-      }
-    };
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
-    
     element.textTracks = [{ kind: "captions" }, { kind: "captions" }];
     $(element).triggerHandler("playing"); // this adds in-stream captions
 
@@ -527,19 +522,6 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should remove closed captions if language is null', function(){
-    var language = "en";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
-    var params = {
-      mode: "showing"
-    };
-
     wrapper.setClosedCaptions(language, closedCaptions, params);
     expect(element.children.length > 0).to.be(true);
     expect(element.children[0].tagName).to.eql("TRACK");
@@ -548,13 +530,6 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set the closed captions mode', function(){
-    OO.CONSTANTS = {
-      CLOSED_CAPTIONS: {
-        SHOWING: "showing",
-        HIDDEN: "hidden",
-        DISABLED: "disabled"
-      }
-    };
     //Mock textTracks
     element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED }];
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
