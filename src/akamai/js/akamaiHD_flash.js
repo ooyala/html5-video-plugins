@@ -6,6 +6,7 @@ require("../../../html5-common/js/utils/InitModules/InitOO.js");
 require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
+require("../../../html5-common/js/utils/environment.js");
 (function(_, $) {
   var pluginName = "ooyalaAkamaiHDFlashVideoTech";
   var flashMinimumVersion = "11.1.0";
@@ -612,18 +613,34 @@ require("../../../html5-common/js/utils/constants.js");
         // or a rounding error we pad the smaller value up a little (1.05) to be sure the
         // larger value is large enough that the change is needed to ensure a
         // good viewing experience.
-        if (wrapperHeight > (objectHeight*1.05)) {
-          resizeStyles = {
-            "top": '50%',
-            "transform": 'translateY(-50%)',
-            "position": "relative"
-          };
-        } else if (wrapperHeight > 0 && wrapperWidth > (objectWidth*1.05)) {
-          resizeStyles = {
-            "left": '50%',
-            "transform": 'translateX(-50%)',
-            "position": "relative"
-          };
+        if (wrapperHeight > (objectHeight*1.1)) {
+          if (OO.isSafari) {
+            resizeStyles = {
+              "top": '50%',
+              "transform": 'translateY(-50%)',
+              "position": "absolute"
+            };
+          } else {
+            resizeStyles = {
+              "top": '50%',
+              "transform": 'translateY(-50%)',
+              "position": "relative"
+            };
+          }
+        } else if (wrapperHeight > 0 && wrapperWidth > (objectWidth*1.1)) {
+          if (OO.isSafari) {
+            resizeStyles = {
+              "left": '50%',
+              "transform": 'translateX(-50%)',
+              "position": "absolute"
+            };            
+          } else {
+            resizeStyles = {
+              "left": '50%',
+              "transform": 'translateX(-50%)',
+              "position": "relative"
+            };
+          }
         } else {
           resizeStyles = {
             "top": '0px',
