@@ -318,22 +318,34 @@ require("../../../html5-common/js/utils/constants.js");
         try {
 
           var originalAspectRatio = (9/16);
+          var wrapperWidth = videoItem.parentNode.clientWidth;
+          var wrapperHeight = videoItem.parentNode.clientHeight;
 
-          // JQuery height detect can fail if a height was not explicitly set.
-          // So we try to find one up the tree, and failing that we use a default common
-          // aspect ratio. Not ideal, but provides viewable result.
-          var wrapperWidth = $(videoItem).parent().width();
-          var wrapperHeight = $(videoItem).parent().height();
-          if (wrapperHeight < 1 && $(videoItem).parent().parent())
-            wrapperHeight = $(videoItem).parent().parent().height();
-          if (wrapperHeight < 1 && $(videoItem).parent().parent().parent())
-            wrapperHeight = $(videoItem).parent().parent().parent().height();
-          if (wrapperHeight < 1 && $(videoItem).parent().parent().parent().parent())
-            wrapperHeight = $(videoItem).parent().parent().parent().parent().height();
+          $(videoItem).css("height", wrapperHeight+'px');
+          $('.innerWrapper').css("height", wrapperHeight+'px');
+          $(videoItem).siblings('.resize').css("height", wrapperHeight+'px');
+
           if (wrapperHeight > 1 && wrapperWidth > 1)
             originalAspectRatio = wrapperHeight / wrapperWidth;
 
           this.callToFlash("load("+originalAspectRatio+")");
+
+          if(wrapperWidth > wrapperHeight) {
+            resizeStyles = {
+              "left": '0px',
+              "top": '50%',
+              "transform": 'translateX(0%)',
+              "transform": 'translateY(-50%)'
+            };
+          } else {
+            resizeStyles = {
+              "left": '50%',
+              "top": '0px',
+              "transform": 'translateX(-50%)',
+              "transform": 'translateY(0%)'
+            };
+          }
+          $(videoItem).css(resizeStyles);
 
           loaded = true;
         } catch (ex) {
@@ -601,33 +613,23 @@ require("../../../html5-common/js/utils/constants.js");
       }
         var objectHeight = event.eventObject.height;
         var objectWidth = event.eventObject.width;
-        var wrapperHeight = $(videoItem).parent().height();
-        var wrapperWidth = $(videoItem).parent().width();
 
         $(videoItem).css("height", objectHeight+'px');
         var resizeStyles = {};
 
-        // The event.eventObject.[size] values seem to randomly fluctuate a lot,
-        // so to prevent an accidental trigger of this formula from either that
-        // or a rounding error we pad the smaller value up a little (1.05) to be sure the
-        // larger value is large enough that the change is needed to ensure a
-        // good viewing experience.
-        if (wrapperHeight > (objectHeight*1.05)) {
+        if(objectWidth > objectHeight) {
           resizeStyles = {
+            "left": '0px',
             "top": '50%',
+            "transform": 'translateX(0%)',
             "transform": 'translateY(-50%)'
-          };
-        } else if (wrapperHeight > 0 && wrapperWidth > (objectWidth*1.05)) {
-          resizeStyles = {
-            "left": '50%',
-            "transform": 'translateX(-50%)'
           };
         } else {
           resizeStyles = {
+            "left": '50%',
             "top": '0px',
-            "left": '0px',
-            "transform": 'translateY(0%)',
-            "transform": 'translateX(0%)'
+            "transform": 'translateX(-50%)',
+            "transform": 'translateY(0%)'
           };
         }
         $(videoItem).css(resizeStyles);
