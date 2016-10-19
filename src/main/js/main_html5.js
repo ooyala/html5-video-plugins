@@ -591,7 +591,7 @@ require("../../../html5-common/js/utils/environment.js");
           }
         } else if (!captions.inStream) {
           this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
-          if (!OO.isEdge) { // on Edge / Safari track has already been added
+          if (!OO.isEdge) { // on Edge track has already been added
             $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
           }
           if (_video.textTracks && _video.textTracks[0]) {
