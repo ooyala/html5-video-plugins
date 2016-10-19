@@ -19,7 +19,6 @@ require("../../../html5-common/js/utils/constants.js");
   var bitrateFlag = true;
   var javascriptCommandQueue = [];
   var qualities = [];
-  var buffering = false;
 
   /**
    * @class OoyalaYoutubeVideoFactory
@@ -145,12 +144,8 @@ require("../../../html5-common/js/utils/constants.js");
         element.controller.notify(element.controller.EVENTS.ENDED);
         break;
       case 1:
-        OO.log("Youtube: Playing event received : buffering = " + buffering);
         // playing 
-        if (buffering) {
-          buffering = false;
-          element.controller.notify( element.controller.EVENTS.BUFFERED, { url: youtubeID });
-        }
+	OO.log("Youtube: Playing event received");
         element.controller.notify(element.controller.EVENTS.PLAYING);
 
         if (bitrateFlag) {
@@ -164,10 +159,8 @@ require("../../../html5-common/js/utils/constants.js");
         element.controller.notify( element.controller.EVENTS.PAUSED);
         break;
       case 3:
-        OO.log("Youtube: Buffering event received");
-        // buffering 
-        element.controller.notify( element.controller.EVENTS.BUFFERING, { url: youtubeID });
-        buffering = true;
+        // buffering
+        OO.log("Youtube: Buffering event received"); 
         break;
       case 5:
         // video cued 
