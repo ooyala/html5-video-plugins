@@ -1,5 +1,5 @@
 /*
- * https://github.com/Automattic/expect.js
+ * Jest Test Cases for Youtube Wrapper events.
  */
 
 describe('youtube wrapper tests', function () {
@@ -22,12 +22,12 @@ describe('youtube wrapper tests', function () {
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
-  });
-
-  afterEach(function() {
     OO.isSafari = false;
     OO.isAndroid = false;
     OO.isFirefox = false;
+  });
+
+  afterEach(function() {
     if (wrapper) { wrapper.destroy(); }
   });
 
@@ -42,7 +42,7 @@ describe('youtube wrapper tests', function () {
   });
 
   it('should not undo seek if disableNativeSeek on video seeked if new position is same as previous', function(){
-    wrapper.disableNativeSeek = true;
+    wrapper.disableNativeSeek = false;
     element.currentTime = 10;
     $(element).triggerHandler("timeupdate");
     $(element).triggerHandler("seeked");
@@ -50,7 +50,7 @@ describe('youtube wrapper tests', function () {
   });
 
   it('should not undo seek if disableNativeSeek on video seeked if floor new position is same as floor of previous', function(){
-    wrapper.disableNativeSeek = true;
+    wrapper.disableNativeSeek = false;
     element.currentTime = 10.4;
     $(element).triggerHandler("timeupdate");
     element.currentTime = 10.5;

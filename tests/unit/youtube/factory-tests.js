@@ -1,5 +1,5 @@
 /*
- * https://github.com/Automattic/expect.js
+ * Jest Test Cases for Youtube Factory.
  */
 
 describe('Youtube factory tests', function () {
@@ -72,7 +72,7 @@ describe('Youtube factory tests', function () {
     expect(elementWrapper).to.be.ok();
   });
 
- it('should create elements when max elements not because no playerId specified', function(){
+ it('should create elements when max elements not reached because no playerId is specified', function(){
     pluginFactory.maxSupportedElements = 1;
     var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
     var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {});
