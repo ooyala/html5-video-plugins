@@ -1,5 +1,5 @@
 /*
- * https://github.com/Automattic/expect.js
+ * Jest Test Cases for Youtube Wrapper.
  */
 
 describe('youtube wrapper tests', function () {
@@ -24,11 +24,11 @@ describe('youtube wrapper tests', function () {
     element = parentElement.children()[0];
     originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 3000;
+    OO.isEdge = false;
+    OO.isAndroid = false;
   });
 
   afterEach(function() {
-    OO.isEdge = false;
-    OO.isAndroid = false;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     if (wrapper) { wrapper.destroy(); }
   });
