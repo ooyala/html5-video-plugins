@@ -166,6 +166,7 @@ require("../../../html5-common/js/utils/constants.js");
         element.controller.notify(element.controller.EVENTS.PLAYING);
 
         if (bitrateFlag) {
+          if(!youtubePlayer) return;
           qualities = youtubePlayer.getAvailableQualityLevels();
           element.raiseBitratesAvailable();
           bitrateFlag = false;
@@ -244,6 +245,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#play
      */
     this.play = function() {
+      if(!youtubePlayer) return;
       if(playerReady)
       {
         youtubePlayer.playVideo();
@@ -262,6 +264,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#pause
      */
     this.pause = function(){
+      if(!youtubePlayer) return;
       youtubePlayer.pauseVideo();
       clearInterval(timeUpdateInterval);
       timeUpdateInterval = null;
@@ -274,6 +277,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      if(!youtubePlayer) return;
       if(playerReady)
       {
         youtubePlayer.seekTo(time,true);
@@ -294,6 +298,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+      if(!youtubePlayer) return;
       youtubePlayer.setVolume(volume*100);
       this.controller.notify( this.controller.EVENTS.VOLUME_CHANGE, { "volume" :volume});
     };
@@ -338,6 +343,7 @@ require("../../../html5-common/js/utils/constants.js");
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
      */
     this.setBitrate = function(suggestedQuality) {
+      if(!youtubePlayer) return;
       youtubePlayer.setPlaybackQuality(suggestedQuality);
     };
 
@@ -373,6 +379,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#raisePlayhead
      */
     var raisePlayhead = _.bind(function() {
+      if(!youtubePlayer) return;
       var timeUpdateObject = {
         "currentTime" : youtubePlayer.getCurrentTime(),
         "duration" : youtubePlayer.getDuration(),
