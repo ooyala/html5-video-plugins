@@ -14,7 +14,8 @@ var gulp = require('gulp'),
 var path = {
   mainJs: './src/main/js/main_html5.js',
   flashOSMFJs: './src/osmf/js/osmf_flash.js',
-  flashAkamaiJs: './src/akamai/js/akamaiHD_flash.js'
+  flashAkamaiJs: './src/akamai/js/akamaiHD_flash.js',
+  youtubeJs: './src/youtube/js/youtube.js'
 };
 
 var main_html5_fn = function() {
@@ -27,6 +28,10 @@ var osmf_fn = function() {
 
 var akamai_fn = function() {
   uglify_fn(path.flashAkamaiJs);
+}
+
+var youtube_fn = function() {
+  uglify_fn(path.youtubeJs);
 }
 
 var uglify_fn = function(srcFile) {
@@ -90,6 +95,7 @@ gulp.task('build_flash_akamai', function(callback) {
 });
 
 gulp.task('build', ['init_module', 'build_flash_osmf', 'build_flash_akamai'], function() {
+  youtube_fn();
   main_html5_fn();
 });
 
