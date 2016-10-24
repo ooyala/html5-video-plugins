@@ -10,11 +10,6 @@ require("../../../html5-common/js/utils/constants.js");
  
   var pluginName = "ooyalaYoutubeVideoTech";
   var player;
-  player= document.createElement('div');
-  player.id ="player";
-  player.style.position = "absolute";
-  player.style.top = "0px";
-  player.style.left = "0px";
   var youtubePlayer;
   var youtubeVideoContainer;
   var element;
@@ -28,8 +23,8 @@ require("../../../html5-common/js/utils/constants.js");
    * @class OoyalaYoutubeVideoFactory
    * @classdesc Factory for creating video player objects for youtube videos.
    * @property {string} name The name of the plugin
-   * @property {object} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
-   * @property {object} features An array of supported features (ex. OO.VIDEO.FEATURE.BITRATE_CONTROL)
+   * @property {string[]} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
+   * @property {string[]} features An array of supported features (ex. OO.VIDEO.FEATURE.BITRATE_CONTROL)
    * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
    */
   var OoyalaYoutubeVideoFactory = function() {
@@ -51,6 +46,8 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, domId, controller, css, playerId) {
+      player = '<div id="player"  style="position:absolute;top:0px;left:0px;"></div>';
+      //Its best to create the div for iframe in the create. Has this method is called once the youtube plugin is choosen.
       if(player == null || parentContainer == null || controller == null)
       {
         console.warn("Youtube: Failed to create the player");
@@ -82,9 +79,11 @@ require("../../../html5-common/js/utils/constants.js");
   };
 
   /* 
-   *This function creates an <iframe> (YouTube player)
-   *after the API code downloads.
-   * @property {object} youtubePlayer The youtube player is creted and assigned to youtubePlayer.
+   * Youtube iframe API will call this function to create an <iframe> (YouTube player)
+   * once the API code downloads.
+   * @public
+   * @method onYouTubeIframeAPIReady
+   * @property {object} youtubePlayer The youtube player is creted.
    */
   function onYouTubeIframeAPIReady() {
     youtubePlayer = new YT.Player('player', {
@@ -106,7 +105,9 @@ require("../../../html5-common/js/utils/constants.js");
   };
 
   /*
-   *The Youtube iframe API will call this function when the video player is ready.
+   * The Youtube iframe API will call this function when the video player is ready.
+   * @public
+   * @method onPlayerReady
    * @param {object} event The event from the youtube once the player is ready.
    */
   function onPlayerReady(event) {
@@ -126,7 +127,9 @@ require("../../../html5-common/js/utils/constants.js");
   };
 
   /*
-   *The Youtube iframe API calls this function when the player's quality changes.
+   * The Youtube iframe API calls this function when the player's quality changes.
+   * @public
+   * @method onPlayerPlaybackQualityChange
    * @param {object} event The event from the youtube on player quality change.
    */
   function onPlayerPlaybackQualityChange(event) {
@@ -140,16 +143,20 @@ require("../../../html5-common/js/utils/constants.js");
   };
 
   /*
-   *The Youtube iframe API calls this function when the player's state changes.
+   * The Youtube iframe API calls this function when the player's state changes.
+   * @public
+   * @method onPlayerStateChange
    * @param {object} event The event from the youtube on player state change.
    */
   function onPlayerStateChange(event) {
     if(event.data == null) return;
     switch(event.data) {
       case -1:
+        OO.log("Youtube: Unstarted event received");
        // unstarted
         break;
       case 0:
+        OO.log("Youtube: Ended event received");
         // ended
         element.controller.notify(element.controller.EVENTS.ENDED);
         break;
@@ -165,6 +172,7 @@ require("../../../html5-common/js/utils/constants.js");
         }      
         break;
       case 2:
+        OO.log("Youtube: Pause event received");
         // paused 
         element.controller.notify(element.controller.EVENTS.PAUSED);
         break;
@@ -173,13 +181,16 @@ require("../../../html5-common/js/utils/constants.js");
         OO.log("Youtube: Buffering event received"); 
         break;
       case 5:
+        OO.log("Youtube: Cued event received");
         // video cued 
         break;
     }
   };
 
   /*
-   *The Youtube iframe API calls this function when the player's throws an error.
+   * The Youtube iframe API calls this function when the player's throws an error.
+   * @public
+   * @method onPlayerError
    * @param {object} event The event from the youtube on player error.
    */
   function onPlayerError(event) {
@@ -269,7 +280,9 @@ require("../../../html5-common/js/utils/constants.js");
         this.controller.notify( this.controller.EVENTS.SEEKED);
       }
       else
-      {
+      { 
+        // control comes here only when the setinitial time calls the seek and the player is not yet in ready state.
+        OO.log("Youtube: Adding setInitialTime to queue has the youtube player is not yet ready");
         javascriptCommandQueue.push(["seek", time]);
       }
     };
@@ -360,12 +373,11 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#raisePlayhead
      */
     var raisePlayhead = _.bind(function() {
-    var timeUpdateObject = { 
-                              "currentTime" : youtubePlayer.getCurrentTime(),
-                              "duration" : youtubePlayer.getDuration(),
-                              "seekRange" : { "begin" : 0, "end" : youtubePlayer.getDuration() }
-                            };
-
+      var timeUpdateObject = {
+        "currentTime" : youtubePlayer.getCurrentTime(),
+        "duration" : youtubePlayer.getDuration(),
+        "seekRange" : { "begin" : 0, "end" : youtubePlayer.getDuration() }
+      };
       this.controller.notify(this.controller.EVENTS.TIME_UPDATE, timeUpdateObject);
     }, this);
 
@@ -375,6 +387,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#raiseBitratesAvailable
      */
     this.raiseBitratesAvailable = function(){
+      if(!qualities) return;
       var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: "auto" }];
       for (var i = 0; i < qualities.length; i++) {
         if (qualities[i] != "auto") {
