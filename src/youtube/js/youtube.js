@@ -87,7 +87,7 @@ require("../../../html5-common/js/utils/constants.js");
    */
   function onYouTubeIframeAPIReady() {
     //youtubeID is expected to be initialized
-    if ( youtubeID == null || youtubePlayer ) {
+    if ( youtubeID === '' || youtubePlayer ) {
      OO.log("Youtube: youtubeID " + youtubeID + " not defined / youtubePlayer already exists");
      return;
     }
@@ -367,6 +367,9 @@ require("../../../html5-common/js/utils/constants.js");
       if (!OO.isEdge) 
       {
         this.setVideoUrl('');
+      }
+      else {
+        youtubeID = '';
       }
       player = null;
       youtubePlayer.destroy();
