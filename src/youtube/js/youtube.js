@@ -86,6 +86,7 @@ require("../../../html5-common/js/utils/constants.js");
    * @property {object} youtubePlayer The youtube player is creted.
    */
   function onYouTubeIframeAPIReady() {
+    if ( youtubeID == null || youtubePlayer ) { return};
     youtubePlayer = new YT.Player('player', {
       videoId: youtubeID,
       height: "100%",
@@ -245,8 +246,13 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#play
      */
     this.play = function() {
-      if(!youtubePlayer) return;
-      if(playerReady)
+      if (youtubePlayer == null) {
+        javascriptCommandQueue.push(["play", null]);
+        onYouTubeIframeAPIReady();  
+        return;  
+      }
+
+      if (playerReady)
       {
         youtubePlayer.playVideo();
         this.controller.notify(this.controller.EVENTS.PLAY, { url: youtubeID });
@@ -325,7 +331,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(youtubeId, encoding, isLive) {   
-      if(youtubeId)
+      if (youtubeId)
       {
         youtubeID = youtubeId;                
         return true;
@@ -359,6 +365,9 @@ require("../../../html5-common/js/utils/constants.js");
         this.setVideoUrl('');
       }
       player = null;
+      youtubePlayer.destroy();
+      youtubePlayer = null;
+      playerReady = false;
     };
 
     /**
