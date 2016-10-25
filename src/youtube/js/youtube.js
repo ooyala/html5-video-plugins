@@ -13,7 +13,7 @@ require("../../../html5-common/js/utils/constants.js");
   var youtubePlayer;
   var youtubeVideoContainer;
   var element;
-  var youtubeID;
+  var youtubeID = '';
   var playerReady = false;
   var bitrateFlag = true;
   var javascriptCommandQueue = [];
@@ -86,6 +86,11 @@ require("../../../html5-common/js/utils/constants.js");
    * @property {object} youtubePlayer The youtube player is creted.
    */
   function onYouTubeIframeAPIReady() {
+    //youtubeID is expected to be initialized
+    if ( youtubeID === '' || youtubePlayer ) {
+     OO.log("Youtube: youtubeID " + youtubeID + " not defined / youtubePlayer already exists");
+     return;
+    }
     youtubePlayer = new YT.Player('player', {
       videoId: youtubeID,
       height: "100%",
@@ -245,8 +250,13 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#play
      */
     this.play = function() {
-      if(!youtubePlayer) return;
-      if(playerReady)
+      if (!youtubePlayer) {
+        javascriptCommandQueue.push(["play", null]);
+        onYouTubeIframeAPIReady();  
+        return;  
+      }
+
+      if (playerReady)
       {
         youtubePlayer.playVideo();
         this.controller.notify(this.controller.EVENTS.PLAY, { url: youtubeID });
@@ -325,7 +335,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(youtubeId, encoding, isLive) {   
-      if(youtubeId)
+      if (youtubeId)
       {
         youtubeID = youtubeId;                
         return true;
@@ -358,7 +368,13 @@ require("../../../html5-common/js/utils/constants.js");
       {
         this.setVideoUrl('');
       }
+      else {
+        youtubeID = '';
+      }
       player = null;
+      youtubePlayer.destroy();
+      youtubePlayer = null;
+      playerReady = false;
     };
 
     /**
