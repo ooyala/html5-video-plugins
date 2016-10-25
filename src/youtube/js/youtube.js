@@ -86,7 +86,11 @@ require("../../../html5-common/js/utils/constants.js");
    * @property {object} youtubePlayer The youtube player is creted.
    */
   function onYouTubeIframeAPIReady() {
-    if ( youtubeID == null || youtubePlayer ) { return};
+    //youtubeID is expected to be initialized
+    if ( youtubeID == null || youtubePlayer ) {
+     OO.log("Youtube: youtubeID " + youtubeID + " not defined / youtubePlayer already exists");
+     return;
+    }
     youtubePlayer = new YT.Player('player', {
       videoId: youtubeID,
       height: "100%",
@@ -246,7 +250,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#play
      */
     this.play = function() {
-      if (youtubePlayer == null) {
+      if (!youtubePlayer) {
         javascriptCommandQueue.push(["play", null]);
         onYouTubeIframeAPIReady();  
         return;  
