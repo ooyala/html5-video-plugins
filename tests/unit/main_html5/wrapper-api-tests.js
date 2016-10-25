@@ -484,12 +484,6 @@ describe('main_html5 wrapper tests', function () {
     expect(element.children[0].getAttribute("srclang")).to.eql("en");
   });
 
-  it('should NOT set external closed captions for Edge', function(){
-    OO.isEdge = true;
-    wrapper.setClosedCaptions(language, closedCaptions, params);
-    expect(element.children.length).to.eql(0);
-  });
-
   it('should set closed captions mode for in-stream captions', function(){
     element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, kind: "captions" }];
     $(element).triggerHandler("playing");
