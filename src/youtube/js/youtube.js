@@ -245,7 +245,10 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#play
      */
     this.play = function() {
-      if(!youtubePlayer) return;
+      if(!youtubePlayer) {
+        javascriptCommandQueue.push(["play", null]);
+        return;
+      }
       if(playerReady)
       {
         youtubePlayer.playVideo();
