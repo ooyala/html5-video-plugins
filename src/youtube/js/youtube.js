@@ -13,7 +13,7 @@ require("../../../html5-common/js/utils/constants.js");
   var youtubePlayer;
   var youtubeVideoContainer;
   var element;
-  var youtubeID;
+  var youtubeID = '';
   var playerReady = false;
   var bitrateFlag = true;
   var javascriptCommandQueue = [];
