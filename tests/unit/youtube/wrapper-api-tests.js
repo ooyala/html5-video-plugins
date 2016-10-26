@@ -30,7 +30,7 @@ describe('youtube wrapper tests', function () {
 
   afterEach(function() {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
-    if (wrapper) { wrapper.destroy(); }
+    if (wrapper) { $(element).triggerHandler("destroy"); }
   });
 
   // helper functions

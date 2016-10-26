@@ -28,7 +28,7 @@ describe('youtube wrapper tests', function () {
   });
 
   afterEach(function() {
-    if (wrapper) { wrapper.destroy(); }
+    if (wrapper) { $(element).triggerHandler("destroy"); }
   });
 
   
