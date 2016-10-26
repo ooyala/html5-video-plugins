@@ -117,19 +117,20 @@ require("../../../html5-common/js/utils/constants.js");
    */
   function onPlayerReady(event) {
     playerReady = true;
+    if (javascriptCommandQueue.length < 1) return;
     for(var i = 0; i < javascriptCommandQueue.length; i++) 
     {
       switch(javascriptCommandQueue[i][0])
       {
-        case "play":
+        case OO.EVENTS.PLAY:
           element.play();
           hasPlayed = true;
           break;
-        case "seek":
-          element.seek(javascriptCommandQueue[i][1]);
+        case OO.EVENTS.SEEK:
+          if (javascriptCommandQueue[i].length > 1) element.seek(javascriptCommandQueue[i][1]);
           break;
-        case "setVolume":
-          element.setVolume(javascriptCommandQueue[i][1]);
+        case OO.EVENTS.VOLUME_CHANGE:
+          if (javascriptCommandQueue[i].length > 1) element.setVolume(javascriptCommandQueue[i][1]);
           break;
       }
     }    
@@ -314,7 +315,7 @@ require("../../../html5-common/js/utils/constants.js");
     this.setVolume = function(volume) {
       if(!youtubePlayer)
       {
-        javascriptCommandQueue.push(["setVolume", volume]);
+        javascriptCommandQueue.push([OO.EVENTS.VOLUME_CHANGE, volume]);
         return;
       }
       youtubePlayer.setVolume(volume*100);
