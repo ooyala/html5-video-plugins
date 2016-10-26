@@ -64,11 +64,13 @@ describe('Youtube factory tests', function () {
 
   it('should create an element because element destroyed', function(){
     pluginFactory.maxSupportedElements = 1;
+    var parentElement = $("<div>");
     var controller = { "iAm" : "theController", EVENTS: { CAN_PLAY: "canplay" }, notify: function(){} };
-    var elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player3");
+    var elementWrapper = pluginFactory.create(parentElement, "test", controller, {}, "player3");
+    var element = parentElement.children()[0];
     expect(elementWrapper).to.be.ok();
-    elementWrapper.destroy();
-    elementWrapper = pluginFactory.create($("<div>"), "test", controller, {}, "player3");
+    $(element).triggerHandler("destroy");
+    elementWrapper = pluginFactory.create(parentElement, "test", controller, {}, "player3");
     expect(elementWrapper).to.be.ok();
   });
 
