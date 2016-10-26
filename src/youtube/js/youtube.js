@@ -117,17 +117,22 @@ require("../../../html5-common/js/utils/constants.js");
    */
   function onPlayerReady(event) {
     playerReady = true;
+    if (javascriptCommandQueue.length < 1) return;
     for(var i = 0; i < javascriptCommandQueue.length; i++) 
     {
-      if(javascriptCommandQueue[i][0] === "play")
-      { 
-        element.play();
-        hasPlayed = true;
+      switch(javascriptCommandQueue[i][0])
+      {
+        case OO.EVENTS.PLAY:
+          element.play();
+          hasPlayed = true;
+          break;
+        case OO.EVENTS.SEEK:
+          if (javascriptCommandQueue[i].length > 1) element.seek(javascriptCommandQueue[i][1]);
+          break;
+        case OO.EVENTS.VOLUME_CHANGE:
+          if (javascriptCommandQueue[i].length > 1) element.setVolume(javascriptCommandQueue[i][1]);
+          break;
       }
-      else if(javascriptCommandQueue[i][0] === "seek")
-      {  
-        element.seek(javascriptCommandQueue[i][1])
-      }    
     }    
   };
 
@@ -308,7 +313,11 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      if(!youtubePlayer) return;
+      if(!youtubePlayer)
+      {
+        javascriptCommandQueue.push([OO.EVENTS.VOLUME_CHANGE, volume]);
+        return;
+      }
       youtubePlayer.setVolume(volume*100);
       this.controller.notify( this.controller.EVENTS.VOLUME_CHANGE, { "volume" :volume});
     };
