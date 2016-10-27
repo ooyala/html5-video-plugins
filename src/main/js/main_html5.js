@@ -572,8 +572,6 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
 
-      var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
-
       //Add the new closed captions if they are valid.
       var captionsFormat = "closed_captions_vtt";
       if (closedCaptions && closedCaptions[captionsFormat]) {
