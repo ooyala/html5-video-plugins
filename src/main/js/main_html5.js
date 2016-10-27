@@ -560,6 +560,7 @@ require("../../../html5-common/js/utils/environment.js");
         $(_video).find('.' + TRACK_CLASS).remove();
         return;
       }
+
       var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
       // Remove captions before setting new ones if they are different, otherwise we may see native closed captions
       if (closedCaptions && _video.textTracks && _video.textTracks.length) {
