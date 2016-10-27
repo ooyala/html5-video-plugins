@@ -18,6 +18,7 @@ describe('main_html5 wrapper tests', function () {
   require('../../../src/main/js/main_html5');
 
   var closedCaptions = {
+    locale: {en: "English"},
     closed_captions_vtt: {
       en: {
         name: "English",
@@ -199,7 +200,7 @@ describe('main_html5 wrapper tests', function () {
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){
     element.textTracks = [{ kind: "captions" }];
     vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
-    $(element).triggerHandler("playing");
+    $(element).triggerHandler("playing"); // this adds in-stream captions
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC'],
       locale: {
@@ -208,11 +209,13 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
-  it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event with all available cc', function(){
+  it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event for both live and external CCs on Safari (or Edge)', function(){
+    OO.isSafari = true;
     vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
-    element.textTracks = [{ kind: "captions" }];
-    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
-    $(element).triggerHandler("playing");
+    element.textTracks = [{ language: "en", label: "English", kind: "subtitles" }]; // this is external CC
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true); // sets isLive flag to true
+    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"}); // creates text tracks for external CCs
+    $(element).triggerHandler("playing"); // adds in-stream captions
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC'],
       locale: {
