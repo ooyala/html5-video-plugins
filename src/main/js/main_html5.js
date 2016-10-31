@@ -556,18 +556,25 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} params The params to set with closed captions
      */
     this.setClosedCaptions = _.bind(function(language, closedCaptions, params) {
-      if (language == null) {
+      var iosVersion = OO.iosMajorVersion;
+      if (iosVersion && iosVersion < 10) { // XXX HACK! PLAYER-54 iOS versions 8 and 9 require re-creation of textTracks every time this function is called
         $(_video).find('.' + TRACK_CLASS).remove();
-        return;
-      }
-      var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
-      // Remove captions before setting new ones if they are different, otherwise we may see native closed captions
-      if (closedCaptions && _video.textTracks && _video.textTracks.length) {
-        for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].language != language ||
-              _video.textTracks[i].label != closedCaptions.locale[language] ||
-              _video.textTracks[i].kind != "subtitles") {
-            _video.textTracks[i] = {};
+        if (language == null) {
+          return;
+        }
+      } else {
+        if (language == null) {
+          $(_video).find('.' + TRACK_CLASS).remove();
+          return;
+        }
+        // Remove captions before setting new ones if they are different, otherwise we may see native closed captions
+        if (closedCaptions && _video.textTracks && _video.textTracks.length) {
+          for (var i = 0; i < _video.textTracks.length; i++) {
+            if (_video.textTracks[i].language != language ||
+                _video.textTracks[i].label != closedCaptions.locale[language] ||
+                _video.textTracks[i].kind != "subtitles") {
+              _video.textTracks[i] = {};
+            }
           }
         }
       }
@@ -586,6 +593,7 @@ require("../../../html5-common/js/utils/environment.js");
         });
       }
 
+      var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
       //Set the closed captions based on the language and our available closed captions
       if (availableClosedCaptions[language]) {
         var captions = availableClosedCaptions[language];
@@ -601,15 +609,26 @@ require("../../../html5-common/js/utils/environment.js");
           }
         } else if (!captions.inStream) {
           this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
-          if (_.isEmpty(_video.textTracks)) {
+          if (iosVersion && iosVersion < 10) { // XXX HACK! PLAYER-54 create video element unconditionally as it was removed
             $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
-          }
-          if (_video.textTracks && _video.textTracks.length > 0) {
-            for (var i = 0; i < _video.textTracks.length; i++) {
-              _video.textTracks[i].mode = captionMode;
+            if (_video.textTracks && _video.textTracks[0]) {
+              _video.textTracks[0].mode = captionMode;
               //We only want to let the controller know of cue change if we aren't rendering cc from the plugin.
               if (captionMode == OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN) {
-                _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
+                _video.textTracks[0].oncuechange = onClosedCaptionCueChange;
+              }
+            }
+          } else {
+            if (_.isEmpty(_video.textTracks)) {
+              $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
+            }
+            if (_video.textTracks && _video.textTracks.length > 0) {
+              for (var i = 0; i < _video.textTracks.length; i++) {
+                _video.textTracks[i].mode = captionMode;
+                //We only want to let the controller know of cue change if we aren't rendering cc from the plugin.
+                if (captionMode == OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN) {
+                  _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
+                }
               }
             }
           }
