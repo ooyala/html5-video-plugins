@@ -741,6 +741,24 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
   });
 
+  it('should raise timeUpdate on replay if initial time is more than video duration', function(){
+    vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
+    element.duration = 20;
+    wrapper.setInitialTime(40);
+    wrapper.play();
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.ENDED);
+    element.currentTime = 10;
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE,
+    {
+        "currentTime" : 10,
+        "duration" : 20,
+        "buffer" : 0,
+        "seekRange" : {"start": 0, "end" : 0}
+    }]);
+  });
+
   // TODO: when async testing working, test for force end on timeupdate on m3u8
 
   it('should notify PLAY on video \'play\' event', function(){

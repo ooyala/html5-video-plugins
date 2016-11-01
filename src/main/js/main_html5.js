@@ -993,6 +993,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
+      initialTime.value = 0; 
 
       this.controller.notify(this.controller.EVENTS.ENDED);
     }, this);
@@ -1373,6 +1374,7 @@ require("../../../html5-common/js/utils/environment.js");
         {
           this.controller.notify(this.controller.EVENTS.SEEKED);
           videoEnded = true;
+          initialTime.value = 0;
           this.controller.notify(this.controller.EVENTS.ENDED);
         }
       }
