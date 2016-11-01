@@ -557,7 +557,9 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.setClosedCaptions = _.bind(function(language, closedCaptions, params) {
       var iosVersion = OO.iosMajorVersion;
-      if (iosVersion && iosVersion < 10) { // XXX HACK! PLAYER-54 iOS versions 8 and 9 require re-creation of textTracks every time this function is called
+      var macOsSafariVersion = OO.macOsSafariVersion;
+      var useOldLogic = (iosVersion && iosVersion < 10) || (macOsSafariVersion && macOsSafariVersion < 10);
+      if (useOldLogic) { // XXX HACK! PLAYER-54 iOS and OSX Safari versions < 10 require re-creation of textTracks every time this function is called
         $(_video).find('.' + TRACK_CLASS).remove();
         if (language == null) {
           return;
@@ -609,7 +611,7 @@ require("../../../html5-common/js/utils/environment.js");
           }
         } else if (!captions.inStream) {
           this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
-          if (iosVersion && iosVersion < 10) { // XXX HACK! PLAYER-54 create video element unconditionally as it was removed
+          if (useOldLogic) { // XXX HACK! PLAYER-54 create video element unconditionally as it was removed
             $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
             if (_video.textTracks && _video.textTracks[0]) {
               _video.textTracks[0].mode = captionMode;

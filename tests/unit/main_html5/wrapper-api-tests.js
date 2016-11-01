@@ -32,7 +32,7 @@ describe('main_html5 wrapper tests', function () {
     }
   };
   var params = {
-    mode: "showing"
+    mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN
   };
   var language = "en";
 
@@ -477,7 +477,7 @@ describe('main_html5 wrapper tests', function () {
     wrapper.setClosedCaptions(language, closedCaptions, params);
     expect(element.children.length > 0).to.be(true);
     expect(element.children[0].tagName).to.eql("TRACK");
-    expect(element.children[0].getAttribute("class")).to.eql("track_cc");
+    expect(element.children[0].getAttribute("class")).to.eql(TRACK_CLASS);
     expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
     expect(element.children[0].getAttribute("label")).to.eql("English");
     expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
@@ -490,6 +490,49 @@ describe('main_html5 wrapper tests', function () {
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
     wrapper.setClosedCaptions("CC", null, { mode: "showing" });
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+  });
+
+  it('should replace French text tracks by English text tracks for iOS versions < 10 ', function(){
+    OO.iosMajorVersion = 9;
+    $(element).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='French' src='http://french.ooyala.com' srclang='fr'>");
+    wrapper.setClosedCaptions(language, closedCaptions, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
+    expect(element.children.length).to.eql(1);
+    expect(element.children[0].tagName).to.eql("TRACK");
+    expect(element.children[0].getAttribute("label")).to.eql("English");
+    expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
+    expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
+    expect(element.children[0].getAttribute("srclang")).to.eql("en");
+    OO.iosMajorVersion = void 0;
+  });
+
+  it('should replace French text tracks by English text tracks for OSX/Safari versions < 10 ', function(){
+    OO.macOsSafariVersion = 9;
+    $(element).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='French' src='http://french.ooyala.com' srclang='fr'>");
+    wrapper.setClosedCaptions(language, closedCaptions, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
+    expect(element.children.length).to.eql(1);
+    expect(element.children[0].tagName).to.eql("TRACK");
+    expect(element.children[0].getAttribute("label")).to.eql("English");
+    expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
+    expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
+    expect(element.children[0].getAttribute("srclang")).to.eql("en");
+    OO.macOsSafariVersion = void 0;
+  });
+
+  it('should append English text tracks to already-existing French text tracks for OSX/Safari version >= 10 and other platforms', function(){
+    $(element).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='French' src='http://french.ooyala.com' srclang='fr'>");
+    wrapper.setClosedCaptions(language, closedCaptions, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
+    expect(element.children[0].tagName).to.eql("TRACK");
+    expect(element.children[0].getAttribute("label")).to.eql("French");
+    expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
+    expect(element.children[0].getAttribute("src")).to.eql("http://french.ooyala.com");
+    expect(element.children[0].getAttribute("srclang")).to.eql("fr");
+    expect(element.children[1].tagName).to.eql("TRACK");
+    expect(element.children[1].getAttribute("label")).to.eql("English");
+    expect(element.children[1].getAttribute("kind")).to.eql("subtitles");
+    expect(element.children[1].getAttribute("src")).to.eql("http://ooyala.com");
+    expect(element.children[1].getAttribute("srclang")).to.eql("en");
+    expect(element.children.length).to.eql(2);
+    OO.macOsSafariVersion = void 0;
   });
 
   it('should set both in-stream and external closed captions and switches between them', function(){
