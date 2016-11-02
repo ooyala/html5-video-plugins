@@ -40,7 +40,6 @@ describe('main_html5 wrapper tests', function () {
     OO.isIos = false;
     OO.isIE = false;
     OO.isIE11Plus = false;
-    OO.isEdge = false;
     OO.isSafari = false;
     OO.isChrome = false;
     OO.isFirefox = false;
@@ -181,42 +180,6 @@ describe('main_html5 wrapper tests', function () {
     element.currentSrc = "url";
     $(element).triggerHandler("canplaythrough");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
-  });
-
-  it('should notify BUFFERED on MS Edge when a frame plays after a waiting event', function(){
-    OO.isEdge = true;
-    vtc.interface.EVENTS.BUFFERED = "buffered";
-    element.currentSrc = "url";
-    $(element).triggerHandler("waiting");
-    element.currentTime = 10;
-    $(element).triggerHandler("timeupdate");
-    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
-  });
-
-  it('should NOT notify BUFFERED on MS Edge when a frame plays without a previous waiting event', function(){
-    OO.isEdge = true;
-    vtc.interface.EVENTS.BUFFERED = "buffered";
-    element.currentSrc = "url";
-    element.currentTime = 10;
-    $(element).triggerHandler("timeupdate");
-    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
-  });
-
-  it('should notify BUFFERED only once on MS Edge when a frame plays after a canplaythrough event', function(){
-    OO.isEdge = true;
-    vtc.interface.EVENTS.BUFFERED = "buffered";
-    element.currentSrc = "url";
-    $(element).triggerHandler("waiting");
-    $(element).triggerHandler("canplaythrough");
-    element.currentTime = 10;
-    $(element).triggerHandler("timeupdate");
-    var bufferedCount = 0
-    _.each(vtc.notified, function(event) {
-      if (event === vtc.interface.EVENTS.BUFFERED) {
-        bufferedCount++;
-      }
-    });
-    expect(bufferedCount).to.be(1);
   });
 
   it('should notify PLAYING on video \'playing\' event', function(){

@@ -194,7 +194,6 @@ require("../../../html5-common/js/utils/environment.js");
     var isLive = false;
     var lastCueText = null;
     var availableClosedCaptions = {};
-    var lastTimeUpdate = 0;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -1017,15 +1016,6 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} event The event from the video
      */
     var raiseTimeUpdate = _.bind(function(event) {
-      // [PBW-6200] - MS Edge will not fire 'playing' or 'canplaythrough' events after seeking.
-      // If playback progresses and 'waitingEventRaised' hasn't been cleared, we fire a
-      // 'buffered' event in order to notify that the video has stopped buffering
-      if (OO.isEdge && waitingEventRaised && lastTimeUpdate !== _video.currentTime) {
-        waitingEventRaised = false;
-        this.controller.notify(this.controller.EVENTS.BUFFERED, { "url": _video.currentSrc });
-      }
-      lastTimeUpdate = _video.currentTime;
-
       if (!isSeeking) {
         currentTime = _video.currentTime;
       }
