@@ -571,7 +571,7 @@ require("../../../html5-common/js/utils/environment.js");
         }
         // Remove captions before setting new ones if they are different, otherwise we may see native closed captions
         if (closedCaptions) {
-          $(_video).children('.' + TRACK_CLASS).each(function(i, element) {
+          $(_video).children('.' + TRACK_CLASS).each(function() {
             if ($(this).label != closedCaptions.locale[language] ||
                 $(this).srclang != language ||
                 $(this).kind != "subtitles") {
