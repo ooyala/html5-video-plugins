@@ -570,14 +570,14 @@ require("../../../html5-common/js/utils/environment.js");
           return;
         }
         // Remove captions before setting new ones if they are different, otherwise we may see native closed captions
-        if (closedCaptions && _video.textTracks && _video.textTracks.length) {
-          for (var i = 0; i < _video.textTracks.length; i++) {
-            if (_video.textTracks[i].language != language ||
-                _video.textTracks[i].label != closedCaptions.locale[language] ||
-                _video.textTracks[i].kind != "subtitles") {
-              _video.textTracks[i] = {};
+        if (closedCaptions) {
+          $(_video).children('.' + TRACK_CLASS).each(function(i, element) {
+            if ($(this).label != closedCaptions.locale[language] ||
+                $(this).srclang != language ||
+                $(this).kind != "subtitles") {
+              $(this).remove();
             }
-          }
+          });
         }
       }
 
@@ -621,7 +621,7 @@ require("../../../html5-common/js/utils/environment.js");
               }
             }
           } else {
-            if (_.isEmpty(_video.textTracks)) {
+            if ($(_video).children('.' + TRACK_CLASS).length == 0) {
               $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
             }
             if (_video.textTracks && _video.textTracks.length > 0) {

@@ -24,6 +24,7 @@ describe('main_html5 wrapper tests', function () {
 
   var TRACK_CLASS = "track_cc";
   var closedCaptions = {
+    locale: { en: "English" },
     closed_captions_vtt: {
       en: {
         name: "English",
@@ -58,6 +59,8 @@ describe('main_html5 wrapper tests', function () {
     OO.isSafari = false;
     OO.isChrome = false;
     OO.isFirefox = false;
+    OO.iosMajorVersion = void 0;
+    OO.macOsSafariVersion = void 0;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     if (wrapper) { wrapper.destroy(); }
   });
@@ -502,7 +505,6 @@ describe('main_html5 wrapper tests', function () {
     expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
     expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
     expect(element.children[0].getAttribute("srclang")).to.eql("en");
-    OO.iosMajorVersion = void 0;
   });
 
   it('should replace French text tracks by English text tracks for OSX/Safari versions < 10 ', function(){
@@ -515,24 +517,27 @@ describe('main_html5 wrapper tests', function () {
     expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
     expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
     expect(element.children[0].getAttribute("srclang")).to.eql("en");
-    OO.macOsSafariVersion = void 0;
   });
 
-  it('should append English text tracks to already-existing French text tracks for OSX/Safari version >= 10 and other platforms', function(){
-    $(element).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='French' src='http://french.ooyala.com' srclang='fr'>");
+  it('should replace French subtitles by English ones on Safari version >= 10 and other platforms', function(){
+    OO.isChrome = true;
+    var closedCaptions2 = {
+      locale: { fr: "French" },
+      closed_captions_vtt: {
+        fr: {
+          name: "French",
+          url: "http://french.ooyala.com"
+        }
+      }
+    };
+
+    wrapper.setClosedCaptions('fr', closedCaptions2, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
     wrapper.setClosedCaptions(language, closedCaptions, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
-    expect(element.children[0].tagName).to.eql("TRACK");
-    expect(element.children[0].getAttribute("label")).to.eql("French");
+    expect(element.children.length).to.eql(1);
+    expect(element.children[0].getAttribute("label")).to.eql("English");
     expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
-    expect(element.children[0].getAttribute("src")).to.eql("http://french.ooyala.com");
-    expect(element.children[0].getAttribute("srclang")).to.eql("fr");
-    expect(element.children[1].tagName).to.eql("TRACK");
-    expect(element.children[1].getAttribute("label")).to.eql("English");
-    expect(element.children[1].getAttribute("kind")).to.eql("subtitles");
-    expect(element.children[1].getAttribute("src")).to.eql("http://ooyala.com");
-    expect(element.children[1].getAttribute("srclang")).to.eql("en");
-    expect(element.children.length).to.eql(2);
-    OO.macOsSafariVersion = void 0;
+    expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
+    expect(element.children[0].getAttribute("srclang")).to.eql("en");
   });
 
   it('should set both in-stream and external closed captions and switches between them', function(){
