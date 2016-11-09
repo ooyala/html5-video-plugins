@@ -393,6 +393,7 @@ require("../../../html5-common/js/utils/constants.js");
      */
     var updateTimerDisplay = function()
     {
+      if(!youtubePlayer || !playerReady) return;
       clearInterval(timeUpdateInterval);
       timeUpdateInterval = setInterval(function () { updateTimerDisplay(); }, 255);
       raisePlayhead();
