@@ -173,8 +173,6 @@ require("../../../html5-common/js/utils/constants.js");
       case 1:
         // playing 
         OO.log("Youtube: Playing event received");
-        element.controller.notify(element.controller.EVENTS.PLAYING);
-
         if (bitrateFlag) {
           if(!youtubePlayer) return;
           qualities = youtubePlayer.getAvailableQualityLevels();
@@ -265,6 +263,7 @@ require("../../../html5-common/js/utils/constants.js");
       {
         youtubePlayer.playVideo();
         this.controller.notify(this.controller.EVENTS.PLAY, { url: youtubeID });
+        this.controller.notify(element.controller.EVENTS.PLAYING);
         updateTimerDisplay();
         hasPlayed = true;
       }
