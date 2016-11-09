@@ -694,7 +694,6 @@ require("../../../html5-common/js/utils/environment.js");
       stopUnderflowWatcher();
       _currentUrl = _video.src;
       firstPlay = true;
-      videoEnded = false;
       isSeeking = false;
     }, this);
 
