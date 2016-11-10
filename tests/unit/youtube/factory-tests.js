@@ -38,7 +38,7 @@ describe('Youtube factory tests', function () {
 
   it('should provide a list of supported encodings', function(){
     // This is controlled by document.createElement("video").canPlayType(type);
-    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.MP4]);
+    expect(pluginFactory.encodings).to.eql([OO.VIDEO.ENCODING.YOUTUBE]);
   });
 
   it('should provide a list of supported features', function(){
