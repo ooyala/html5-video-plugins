@@ -532,6 +532,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.destroy = function() {
       _video.pause();
+      stopUnderflowWatcher();
       //On IE and Edge, setting the video source to an empty string has the unwanted effect
       //of a network request to the base url
       if (!OO.isIE && !OO.isEdge) {
@@ -924,8 +925,8 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var raiseWaitingEvent = _.bind(function() {
       // WAITING event is not raised if no video is assigned yet
-      if (_.isEmpty(_video.currentSrc)) { 
-        return; 
+      if (_.isEmpty(_video.currentSrc)) {
+        return;
       }
       waitingEventRaised = true;
       this.controller.notify(this.controller.EVENTS.WAITING, {"url":_video.currentSrc});
@@ -993,7 +994,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
-      initialTime.value = 0; 
+      initialTime.value = 0;
 
       this.controller.notify(this.controller.EVENTS.ENDED);
     }, this);
@@ -1389,7 +1390,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#startUnderflowWatcher
      */
     var startUnderflowWatcher = _.bind(function() {
-      if ((OO.isChrome || OO.isIos || OO.isIE11Plus) && !underflowWatcherTimer) {
+      if ((OO.isChrome || OO.isIos || OO.isIE11Plus || OO.isEdge) && !underflowWatcherTimer) {
         var watchInterval = 300;
         underflowWatcherTimer = setInterval(underflowWatcher, watchInterval)
       }
