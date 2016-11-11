@@ -23,7 +23,7 @@ require("../../../html5-common/js/utils/constants.js");
    * @class OoyalaYoutubeVideoFactory
    * @classdesc Factory for creating video player objects for youtube videos.
    * @property {string} name The name of the plugin
-   * @property {string[]} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.MP4)
+   * @property {string[]} encodings An array of supported encoding types (ex. OO.VIDEO.ENCODING.YOUTUBE)
    * @property {string[]} features An array of supported features (ex. OO.VIDEO.FEATURE.BITRATE_CONTROL)
    * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
    */
@@ -32,7 +32,7 @@ require("../../../html5-common/js/utils/constants.js");
     this.features = [ OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE,
                       OO.VIDEO.FEATURE.BITRATE_CONTROL ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
-    this.encodings = [OO.VIDEO.ENCODING.MP4];
+    this.encodings = [OO.VIDEO.ENCODING.YOUTUBE];
 
     /**
      * Creates a video player instance using OoyalaYoutubeVideoWrapper.
