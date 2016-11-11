@@ -289,7 +289,7 @@ require("../../../html5-common/js/utils/constants.js");
         youtubePlayer.seekTo(time,true);
         this.controller.notify( this.controller.EVENTS.SEEKED);
       }
-      else { 
+      else {
         // control comes here only when the setinitial time calls the seek and the player is not yet in ready state.
         OO.log("Youtube: Adding setInitialTime to queue has the youtube player is not yet ready");
         javascriptCommandQueue.push(["seek", time]);
@@ -378,6 +378,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#updateTimerDisplay
      */
     var updateTimerDisplay = function() {
+      if(!youtubePlayer || !playerReady) return;
       clearInterval(timeUpdateInterval);
       timeUpdateInterval = setInterval(function () { updateTimerDisplay(); }, 255);
       raisePlayhead();
