@@ -104,7 +104,7 @@ require("../../../html5-common/js/utils/constants.js");
     if(!youtubePlayer) {
       element.controller.notify(element.controller.EVENTS.ERROR, { "errorcode" : -1 });
     }
-  };
+  }
 
   /*
    * The Youtube iframe API will call this function when the video player is ready.
@@ -129,7 +129,7 @@ require("../../../html5-common/js/utils/constants.js");
           break;
       }
     }    
-  };
+  }
 
   /*
    * The Youtube iframe API calls this function when the player's quality changes.
@@ -143,9 +143,9 @@ require("../../../html5-common/js/utils/constants.js");
       width: 0,
       height: 0,
       bitrate:event.data 
-    }
+    };
     element.controller.notify(element.controller.EVENTS.BITRATE_CHANGED,vtcBitrate);
-  };
+  }
 
   /*
    * The Youtube iframe API calls this function when the player's state changes.
@@ -189,7 +189,7 @@ require("../../../html5-common/js/utils/constants.js");
         // video cued 
         break;
     }
-  };
+  }
 
   /*
    * The Youtube iframe API calls this function when the player's throws an error.
@@ -227,7 +227,7 @@ require("../../../html5-common/js/utils/constants.js");
         // This error is the same as 101. It's just a 101 error in disguise! 
         break;
       }
-  };
+  }
 
   /**
    * @class OoyalaYoutubeVideoWrapper
@@ -328,10 +328,9 @@ require("../../../html5-common/js/utils/constants.js");
      * @public
      * @method OoyalaYoutubeVideoWrapper#setVideoUrl
      * @param {string} youtubeId The youtube Id of the video that needs to be played. 
-     * @param {string} encoding The encoding of video stream, possible values are found in OO.VIDEO.ENCODING
      * @returns {boolean} True or false indicating success
      */
-    this.setVideoUrl = function(youtubeId, encoding, isLive) {   
+    this.setVideoUrl = function(youtubeId) {
       if (youtubeId) {
         youtubeID = youtubeId;                
         return true;
@@ -382,7 +381,7 @@ require("../../../html5-common/js/utils/constants.js");
       clearInterval(timeUpdateInterval);
       timeUpdateInterval = setInterval(function () { updateTimerDisplay(); }, 255);
       raisePlayhead();
-    }
+    };
 
     /**
      * Notifies the controller of events that provide playhead information.
@@ -414,7 +413,7 @@ require("../../../html5-common/js/utils/constants.js");
             width: 0,
             height: 0,
             bitrate: qualities[i]
-          }
+          };
           vtcBitrates.push(vtcBitrate);
         }
       }
