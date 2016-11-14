@@ -245,6 +245,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql(null);
     $(element).triggerHandler("loadstart");
+    $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql(null);
     wrapper.play();
     $(element).triggerHandler("ended");
