@@ -237,6 +237,20 @@ describe('main_html5 wrapper tests', function () {
     expect(element.load.wasCalled).to.be(true);
   });
 
+  it('should unblock raising of ended event after calling play', function(){
+    vtc.interface.EVENTS.ENDED = "ended";
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
+    vtc.notifyParameters = null;
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql(null);
+    $(element).triggerHandler("loadstart");
+    expect(vtc.notifyParameters).to.eql(null);
+    wrapper.play();
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
+  });
+
   it('should not play if seeking', function(){
     element.seeking = true;
     spyOn(element, "play");
