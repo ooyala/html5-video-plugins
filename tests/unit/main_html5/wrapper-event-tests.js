@@ -487,18 +487,6 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
   });
 
-  it('should unblock raising of ended event after a new stream begins loading', function(){
-    vtc.interface.EVENTS.ENDED = "ended";
-    $(element).triggerHandler("ended");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
-    vtc.notifyParameters = null;
-    $(element).triggerHandler("ended");
-    expect(vtc.notifyParameters).to.eql(null);
-    $(element).triggerHandler("loadstart");
-    $(element).triggerHandler("ended");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
-  });
-
   // TODO: When we have platform testing support, test for iOS behavior for ended event raised when ended != true
 
   it('should block seekable from playheads until video initialization in safari', function(){
