@@ -353,7 +353,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("waiting");
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
-  
+
   it('should notify SEEKING on video \'seeking\' event', function(){
     vtc.interface.EVENTS.SEEKING = "seeking";
     $(element).triggerHandler("seeking");

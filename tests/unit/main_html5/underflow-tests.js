@@ -34,6 +34,7 @@ describe('main_html5 chrome underflow tests', function () {
     OO.isFirefox = false;
     OO.isIos = false;
     OO.isIE11Plus = false;
+    OO.isEdge = false;
     vtc = new mock_vtc();
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
@@ -455,6 +456,20 @@ describe('main_html5 chrome underflow tests', function () {
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     jasmine.Clock.tick(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
+  });
+
+  it('should raise buffered event after waiting on MS Edge when currentTime has progressed', function(){
+    OO.isChrome = false;
+    OO.isEdge = true;
+    vtc.interface.EVENTS.BUFFERED = "buffered";
+    element.currentSrc = "url";
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    $(element).triggerHandler("waiting");
+    element.currentTime = 10;
+    $(element).triggerHandler("timeupdate");
+    jasmine.Clock.tick(interval);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
   });
 
   it('should not raise waiting event when the currentTime hasn\'t progressed on most platforms', function(){
