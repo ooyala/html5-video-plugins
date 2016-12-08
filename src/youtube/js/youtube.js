@@ -53,7 +53,7 @@ require("../../../html5-common/js/utils/constants.js");
         return;
       }
       youtubeVideoContainer = parentContainer;
-      $('head').append("<script type = 'text/javascript' src = 'http://www.youtube.com/iframe_api'></script>");
+      $('head').append("<script type = 'text/javascript' src = '//www.youtube.com/iframe_api'></script>");
       window.onYouTubePlayerAPIReady = function() { onYouTubeIframeAPIReady(); }; 
       element = new OoyalaYoutubeVideoWrapper();
       if(element == null) return;
