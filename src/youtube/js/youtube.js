@@ -273,8 +273,10 @@ require("../../../html5-common/js/utils/constants.js");
     this.pause = function() {
       if(!youtubePlayer) return;
       youtubePlayer.pauseVideo();
-      clearInterval(timeUpdateInterval);
-      timeUpdateInterval = null;
+      if (timeUpdateInterval) {
+        clearInterval(timeUpdateInterval);
+        timeUpdateInterval = null;
+      }
     };
     
     /**
@@ -366,9 +368,15 @@ require("../../../html5-common/js/utils/constants.js");
         youtubeID = '';
       }
       player = null;
-      youtubePlayer.destroy();
-      youtubePlayer = null;
+      if (youtubePlayer) {
+        youtubePlayer.destroy();
+        youtubePlayer = null;
+      }
       playerReady = false;
+      if (timeUpdateInterval) {
+        clearInterval(timeUpdateInterval);
+        timeUpdateInterval = null;
+      }
     };
 
     /**
@@ -378,7 +386,9 @@ require("../../../html5-common/js/utils/constants.js");
      */
     var updateTimerDisplay = function() {
       if(!youtubePlayer || !playerReady) return;
-      clearInterval(timeUpdateInterval);
+      if (timeUpdateInterval) {
+        clearInterval(timeUpdateInterval);
+      }
       timeUpdateInterval = setInterval(function () { updateTimerDisplay(); }, 255);
       raisePlayhead();
     };
