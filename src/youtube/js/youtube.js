@@ -369,6 +369,8 @@ require("../../../html5-common/js/utils/constants.js");
       youtubePlayer.destroy();
       youtubePlayer = null;
       playerReady = false;
+      clearInterval(timeUpdateInterval);
+      timeUpdateInterval = null;
     };
 
     /**
