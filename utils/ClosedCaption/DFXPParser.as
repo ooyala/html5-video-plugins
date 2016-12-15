@@ -240,7 +240,7 @@ package
 								text += parseSpanTag(doc, child);
 								break;
 							case "br":
-								text += "<br />";
+								text += "<br/>\n";
 								break;
 							default:
 								text += formatCCText(child.toString());
