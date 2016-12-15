@@ -91,6 +91,24 @@ describe('main_html5 wrapper tests', function () {
     expect(returns).to.be(false);
   });
 
+  it('should clear closed captions when setting a new url', function(){
+    wrapper.setVideoUrl("url");
+    wrapper.setClosedCaptions(language, closedCaptions, params);
+    // Make sure tracks are actually there before we remove them
+    expect(element.children.length > 0).to.be(true);
+    expect(element.children[0].tagName).to.eql("TRACK");
+    wrapper.setVideoUrl("new_url");
+    expect(element.children.length).to.be(0);
+  });
+
+  it('should not clear closed captions when setting the same url', function(){
+    wrapper.setVideoUrl("url");
+    wrapper.setClosedCaptions(language, closedCaptions, params);
+    wrapper.setVideoUrl("url");
+    expect(element.children.length > 0).to.be(true);
+    expect(element.children[0].tagName).to.eql("TRACK");
+  });
+
   it('should ignore cache buster', function(){
     wrapper.setVideoUrl("url?_=1");
     var returns = wrapper.setVideoUrl("url");
@@ -287,7 +305,7 @@ describe('main_html5 wrapper tests', function () {
     wrapper.setVideoUrl("url", "mp4", false);
     element.duration = 0;
     setFullSeekRange(10);
-    var returns = wrapper.seek(1);    
+    var returns = wrapper.seek(1);
     expect(returns).to.be(true);
     element.duration = Infinity;
     returns = wrapper.seek(1);
@@ -548,7 +566,7 @@ describe('main_html5 wrapper tests', function () {
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
     expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
 
-    wrapper.setClosedCaptions("CC", null, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING}); 
+    wrapper.setClosedCaptions("CC", null, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING});
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
     expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
 

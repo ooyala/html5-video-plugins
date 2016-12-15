@@ -343,6 +343,11 @@ require("../../../html5-common/js/utils/environment.js");
       isPriming = false;
       stopUnderflowWatcher();
       lastCueText = null;
+      // [PLAYER-212]
+      // Closed captions persist across discovery videos unless they are cleared
+      // when a new video is set
+      $(_video).find('.' + TRACK_CLASS).remove();
+      availableClosedCaptions = {};
     }, this);
 
     /**
