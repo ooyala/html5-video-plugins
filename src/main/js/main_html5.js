@@ -194,6 +194,7 @@ require("../../../html5-common/js/utils/environment.js");
     var isLive = false;
     var lastCueText = null;
     var availableClosedCaptions = {};
+    var textTrackModes = {};
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -343,6 +344,7 @@ require("../../../html5-common/js/utils/environment.js");
       isPriming = false;
       stopUnderflowWatcher();
       lastCueText = null;
+      textTrackModes = {};
       // [PLAYER-212]
       // Closed captions persist across discovery videos unless they are cleared
       // when a new video is set
@@ -616,9 +618,10 @@ require("../../../html5-common/js/utils/environment.js");
             }
           }
         } else if (!captions.inStream) {
+          var trackId = new Date().getTime().toString();
           this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
           if (useOldLogic) { // XXX HACK! PLAYER-54 create video element unconditionally as it was removed
-            $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
+            $(_video).append("<track id='" + trackId + "' class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
             if (_video.textTracks && _video.textTracks[0]) {
               _video.textTracks[0].mode = captionMode;
               //We only want to let the controller know of cue change if we aren't rendering cc from the plugin.
@@ -628,7 +631,7 @@ require("../../../html5-common/js/utils/environment.js");
             }
           } else {
             if ($(_video).children('.' + TRACK_CLASS).length == 0) {
-              $(_video).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
+              $(_video).append("<track id='" + trackId + "' class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
             }
             if (_video.textTracks && _video.textTracks.length > 0) {
               for (var i = 0; i < _video.textTracks.length; i++) {
@@ -640,6 +643,7 @@ require("../../../html5-common/js/utils/environment.js");
               }
             }
           }
+          textTrackModes[trackId] = captionMode;
           //Sometimes there is a delay before the textTracks are accessible. This is a workaround.
           _.delay(function(captionMode) {
             if (_video.textTracks && _video.textTracks[0]) {
@@ -666,6 +670,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
           _video.textTracks[i].mode = mode;
+          textTrackModes[_video.textTracks[i].id] = mode;
         }
       }
       if (mode == OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
@@ -710,8 +715,25 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#onLoadedMetadata
      */
     var onLoadedMetadata = _.bind(function() {
+      if (OO.isIos && _video && _video.textTracks) {
+        _video.textTracks.onchange = onTextTracksChange;
+      }
       dequeueSeek();
       loaded = true;
+    }, this);
+
+    /**
+     * Fired when there is a change on a text track.
+     * @private
+     * @param  {object} function(event description
+     */
+    var onTextTracksChange = _.bind(function(event) {
+      for (var i = 0; i < _video.textTracks.length; i++) {
+        if (textTrackModes[_video.textTracks[i].id] !== _video.textTracks[i].mode) {
+          OO.log("main_html5: Forcing text track mode. Expected: '" + textTrackModes[_video.textTracks[i].id] + "', received: '" + _video.textTracks[i].mode + "'");
+          _video.textTracks[i].mode = textTrackModes[_video.textTracks[i].id];
+        }
+      }
     }, this);
 
     /**
