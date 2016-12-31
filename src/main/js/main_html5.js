@@ -603,6 +603,7 @@ require("../../../html5-common/js/utils/environment.js");
         });
       }
 
+      var trackId = OO.getRandomString();
       var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
       //Set the closed captions based on the language and our available closed captions
       if (availableClosedCaptions[language]) {
@@ -610,15 +611,24 @@ require("../../../html5-common/js/utils/environment.js");
         //If the captions are in-stream, we just need to enable them; Otherwise we must add them to the video ourselves.
         if (captions.inStream == true && _video.textTracks) {
           for (var i = 0; i < _video.textTracks.length; i++) {
+            // [PLAYER-327], [PLAYER-73]
+            // Safari doesn't allow modifying inStream track ids and we don't want
+            // to mess with any existing ids anyway. For inStream tracks we store the id
+            // on a separate custom property. We use the existing id if it's available
+            trackId = _video.textTracks[i].id || OO.getRandomString();
+            _video.textTracks[i].trackId =  trackId;
+
             if (((OO.isSafari || OO.isEdge) && isLive) || _video.textTracks[i].kind === "captions") {
               _video.textTracks[i].mode = captionMode;
               _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
             } else {
               _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
             }
+            // [PLAYER-327], [PLAYER-73]
+            // Store current mode of inStream tracks for future use in workaround
+            textTrackModes[trackId] = _video.textTracks[i].mode;
           }
         } else if (!captions.inStream) {
-          var trackId = new Date().getTime().toString();
           this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
           if (useOldLogic) { // XXX HACK! PLAYER-54 create video element unconditionally as it was removed
             $(_video).append("<track id='" + trackId + "' class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
@@ -643,6 +653,8 @@ require("../../../html5-common/js/utils/environment.js");
               }
             }
           }
+          // [PLAYER-327], [PLAYER-73]
+          // Store mode of newly added tracks for future use in workaround
           textTrackModes[trackId] = captionMode;
           //Sometimes there is a delay before the textTracks are accessible. This is a workaround.
           _.delay(function(captionMode) {
@@ -670,7 +682,10 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video.textTracks) {
         for (var i = 0; i < _video.textTracks.length; i++) {
           _video.textTracks[i].mode = mode;
-          textTrackModes[_video.textTracks[i].id] = mode;
+          // [PLAYER-327], [PLAYER-73]
+          // Store newly set track mode for future use in workaround
+          var trackId = _video.textTracks[i].id || _video.textTracks[i].trackId;
+          textTrackModes[trackId] = mode;
         }
       }
       if (mode == OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
@@ -715,6 +730,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#onLoadedMetadata
      */
     var onLoadedMetadata = _.bind(function() {
+      // [PLAYER-327], [PLAYER-73]
+      // We need to monitor track change on iOS in order to prevent
+      // Safari from overriding our settings
       if (OO.isIos && _video && _video.textTracks) {
         _video.textTracks.onchange = onTextTracksChange;
       }
@@ -729,9 +747,16 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var onTextTracksChange = _.bind(function(event) {
       for (var i = 0; i < _video.textTracks.length; i++) {
-        if (textTrackModes[_video.textTracks[i].id] !== _video.textTracks[i].mode) {
-          OO.log("main_html5: Forcing text track mode. Expected: '" + textTrackModes[_video.textTracks[i].id] + "', received: '" + _video.textTracks[i].mode + "'");
-          _video.textTracks[i].mode = textTrackModes[_video.textTracks[i].id];
+        var trackId = _video.textTracks[i].id || _video.textTracks[i].trackId;
+        // [PLAYER-327], [PLAYER-73]
+        // iOS Safari sometimes randomly switches a track's mode. As a
+        // workaround, we force our own value if we detect that we have switched
+        // to a mode that we didn't set ourselves
+        if (_video.textTracks[i].mode !== textTrackModes[trackId]) {
+          OO.log("main_html5: Forcing text track mode for track " + trackId + ". Expected: '"
+                + textTrackModes[trackId] + "', received: '" + _video.textTracks[i].mode + "'");
+
+          _video.textTracks[i].mode = textTrackModes[trackId];
         }
       }
     }, this);
