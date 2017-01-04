@@ -611,13 +611,6 @@ require("../../../html5-common/js/utils/environment.js");
         //If the captions are in-stream, we just need to enable them; Otherwise we must add them to the video ourselves.
         if (captions.inStream == true && _video.textTracks) {
           for (var i = 0; i < _video.textTracks.length; i++) {
-            // [PLAYER-327], [PLAYER-73]
-            // Safari doesn't allow modifying inStream track ids and we don't want
-            // to mess with any existing ids anyway. For inStream tracks we store the id
-            // on a separate custom property. We use the existing id if it's available
-            trackId = _video.textTracks[i].id || OO.getRandomString();
-            _video.textTracks[i].trackId =  trackId;
-
             if (((OO.isSafari || OO.isEdge) && isLive) || _video.textTracks[i].kind === "captions") {
               _video.textTracks[i].mode = captionMode;
               _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
@@ -625,7 +618,11 @@ require("../../../html5-common/js/utils/environment.js");
               _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
             }
             // [PLAYER-327], [PLAYER-73]
-            // Store current mode of inStream tracks for future use in workaround
+            // We keep track of all text track modes in order to prevent Safari from randomly
+            // changing them. We can't set the id of inStream tracks, so we use a custom
+            // trackId property instead
+            trackId = _video.textTracks[i].id || OO.getRandomString();
+            _video.textTracks[i].trackId = trackId;
             textTrackModes[trackId] = _video.textTracks[i].mode;
           }
         } else if (!captions.inStream) {
@@ -731,9 +728,9 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var onLoadedMetadata = _.bind(function() {
       // [PLAYER-327], [PLAYER-73]
-      // We need to monitor track change on iOS in order to prevent
-      // Safari from overriding our settings
-      if (OO.isIos && _video && _video.textTracks) {
+      // We need to monitor track change in Safari in order to prevent
+      // it from overriding our settings
+      if (OO.isSafari && _video && _video.textTracks) {
         _video.textTracks.onchange = onTextTracksChange;
       }
       dequeueSeek();
@@ -749,7 +746,7 @@ require("../../../html5-common/js/utils/environment.js");
       for (var i = 0; i < _video.textTracks.length; i++) {
         var trackId = _video.textTracks[i].id || _video.textTracks[i].trackId;
         // [PLAYER-327], [PLAYER-73]
-        // iOS Safari sometimes randomly switches a track's mode. As a
+        // Safari (desktop and iOS) sometimes randomly switches a track's mode. As a
         // workaround, we force our own value if we detect that we have switched
         // to a mode that we didn't set ourselves
         if (_video.textTracks[i].mode !== textTrackModes[trackId]) {
