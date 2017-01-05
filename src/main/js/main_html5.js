@@ -740,7 +740,8 @@ require("../../../html5-common/js/utils/environment.js");
     /**
      * Fired when there is a change on a text track.
      * @private
-     * @param  {object} function(event description
+     * @method OoyalaVideoWrapper#onTextTracksChange
+     * @param {object} event The event from the track change
      */
     var onTextTracksChange = _.bind(function(event) {
       for (var i = 0; i < _video.textTracks.length; i++) {
