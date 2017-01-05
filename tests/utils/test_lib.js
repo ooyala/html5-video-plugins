@@ -2,6 +2,7 @@ jest.dontMock('underscore');
 jest.dontMock('jquery');
 
 global.OO = { publicApi: {}, platform: 'MacIntel', os: {}, browser: { version:1, webkit:true }, TEST_TEST_TEST: true};
+global.OO.getRandomString = function() { return Math.random().toString(36).substring(7); };
 
 // The function setTimeout from jsdom is not working, this overwrites the function with the function defined by node
 global.window.setTimeout = setTimeout;
