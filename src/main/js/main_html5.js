@@ -569,12 +569,14 @@ require("../../../html5-common/js/utils/environment.js");
       var useOldLogic = (iosVersion && iosVersion < 10) || (macOsSafariVersion && macOsSafariVersion < 10);
       if (useOldLogic) { // XXX HACK! PLAYER-54 iOS and OSX Safari versions < 10 require re-creation of textTracks every time this function is called
         $(_video).find('.' + TRACK_CLASS).remove();
+        textTrackModes = {};
         if (language == null) {
           return;
         }
       } else {
         if (language == null) {
           $(_video).find('.' + TRACK_CLASS).remove();
+          textTrackModes = {};
           return;
         }
         // Remove captions before setting new ones if they are different, otherwise we may see native closed captions
@@ -621,7 +623,7 @@ require("../../../html5-common/js/utils/environment.js");
             // We keep track of all text track modes in order to prevent Safari from randomly
             // changing them. We can't set the id of inStream tracks, so we use a custom
             // trackId property instead
-            trackId = _video.textTracks[i].id || OO.getRandomString();
+            trackId = _video.textTracks[i].id || _video.textTracks[i].trackId || OO.getRandomString();
             _video.textTracks[i].trackId = trackId;
             textTrackModes[trackId] = _video.textTracks[i].mode;
           }
@@ -746,6 +748,10 @@ require("../../../html5-common/js/utils/environment.js");
     var onTextTracksChange = _.bind(function(event) {
       for (var i = 0; i < _video.textTracks.length; i++) {
         var trackId = _video.textTracks[i].id || _video.textTracks[i].trackId;
+
+        if (typeof textTrackModes[trackId] === 'undefined') {
+          continue;
+        }
         // [PLAYER-327], [PLAYER-73]
         // Safari (desktop and iOS) sometimes randomly switches a track's mode. As a
         // workaround, we force our own value if we detect that we have switched
