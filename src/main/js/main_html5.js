@@ -7,6 +7,7 @@ require("../../../html5-common/js/utils/InitModules/InitOO.js");
 require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
 require("../../../html5-common/js/utils/constants.js");
+require("../../../html5-common/js/utils/utils.js");
 require("../../../html5-common/js/utils/environment.js");
 
 (function(_, $) {
