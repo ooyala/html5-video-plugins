@@ -19,8 +19,8 @@ require("../../../html5-common/js/utils/constants.js");
   var pluginPath;
   var filename = "akamaiHD_flash.*\.js";
   var scripts = document.getElementsByTagName('script');
-  for (var index in scripts) {
-    var match = scripts[index].src.match(filename);
+  for (var i = 0; i < scripts.length; i++) {
+    var match = scripts[i].src.match(filename);
     if (match && match.length > 0) {
       pluginPath = match.input.match(/.*\//)[0];
       break;
@@ -100,7 +100,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, domId, controller, css, playerId) {
-      var video = $("<object>");
+      var video = $("<video>");
       video.attr("class", "video");
       video.attr("id", domId);
       video.attr("preload", "none");
@@ -316,7 +316,37 @@ require("../../../html5-common/js/utils/constants.js");
       if (loaded && !rewind) return;
       else {
         try {
-          this.callToFlash("load("+rewind+")");
+
+          var originalAspectRatio = (9/16);
+          var wrapperWidth = videoItem.parentNode.clientWidth;
+          var wrapperHeight = videoItem.parentNode.clientHeight;
+
+          $(videoItem).css("height", wrapperHeight+'px');
+          $('.innerWrapper').css("height", wrapperHeight+'px');
+          $(videoItem).siblings('.resize').css("height", wrapperHeight+'px');
+
+          if (wrapperHeight > 1 && wrapperWidth > 1)
+            originalAspectRatio = wrapperHeight / wrapperWidth;
+
+          this.callToFlash("load("+originalAspectRatio+")");
+
+          if(wrapperWidth > wrapperHeight) {
+            resizeStyles = {
+              "left": '0px',
+              "top": '50%',
+              "transform": 'translateX(0%)',
+              "transform": 'translateY(-50%)'
+            };
+          } else {
+            resizeStyles = {
+              "left": '50%',
+              "top": '0px',
+              "transform": 'translateX(-50%)',
+              "transform": 'translateY(0%)'
+            };
+          }
+          $(videoItem).css(resizeStyles);
+
           loaded = true;
         } catch (ex) {
           // error because currentTime does not exist because stream hasn't been retrieved yet
@@ -483,8 +513,8 @@ require("../../../html5-common/js/utils/constants.js");
       self.controller.notify(self.controller.EVENTS.SEEKED);
     };
 
-    var raiseBufferingEvent = function() {
-      self.controller.notify(self.controller.EVENTS.BUFFERING);
+    var raiseBufferingEvent = function(event) {
+      self.controller.notify(self.controller.EVENTS.BUFFERING, { url: event.eventObject.url });
     };
 
     var raisePauseEvent = function() {
@@ -538,8 +568,8 @@ require("../../../html5-common/js/utils/constants.js");
                                "seekRange": { "begin": seekRange_start, "end": seekRange_end } });
     };
 
-    var raiseCanPlayThrough = function() {
-      self.controller.notify(self.controller.EVENTS.BUFFERED);
+    var raiseCanPlayThrough = function(event) {
+      self.controller.notify(self.controller.EVENTS.BUFFERED, { url: event.eventObject.url });
     };
 
     var raiseFullScreenBegin = function(event) {
@@ -564,14 +594,16 @@ require("../../../html5-common/js/utils/constants.js");
 
     var raiseBitratesAvailable = function(event) {
       var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
-      for (var i in event.eventObject) {
-        var vtcBitrate = {
-          id: event.eventObject[i].id,
-          width: event.eventObject[i].width,
-          height: event.eventObject[i].height,
-          bitrate: event.eventObject[i].bitrate
+      if (event) {
+        for (var i = 0; i < event.eventObject.length; i++) {
+          var vtcBitrate = {
+            id: event.eventObject[i].id,
+            width: event.eventObject[i].width,
+            height: event.eventObject[i].height,
+            bitrate: event.eventObject[i].bitrate
+          }
+          vtcBitrates.push(vtcBitrate);
         }
-        vtcBitrates.push(vtcBitrate);
       }
       self.controller.notify(self.controller.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
     };
@@ -581,6 +613,29 @@ require("../../../html5-common/js/utils/constants.js");
         width: event.eventObject.width,
         height: event.eventObject.height,
       }
+        var objectHeight = event.eventObject.height;
+        var objectWidth = event.eventObject.width;
+
+        $(videoItem).css("height", objectHeight+'px');
+        var resizeStyles = {};
+
+        if(objectWidth > objectHeight) {
+          resizeStyles = {
+            "left": '0px',
+            "top": '50%',
+            "transform": 'translateX(0%)',
+            "transform": 'translateY(-50%)'
+          };
+        } else {
+          resizeStyles = {
+            "left": '50%',
+            "top": '0px',
+            "transform": 'translateX(-50%)',
+            "transform": 'translateY(0%)'
+          };
+        }
+        $(videoItem).css(resizeStyles);
+
       //notify VTC about the asset's dimentions
       if (firstPlay) {
         self.controller.notify(self.controller.EVENTS.ASSET_DIMENSION,assetDimension);
@@ -658,7 +713,7 @@ require("../../../html5-common/js/utils/constants.js");
         raisePauseEvent();
         break;
        case "BUFFERING":
-        raiseBufferingEvent();
+        raiseBufferingEvent(data);
         break;
        case "PLAY":
         raisePlayEvent(data);
@@ -700,7 +755,7 @@ require("../../../html5-common/js/utils/constants.js");
         raiseProgress(data);
         break;
        case "BUFFERED":
-        raiseCanPlayThrough();
+        raiseCanPlayThrough(data);
         break;
        case "FULLSCREEN_CHANGED":
         raiseFullScreenBegin(data);
@@ -1163,7 +1218,7 @@ var swfobject = function() {
       if (ua.ie && ua.win) { // Internet Explorer + the HTML object element + W3C DOM methods do not combine: fall back to outerHTML
         var att = "";
         for (var i in attObj) {
-          if (attObj[i] != Object.prototype[i]) { // filter out prototype additions from other potential libraries
+          if (attObj.hasOwnProperty(i)) { // filter out prototype additions from other potential libraries
             if (i.toLowerCase() == "data") {
               parObj.movie = attObj[i];
             } else if (i.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
@@ -1175,7 +1230,7 @@ var swfobject = function() {
         }
         var par = "";
         for (var j in parObj) {
-          if (parObj[j] != Object.prototype[j]) { // filter out prototype additions from other potential libraries
+          if (parObj.hasOwnProperty(j)) { // filter out prototype additions from other potential libraries
             par += '<param name="' + j + '" value="' + parObj[j] + '" />';
           }
         }
@@ -1186,7 +1241,7 @@ var swfobject = function() {
         var o = createElement(OBJECT);
         o.setAttribute("type", FLASH_MIME_TYPE);
         for (var m in attObj) {
-          if (attObj[m] != Object.prototype[m]) { // filter out prototype additions from other potential libraries
+          if (attObj.hasOwnProperty(m)) { // filter out prototype additions from other potential libraries
             if (m.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
               o.setAttribute("class", attObj[m]);
             } else if (m.toLowerCase() != "classid") { // filter out IE specific attribute
@@ -1195,7 +1250,7 @@ var swfobject = function() {
           }
         }
         for (var n in parObj) {
-          if (parObj[n] != Object.prototype[n] && n.toLowerCase() != "movie") { // filter out prototype additions from other potential libraries and IE specific param element
+          if (parObj.hasOwnProperty(n) && n.toLowerCase() != "movie") { // filter out prototype additions from other potential libraries and IE specific param element
             createObjParam(o, n, parObj[n]);
           }
         }
@@ -1237,7 +1292,7 @@ var swfobject = function() {
   function removeObjectInIE(id) {
     var obj = getElementById(id);
     if (obj) {
-      for (var i in obj) {
+      for (var i = 0; i < obj.length; i++) {
         if (typeof obj[i] == "function") {
           obj[i] = null;
         }
@@ -1348,11 +1403,11 @@ var swfobject = function() {
           removeSWF(objIdArr[j]);
         }
         // cleanup library's main closures to avoid memory leaks
-        for (var k in ua) {
+        for (var k = 0; k < ua.length; k++) {
           ua[k] = null;
         }
         ua = null;
-        for (var l in swfobject) {
+        for (var l = 0; l < swfobject.length; l++) {
           swfobject[l] = null;
         }
         swfobject = null;
@@ -1510,3 +1565,4 @@ var swfobject = function() {
     }
   };
 }();
+

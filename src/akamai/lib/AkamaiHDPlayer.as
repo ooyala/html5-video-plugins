@@ -88,6 +88,9 @@ package
     private var _playSecurestream:Boolean = false;
     private var _goLiveFlag:Boolean = true;
     private var _liveFlag:Boolean = true;
+    private var originalWidth:Number = 0;
+    private var originalHeight:Number = 0;
+    private var originalAspectRatio:Number = 0;
 
     /**
      * Constructor
@@ -150,7 +153,9 @@ package
     {
       if (!_streamController.mediaPlayer.buffering)
       {
-        dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERED,null));
+        var eventObject:Object = new Object();
+        eventObject.url = _akamaiStreamURL;
+        dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERED,eventObject));
       }
     }
     
@@ -338,7 +343,9 @@ package
           dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
           break;
         case MediaPlayerState.BUFFERING:
-          dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING,null));
+          var eventObject:Object = new Object();
+          eventObject.url = _akamaiStreamURL;
+          dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING,eventObject));
           break;
         case MediaPlayerState.PLAYBACK_ERROR:
           break;
@@ -604,8 +611,20 @@ package
      */
     public function onLoadVideo(event:DynamicEvent):void
     {
-      _akamaiVideoSurface.width = stage.stageWidth;
-      _akamaiVideoSurface.height = stage.stageHeight;
+      originalAspectRatio = (Number)(event.args);
+      if (originalAspectRatio < 1)
+      {
+        _akamaiVideoSurface.width = stage.stageWidth;
+        _akamaiVideoSurface.height = stage.stageWidth * originalAspectRatio;      
+      } else {
+        // Flash must set its largest dimension to a stage value to prevent cropping.
+        // So we reverse engineer a fractional aspectRatio to form the smaller width.
+        originalHeight = stage.stageWidth * originalAspectRatio;
+        var pillarBoxRatio = stage.stageWidth / originalHeight;
+        _akamaiVideoSurface.height = stage.stageHeight;
+        _akamaiVideoSurface.width = stage.stageHeight * pillarBoxRatio;
+      }
+
       stage.scaleMode = StageScaleMode.NO_SCALE;
       stage.align = StageAlign.TOP_LEFT;
 
@@ -1060,7 +1079,7 @@ package
     private function resizeListener (event:Event):void
     {
       _akamaiVideoSurface.width = stage.stageWidth;
-      _akamaiVideoSurface.height = stage.stageHeight;
+      _akamaiVideoSurface.height = stage.stageWidth * originalAspectRatio;
 
       if (_mode == "showing")
       {

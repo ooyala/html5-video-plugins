@@ -13,6 +13,30 @@ describe('main_html5 wrapper tests', function () {
   // Setup
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
+  OO.CONSTANTS = {
+    CLOSED_CAPTIONS: {
+      SHOWING: "showing",
+      HIDDEN: "hidden",
+      DISABLED: "disabled"
+    },
+    SEEK_TO_END_LIMIT: 3
+  };
+
+  var TRACK_CLASS = "track_cc";
+  var closedCaptions = {
+    locale: { en: "English" },
+    closed_captions_vtt: {
+      en: {
+        name: "English",
+        url: "http://ooyala.com"
+      }
+    }
+  };
+  var params = {
+    mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN
+  };
+  var language = "en";
+
   // Load file under test
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
@@ -29,7 +53,14 @@ describe('main_html5 wrapper tests', function () {
   afterEach(function() {
     OO.isEdge = false;
     OO.isAndroid = false;
+    OO.isIos = false;
     OO.isIE = false;
+    OO.isIE11Plus = false;
+    OO.isSafari = false;
+    OO.isChrome = false;
+    OO.isFirefox = false;
+    OO.iosMajorVersion = void 0;
+    OO.macOsSafariVersion = void 0;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     if (wrapper) { wrapper.destroy(); }
   });
@@ -58,6 +89,24 @@ describe('main_html5 wrapper tests', function () {
     wrapper.setVideoUrl("url");
     var returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(false);
+  });
+
+  it('should clear closed captions when setting a new url', function(){
+    wrapper.setVideoUrl("url");
+    wrapper.setClosedCaptions(language, closedCaptions, params);
+    // Make sure tracks are actually there before we remove them
+    expect(element.children.length > 0).to.be(true);
+    expect(element.children[0].tagName).to.eql("TRACK");
+    wrapper.setVideoUrl("new_url");
+    expect(element.children.length).to.be(0);
+  });
+
+  it('should not clear closed captions when setting the same url', function(){
+    wrapper.setVideoUrl("url");
+    wrapper.setClosedCaptions(language, closedCaptions, params);
+    wrapper.setVideoUrl("url");
+    expect(element.children.length > 0).to.be(true);
+    expect(element.children[0].tagName).to.eql("TRACK");
   });
 
   it('should ignore cache buster', function(){
@@ -256,7 +305,7 @@ describe('main_html5 wrapper tests', function () {
     wrapper.setVideoUrl("url", "mp4", false);
     element.duration = 0;
     setFullSeekRange(10);
-    var returns = wrapper.seek(1);    
+    var returns = wrapper.seek(1);
     expect(returns).to.be(true);
     element.duration = Infinity;
     returns = wrapper.seek(1);
@@ -287,12 +336,11 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should force seeks within SEEK_TO_END_LIMIT to seek to duration - 0.01', function(){
-    OO.CONSTANTS = { SEEK_TO_END_LIMIT: 3 };
     var duration = 10;
     setFullSeekRange(duration);
     var returns = wrapper.seek(duration - 3);
     expect(returns).to.be(true);
-    expect(element.currentTime).to.eql(duration - 3);
+    expect(element.currentTime).to.eql(duration - 0.01);
     var returns = wrapper.seek(duration - 2.99);
     expect(returns).to.be(true);
     expect(element.currentTime).to.eql(duration - 0.01);
@@ -447,30 +495,10 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set external closed captions', function(){
-    OO.CONSTANTS = {
-      CLOSED_CAPTIONS: {
-        SHOWING: "showing",
-        HIDDEN: "hidden",
-        DISABLED: "disabled"
-      }
-    };
-    var language = "en";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
-    var params = {
-      mode: "showing"
-    };
-
     wrapper.setClosedCaptions(language, closedCaptions, params);
     expect(element.children.length > 0).to.be(true);
     expect(element.children[0].tagName).to.eql("TRACK");
-    expect(element.children[0].getAttribute("class")).to.eql("track_cc");
+    expect(element.children[0].getAttribute("class")).to.eql(TRACK_CLASS);
     expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
     expect(element.children[0].getAttribute("label")).to.eql("English");
     expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
@@ -478,14 +506,6 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set closed captions mode for in-stream captions', function(){
-    OO.CONSTANTS = {
-      CLOSED_CAPTIONS: {
-        SHOWING: "showing",
-        HIDDEN: "hidden",
-        DISABLED: "disabled"
-      }
-    };
-
     element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, kind: "captions" }];
     $(element).triggerHandler("playing");
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
@@ -493,23 +513,52 @@ describe('main_html5 wrapper tests', function () {
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
   });
 
-  it('should set both in-stream and external closed captions and switches between them', function(){
-    OO.CONSTANTS = {
-      CLOSED_CAPTIONS: {
-        SHOWING: "showing",
-        HIDDEN: "hidden",
-        DISABLED: "disabled"
-      }
-    };
-    var closedCaptions = {
+  it('should replace French text tracks by English text tracks for iOS versions < 10 ', function(){
+    OO.iosMajorVersion = 9;
+    $(element).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='French' src='http://french.ooyala.com' srclang='fr'>");
+    wrapper.setClosedCaptions(language, closedCaptions, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
+    expect(element.children.length).to.eql(1);
+    expect(element.children[0].tagName).to.eql("TRACK");
+    expect(element.children[0].getAttribute("label")).to.eql("English");
+    expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
+    expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
+    expect(element.children[0].getAttribute("srclang")).to.eql("en");
+  });
+
+  it('should replace French text tracks by English text tracks for OSX/Safari versions < 10 ', function(){
+    OO.macOsSafariVersion = 9;
+    $(element).append("<track class='" + TRACK_CLASS + "' kind='subtitles' label='French' src='http://french.ooyala.com' srclang='fr'>");
+    wrapper.setClosedCaptions(language, closedCaptions, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
+    expect(element.children.length).to.eql(1);
+    expect(element.children[0].tagName).to.eql("TRACK");
+    expect(element.children[0].getAttribute("label")).to.eql("English");
+    expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
+    expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
+    expect(element.children[0].getAttribute("srclang")).to.eql("en");
+  });
+
+  it('should replace French subtitles by English ones on Safari version >= 10 and other platforms', function(){
+    OO.isChrome = true;
+    var closedCaptions2 = {
+      locale: { fr: "French" },
       closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
+        fr: {
+          name: "French",
+          url: "http://french.ooyala.com"
         }
       }
     };
-    
+
+    wrapper.setClosedCaptions('fr', closedCaptions2, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
+    wrapper.setClosedCaptions(language, closedCaptions, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN });
+    expect(element.children.length).to.eql(1);
+    expect(element.children[0].getAttribute("label")).to.eql("English");
+    expect(element.children[0].getAttribute("kind")).to.eql("subtitles");
+    expect(element.children[0].getAttribute("src")).to.eql("http://ooyala.com");
+    expect(element.children[0].getAttribute("srclang")).to.eql("en");
+  });
+
+  it('should set both in-stream and external closed captions and switches between them', function(){
     element.textTracks = [{ kind: "captions" }, { kind: "captions" }];
     $(element).triggerHandler("playing"); // this adds in-stream captions
 
@@ -517,29 +566,16 @@ describe('main_html5 wrapper tests', function () {
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
     expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
 
-    wrapper.setClosedCaptions("CC", null, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING}); 
+    wrapper.setClosedCaptions("CC", null, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING});
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
     expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
 
     wrapper.setClosedCaptions("en", closedCaptions, {mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN}); // this adds external captions
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
-    expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+    expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
   });
 
   it('should remove closed captions if language is null', function(){
-    var language = "en";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
-    var params = {
-      mode: "showing"
-    };
-
     wrapper.setClosedCaptions(language, closedCaptions, params);
     expect(element.children.length > 0).to.be(true);
     expect(element.children[0].tagName).to.eql("TRACK");
@@ -548,13 +584,6 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should set the closed captions mode', function(){
-    OO.CONSTANTS = {
-      CLOSED_CAPTIONS: {
-        SHOWING: "showing",
-        HIDDEN: "hidden",
-        DISABLED: "disabled"
-      }
-    };
     //Mock textTracks
     element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED }];
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);

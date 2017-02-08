@@ -17,6 +17,16 @@ describe('main_html5 wrapper tests', function () {
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
 
+  var closedCaptions = {
+    locale: {en: "English"},
+    closed_captions_vtt: {
+      en: {
+        name: "English",
+        url: "http://ooyala.com"
+      }
+    }
+  };
+
   beforeEach(function() {
     vtc = new mock_vtc();
     parentElement = $("<div>");
@@ -25,8 +35,13 @@ describe('main_html5 wrapper tests', function () {
   });
 
   afterEach(function() {
-    OO.isSafari = false;
+    OO.isEdge = false;
     OO.isAndroid = false;
+    OO.isIos = false;
+    OO.isIE = false;
+    OO.isIE11Plus = false;
+    OO.isSafari = false;
+    OO.isChrome = false;
     OO.isFirefox = false;
     if (wrapper) { wrapper.destroy(); }
   });
@@ -185,7 +200,7 @@ describe('main_html5 wrapper tests', function () {
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){
     element.textTracks = [{ kind: "captions" }];
     vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
-    $(element).triggerHandler("playing");
+    $(element).triggerHandler("playing"); // this adds in-stream captions
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC'],
       locale: {
@@ -194,19 +209,13 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
-  it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event with all available cc', function(){
+  it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event for both live and external CCs on Safari (or Edge)', function(){
+    OO.isSafari = true;
     vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
-    element.textTracks = [{ kind: "captions" }];
-    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
-    $(element).triggerHandler("playing");
+    element.textTracks = [{ language: "en", label: "English", kind: "subtitles" }]; // this is external CC
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true); // sets isLive flag to true
+    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"}); // creates text tracks for external CCs
+    $(element).triggerHandler("playing"); // adds in-stream captions
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC'],
       locale: {
@@ -216,16 +225,19 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
+  it('should notify CAPTIONS_FOUND_ON_PLAYING for live in-stream captions for Edge in a different way', function(){
+    OO.isEdge = true;
+    vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING = "captionsFoundOnPlaying";
+    element.textTracks = [{}];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    $(element).triggerHandler("playing"); // this adds in-stream captions
+
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['CC'], locale: { CC: 'In-Stream' }}]);
+  });
+
   it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack', function(){
     vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
     var event = {
       currentTarget: {
         activeCues: [{
@@ -243,14 +255,6 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack with all active cues', function(){
     vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED = "closedCaptionCueChange";
-    var closedCaptions = {
-      closed_captions_vtt: {
-        en: {
-          name: "English",
-          url: "http://ooyala.com"
-        }
-      }
-    };
     var event = {
       currentTarget: {
         activeCues: [{
@@ -349,7 +353,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("waiting");
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
-  
+
   it('should notify SEEKING on video \'seeking\' event', function(){
     vtc.interface.EVENTS.SEEKING = "seeking";
     $(element).triggerHandler("seeking");
@@ -735,6 +739,24 @@ describe('main_html5 wrapper tests', function () {
     element.currentTime = 11;
     $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
+  });
+
+  it('should raise timeUpdate on replay if initial time is more than video duration', function(){
+    vtc.interface.EVENTS.TIME_UPDATE = "timeUpdate";
+    element.duration = 20;
+    wrapper.setInitialTime(40);
+    wrapper.play();
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.ENDED);
+    element.currentTime = 10;
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE,
+    {
+        "currentTime" : 10,
+        "duration" : 20,
+        "buffer" : 0,
+        "seekRange" : {"start": 0, "end" : 0}
+    }]);
   });
 
   // TODO: when async testing working, test for force end on timeupdate on m3u8

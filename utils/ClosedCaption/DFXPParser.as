@@ -240,7 +240,7 @@ package
 								text += parseSpanTag(doc, child);
 								break;
 							case "br":
-								text += "<br />";
+								text += "<br/> \n";
 								break;
 							default:
 								text += formatCCText(child.toString());
@@ -335,7 +335,7 @@ package
 							case "metadata":
 								break;	// We don't support these in <span> tags
 							case "br":
-								ccText += "<br/>";
+								ccText += "<br/> \n";
 								break;
 							default:
 								ccText += child.toString();
