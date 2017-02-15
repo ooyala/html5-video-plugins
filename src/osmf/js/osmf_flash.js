@@ -617,14 +617,16 @@ require("../../../html5-common/js/utils/constants.js");
     var raiseBitratesAvailable = function(event) {
       var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: 0 }];
       if (event) {
-        for (var i = 0; i < event.eventObject.length; i++) {
-          var vtcBitrate = {
-            id: event.eventObject[i].id,
-            width: event.eventObject[i].width,
-            height: event.eventObject[i].height,
-            bitrate: event.eventObject[i].bitrate
+        for(var i in event.eventObject) {
+          if (event.eventObject.hasOwnProperty(i)) {
+            var vtcBitrate = {
+              id: event.eventObject[i].id,
+              width: event.eventObject[i].width,
+              height: event.eventObject[i].height,
+              bitrate: event.eventObject[i].bitrate
+            }
+            vtcBitrates.push(vtcBitrate);
           }
-          vtcBitrates.push(vtcBitrate);
         }
       }
       newController.notify(newController.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
