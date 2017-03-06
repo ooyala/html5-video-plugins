@@ -590,8 +590,8 @@ require("../../../html5-common/js/utils/constants.js");
                                "seekRange": { "begin": seekRange_start, "end": seekRange_end } });
     };
 
-    var raiseCanPlayThrough = function() {
-      newController.notify(newController.EVENTS.BUFFERED);
+    var raiseCanPlayThrough = function(event) {
+      newController.notify(newController.EVENTS.BUFFERED, { url: event.eventObject.url });
     };
 
     var raiseFullScreenBegin = function(event) {
@@ -713,8 +713,7 @@ require("../../../html5-common/js/utils/constants.js");
         raisePauseEvent();
         break;
        case "BUFFERING":
-        //this.controller.notify(this.controller.EVENTS.BUFFERING);
-        newController.notify(newController.EVENTS.BUFFERING);
+        newController.notify(newController.EVENTS.BUFFERING, { url: data.eventObject.url });
         break;
        case "PLAY":
         raisePlayEvent(data);
@@ -756,7 +755,7 @@ require("../../../html5-common/js/utils/constants.js");
         raiseProgress(data);
         break;
        case "BUFFERED":
-        raiseCanPlayThrough();
+        raiseCanPlayThrough(data);
         break;
        case "FULLSCREEN_CHANGED":
         raiseFullScreenBegin(data);
