@@ -308,11 +308,9 @@ package
           dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
           break;
         case MediaPlayerState.BUFFERING:
-          {
-            var eventObject:Object = new Object();
-            eventObject.url = _videoUrl;
-            dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING, eventObject));
-          }
+          var eventObject:Object = new Object();
+          eventObject.url = _videoUrl;
+          dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING, eventObject));
           break;
         case MediaPlayerState.PLAYBACK_ERROR:
           SendToDebugger("MediaPlayerState.PLAYBACK_ERROR", "onPlayerStateChange");

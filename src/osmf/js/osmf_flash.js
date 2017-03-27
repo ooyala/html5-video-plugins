@@ -566,7 +566,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Notifies the controller of events that provide playhead information.
      * @private
-     * @method OoyalaVideoWrapper#raisePlayhead
+     * @method OoyalaFlashVideoWrapper#raisePlayhead
      */
     var raisePlayhead = _.bind(function(eventname, event) {
       newController.notify(eventname,
@@ -579,7 +579,7 @@ require("../../../html5-common/js/utils/constants.js");
     /**
      * Notifies the controller that a progress event was raised.
      * @private
-     * @method OoyalaVideoWrapper#raiseProgress
+     * @method OoyalaFlashVideoWrapper#raiseProgress
      * @param {object} event The event from the video
      */
     var raiseProgress = function(event) {
@@ -590,6 +590,12 @@ require("../../../html5-common/js/utils/constants.js");
                                "seekRange": { "begin": seekRange_start, "end": seekRange_end } });
     };
 
+    /**
+     * Notifies the controller that a buffered event was raised.
+     * @private
+     * @method OoyalaFlashVideoWrapper#raiseCanPlayThrough
+     * @param {object} event The event from the video
+     */
     var raiseCanPlayThrough = function(event) {
       newController.notify(newController.EVENTS.BUFFERED, { url: event.eventObject.url });
     };
