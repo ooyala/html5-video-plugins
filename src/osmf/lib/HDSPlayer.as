@@ -151,8 +151,10 @@ package
     {
       if (!_mediaPlayerSprite.mediaPlayer.buffering)
       {
+        var eventObject:Object = new Object();
+        eventObject.url = _videoUrl;
         SendToDebugger("buffering is finished", "buffering change handler");
-        dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERED,null));
+        dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERED, eventObject));
       }
     }
     
@@ -306,7 +308,9 @@ package
           dispatchEvent(new DynamicEvent(DynamicEvent.PAUSED,null));
           break;
         case MediaPlayerState.BUFFERING:
-          dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING,null));
+          var eventObject:Object = new Object();
+          eventObject.url = _videoUrl;
+          dispatchEvent(new DynamicEvent(DynamicEvent.BUFFERING, eventObject));
           break;
         case MediaPlayerState.PLAYBACK_ERROR:
           SendToDebugger("MediaPlayerState.PLAYBACK_ERROR", "onPlayerStateChange");
