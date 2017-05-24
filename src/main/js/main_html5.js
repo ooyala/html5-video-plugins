@@ -307,11 +307,6 @@ require("../../../html5-common/js/utils/environment.js");
       if (_currentUrl.replace(/[\?&]_=[^&]+$/,'') != url) {
         _currentUrl = url || "";
 
-        // bust the chrome caching bug
-        if (_currentUrl.length > 0 && OO.isChrome) {
-          _currentUrl = _currentUrl + (/\?/.test(_currentUrl) ? "&" : "?") + "_=" + getRandomString();
-        }
-
         isM3u8 = (encoding == OO.VIDEO.ENCODING.HLS ||
           encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS ||
           encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_HLS
