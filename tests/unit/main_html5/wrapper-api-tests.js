@@ -622,12 +622,4 @@ describe('main_html5 wrapper tests', function () {
     expect($(parentElement).has(":first-child").length).to.eql(0);
   });
 
-  /*
-  // TODO: Complete this test once we have ability to simulate browsers and devices
-  it('should apply cache buster to chrome', function(){
-    var returns = wrapper.setVideoUrl("url");
-    expect(returns).to.be(true);
-    expect(element.src).to.eql("url");
-  });
-  */
 });
