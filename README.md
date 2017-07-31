@@ -16,8 +16,7 @@ core.js is a lightweight core player that enables core player functionality and 
 
 2. Sync submodules by running the following commands:
    ```bash
-   $ git submodule init
-   $ git submodule update
+   $ git submodule update --init --recursive
    ```
 
 3. Install npm:
