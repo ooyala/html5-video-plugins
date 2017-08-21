@@ -97,7 +97,16 @@ require("../../../html5-common/js/utils/environment.js");
       } else {
         video.attr("preload", "none");
       }
-
+      if (OO.isIos) {
+          video.attr('playsinline','');
+          video.attr('autoplay','autoplay');
+          video.attr('muted','');
+          // video.attr('loop','');
+          //  setting "css.display="inline"; css.visibility ="visible";" autoplays main content without attempting ad.
+          // css.display="inline";
+          // css.visibility ="visible";
+      }
+      console.log("css@",css);
       video.css(css);
 
       // enable airplay for iOS
