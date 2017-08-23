@@ -442,6 +442,53 @@ describe('main_html5 wrapper tests', function () {
     expect(element.pause.wasCalled).to.be(true);
   });
 
+  it('should wait for play promise to be resolved before pausing when priming on iOS', function(){
+    OO.isIos = true;
+    var thenCallback = null;
+    var originalPlayFunction = element.play;
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+          thenCallback = callback;
+        }
+      };
+    };
+    spyOn(element, "pause");
+    wrapper.load(false);
+    wrapper.primeVideoElement();
+    // Pause should not be called until promise is resolved
+    expect(element.pause.wasCalled).to.be(false);
+    thenCallback();
+    expect(element.pause.wasCalled).to.be(true);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
+  it('should not pause when priming on iOS if playback has already been requested', function(){
+    OO.isIos = true;
+    var thenCallback = null;
+    var originalPlayFunction = element.play;
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+          thenCallback = callback;
+        }
+      };
+    };
+    spyOn(element, "pause");
+    wrapper.load(false);
+    wrapper.primeVideoElement();
+    // Simulating that play() gets called before the original video.play promise from
+    // the priming call is resolved
+    wrapper.play();
+    thenCallback();
+    expect(element.pause.wasCalled).to.be(false);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
   it('should append and change css', function(){
     var css = { "visibility" : "hidden" };
     wrapper.applyCss(css);

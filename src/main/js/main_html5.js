@@ -513,8 +513,21 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.primeVideoElement = function() {
       // We need to "activate" the video on a click so we can control it with JS later on mobile
-      executePlay(true);
-      _video.pause();
+      var playPromise = executePlay(true);
+      // PLAYER-1323
+      // Safar iOS seems to freeze when pausing right after playing when using preloading.
+      // On this platform we wait for the play promise to be resolved before pausing.
+      if (OO.isIos && playPromise && typeof playPromise.then === 'function') {
+        playPromise.then(function() {
+          // There is no point in pausing anymore if actual playback has already been requested
+          // by the time the promise is resolved
+          if (!hasPlayed) {
+            _video.pause();
+          }
+        });
+      } else {
+        _video.pause();
+      }
     };
 
     /**
@@ -1226,12 +1239,13 @@ require("../../../html5-common/js/utils/environment.js");
         this.load(true);
       }
 
-      _video.play();
+      var playPromise = _video.play();
 
       if (!isPriming) {
         hasPlayed = true;
         videoEnded = false;
       }
+      return playPromise;
     }, this);
 
 
