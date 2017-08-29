@@ -109,6 +109,14 @@ describe('main_html5 wrapper tests', function () {
     expect(element.children[0].tagName).to.eql("TRACK");
   });
 
+  it('should restore preload attribute when setting a new url', function(){
+    var originalPreloadValue = element.getAttribute("preload");
+    wrapper.setVideoUrl("url1");
+    wrapper.load(false);
+    wrapper.setVideoUrl("url2");
+    expect(element.getAttribute("preload")).to.equal(originalPreloadValue);
+  });
+
   it('should ignore cache buster', function(){
     wrapper.setVideoUrl("url?_=1");
     var returns = wrapper.setVideoUrl("url");
@@ -213,6 +221,12 @@ describe('main_html5 wrapper tests', function () {
     expect(element.pause.callCount).to.eql(0);
     expect(element.load.callCount).to.eql(1);
     expect(element.currentTime).to.eql(10);
+  });
+
+  it('should set preload to auto when loading', function(){
+    element.src = "url";
+    wrapper.load(false);
+    expect(element.getAttribute("preload")).to.equal("auto");
   });
 
   it('should act on initialTime if has not played', function(){

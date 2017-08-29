@@ -196,6 +196,7 @@ require("../../../html5-common/js/utils/environment.js");
     var lastCueText = null;
     var availableClosedCaptions = {};
     var textTrackModes = {};
+    var originalPreloadValue = $(_video).attr("preload") || "none";
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -341,6 +342,9 @@ require("../../../html5-common/js/utils/environment.js");
       stopUnderflowWatcher();
       lastCueText = null;
       textTrackModes = {};
+      // Restore the preload attribute to the value it had when the video
+      // element was created
+      $(_video).attr("preload", originalPreloadValue);
       // [PLAYER-212]
       // Closed captions persist across discovery videos unless they are cleared
       // when a new video is set
@@ -391,6 +395,11 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
       canPlay = false;
+      // The load() method might still be affected by the value of the preload attribute in
+      // some browsers (i.e. it might determine how much data is actually loaded). We set preload to auto
+      // before loading in case that this.load() was called by VC_PRELOAD. If load() is called prior to
+      // starting playback this will be redundant, but it shouldn't cause any issues
+      $(_video).attr("preload", "auto");
       _video.load();
       loaded = true;
     };
