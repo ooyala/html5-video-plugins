@@ -75,9 +75,10 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} controller A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @param {string} playerId An id that represents the player instance
+     * @param {object} pluginParams An object containing all of the options set for this plugin
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, domId, controller, css, playerId) {
+    this.create = function(parentContainer, domId, controller, css, playerId, pluginParams) {
       // If the current player has reached max supported elements, do not create a new one
       if (this.maxSupportedElements > 0 && playerId &&
           currentInstances[playerId] >= this.maxSupportedElements) {
@@ -100,10 +101,18 @@ require("../../../html5-common/js/utils/environment.js");
 
       video.css(css);
 
-      // enable airplay for iOS
-      // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
       if (OO.isIos) {
+        // enable airplay for iOS
+        // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
+        //
         video.attr("x-webkit-airplay", "allow");
+
+        //enable inline playback for mobile
+        if (pluginParams["iosPlayMode"] === "inline") {
+          if (OO.iosMajorVersion >= 10) {
+            video.attr('playsinline', '');
+          }
+        }
       }
 
       // Set initial container dimension
