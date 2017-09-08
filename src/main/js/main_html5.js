@@ -75,9 +75,10 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} controller A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
      * @param {string} playerId An id that represents the player instance
+     * @param {object} pluginParams An object containing all of the options set for this plugin
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, domId, controller, css, playerId) {
+    this.create = function(parentContainer, domId, controller, css, playerId, pluginParams) {
       // If the current player has reached max supported elements, do not create a new one
       if (this.maxSupportedElements > 0 && playerId &&
           currentInstances[playerId] >= this.maxSupportedElements) {
@@ -100,10 +101,18 @@ require("../../../html5-common/js/utils/environment.js");
 
       video.css(css);
 
-      // enable airplay for iOS
-      // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
       if (OO.isIos) {
+        // enable airplay for iOS
+        // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
+        //
         video.attr("x-webkit-airplay", "allow");
+
+        //enable inline playback for mobile
+        if (pluginParams["iosPlayMode"] === "inline") {
+          if (OO.iosMajorVersion >= 10) {
+            video.attr('playsinline', '');
+          }
+        }
       }
 
       // Set initial container dimension
@@ -196,6 +205,7 @@ require("../../../html5-common/js/utils/environment.js");
     var lastCueText = null;
     var availableClosedCaptions = {};
     var textTrackModes = {};
+    var originalPreloadValue = $(_video).attr("preload") || "none";
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -341,6 +351,9 @@ require("../../../html5-common/js/utils/environment.js");
       stopUnderflowWatcher();
       lastCueText = null;
       textTrackModes = {};
+      // Restore the preload attribute to the value it had when the video
+      // element was created
+      $(_video).attr("preload", originalPreloadValue);
       // [PLAYER-212]
       // Closed captions persist across discovery videos unless they are cleared
       // when a new video is set
@@ -391,6 +404,11 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
       canPlay = false;
+      // The load() method might still be affected by the value of the preload attribute in
+      // some browsers (i.e. it might determine how much data is actually loaded). We set preload to auto
+      // before loading in case that this.load() was called by VC_PRELOAD. If load() is called prior to
+      // starting playback this will be redundant, but it shouldn't cause any issues
+      $(_video).attr("preload", "auto");
       _video.load();
       loaded = true;
     };
@@ -513,8 +531,21 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.primeVideoElement = function() {
       // We need to "activate" the video on a click so we can control it with JS later on mobile
-      executePlay(true);
-      _video.pause();
+      var playPromise = executePlay(true);
+      // PLAYER-1323
+      // Safar iOS seems to freeze when pausing right after playing when using preloading.
+      // On this platform we wait for the play promise to be resolved before pausing.
+      if (OO.isIos && playPromise && typeof playPromise.then === 'function') {
+        playPromise.then(function() {
+          // There is no point in pausing anymore if actual playback has already been requested
+          // by the time the promise is resolved
+          if (!hasPlayed) {
+            _video.pause();
+          }
+        });
+      } else {
+        _video.pause();
+      }
     };
 
     /**
@@ -1226,12 +1257,13 @@ require("../../../html5-common/js/utils/environment.js");
         this.load(true);
       }
 
-      _video.play();
+      var playPromise = _video.play();
 
       if (!isPriming) {
         hasPlayed = true;
         videoEnded = false;
       }
+      return playPromise;
     }, this);
 
 
