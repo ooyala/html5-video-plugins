@@ -81,7 +81,7 @@ require("../../../html5-common/js/utils/constants.js");
     function testForFlash() {
       var version = getFlashVersion().split(',').shift();
       if (version < 11) {
-        console.error("NO FLASH DETECTED");
+        OO.log('OSMF: Flash not detected');
         return [];
       } else {
         return [ OO.VIDEO.ENCODING.HDS ];
