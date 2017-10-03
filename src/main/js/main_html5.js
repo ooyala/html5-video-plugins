@@ -490,6 +490,24 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
+     * Triggers a mute on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#mute
+     */
+    this.mute = function() {
+      _video.muted = true;
+    };
+
+    /**
+     * Triggers an unmute on the video element.
+     * @public
+     * @method OoyalaVideoWrapper#unmute
+     */
+    this.unmute = function() {
+      _video.muted = false;
+    };
+
+    /**
      * Triggers a volume change on the video element.
      * @public
      * @method OoyalaVideoWrapper#setVolume
@@ -501,6 +519,10 @@ require("../../../html5-common/js/utils/environment.js");
         resolvedVolume = 0;
       } else if (resolvedVolume > 1) {
         resolvedVolume = 1;
+      }
+
+      if (resolvedVolume > 0) {
+        this.unmute();
       }
 
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
@@ -1171,6 +1193,10 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {object} event The event raised by the video.
      */
     var raiseVolumeEvent = _.bind(function(event) {
+      //ignore the volume change event for if muted
+      if (event.target.muted) {
+        return;
+      }
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: event.target.volume });
     }, this);
 

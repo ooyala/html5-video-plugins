@@ -244,6 +244,22 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
+     * Triggers a mute on the video element.
+     * @public
+     * @method TemplateVideoWrapper#mute
+     */
+    this.mute = function() {
+    };
+
+    /**
+     * Triggers an unmute on the video element.
+     * @public
+     * @method TemplateVideoWrapper#unmute
+     */
+    this.unmute = function() {
+    };
+
+    /**
      * Triggers a volume change on the video element.
      * @public
      * @method TemplateVideoWrapper#setVolume
