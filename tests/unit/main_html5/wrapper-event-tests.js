@@ -784,17 +784,47 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify VOLUME_CHANGE on video \'volumechange\' event', function(){
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
-    element.volume = 0.3;
-    $(element).triggerHandler("volumechange");
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({
+      type: "volumechange",
+      target: {volume: 0.3}
+    });
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
+  });
+
+  it('should not notify VOLUME_CHANGE on video \'volumechange\' event if video is muted', function(){
+    vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
+    vtc.notifyParameters = null;
+    $(element).triggerHandler({
+      type: "volumechange",
+      target: {volume: 0.3, muted: true}
+    });
+    expect(vtc.notifyParameters).to.be(null);
   });
 
   it('should notify VOLUME_CHANGE on video \'volumechangeNew\' event', function(){
     vtc.notifyParameters = null;
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
-    element.volume = 0.3;
-    $(element).triggerHandler("volumechangeNew");
+    $(element).triggerHandler({
+      type: "volumechangeNew",
+      target: {volume: 0.3}
+    });
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
+  });
+
+  it('should notify VOLUME_CHANGE on setting video volume', function(){
+    vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
+    vtc.notifyParameters = null;
+    element.volume = 0.3;
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
+  });
+
+  it('should not notify VOLUME_CHANGE on setting video volume if video is muted', function(){
+    vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
+    vtc.notifyParameters = null;
+    element.muted = true;
+    element.volume = 0.3;
+    expect(vtc.notifyParameters).to.be(null);
   });
 
   it('should notify FULLSCREEN_CHANGED on video \'webkitbeginfullscreen\' event when paused', function(){

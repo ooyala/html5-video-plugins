@@ -427,6 +427,31 @@ describe('main_html5 wrapper tests', function () {
     expect(element.volume).to.eql(0);
   });
 
+  it('should unmute if setVolume is called with a value above 0', function(){
+    element.muted = true;
+    wrapper.setVolume(0.5);
+    expect(element.volume).to.eql(0.5);
+    expect(element.muted).to.eql(false);
+  });
+
+  it('should not unmute if setVolume is called with a value of 0', function(){
+    element.muted = true;
+    wrapper.setVolume(0);
+    expect(element.volume).to.eql(0);
+    expect(element.muted).to.eql(true);
+  });
+
+  it('should mute video element when mute is called', function(){
+    wrapper.mute();
+    expect(element.muted).to.eql(true);
+  });
+
+  it('should unmute video element when unmute is called', function(){
+    element.muted = true;
+    wrapper.unmute();
+    expect(element.muted).to.eql(false);
+  });
+
   it('should notify VOLUME_CHANGE on volume change of video with empty string', function(){
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
     element.currentSrc = "";

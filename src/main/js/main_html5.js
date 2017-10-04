@@ -521,7 +521,7 @@ require("../../../html5-common/js/utils/environment.js");
         resolvedVolume = 1;
       }
 
-      if (resolvedVolume > 0) {
+      if (resolvedVolume > 0 && _video.muted) {
         this.unmute();
       }
 
