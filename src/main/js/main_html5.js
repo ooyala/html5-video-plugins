@@ -496,7 +496,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {boolean} true if video must be muted to autoplay, false otherwise
      */
     this.requiresMutedAutoplay = function() {
-      return OO.isSafari || OO.isIos || OO.isAndroid;
+      return (OO.isSafari && OO.macOsSafariVersion >= 11) || OO.isIos || OO.isAndroid;
     };
 
     /**
