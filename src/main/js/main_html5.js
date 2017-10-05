@@ -229,7 +229,7 @@ require("../../../html5-common/js/utils/environment.js");
         if (document.hidden) {
           canSeek = false;
         }
-      }, this)
+      }, this);
       document.addEventListener("visibilitychange", watchHidden);
     }
 
@@ -487,6 +487,16 @@ require("../../../html5-common/js/utils/environment.js");
       }
       queueSeek(time);
       return false;
+    };
+
+    /**
+     * Checks to see if autoplay requires the video to be muted
+     * @public
+     * @method OoyalaVideoWrapper#requiresMutedAutoplay
+     * @param {boolean} true if video must be muted to autoplay, false otherwise
+     */
+    this.requiresMutedAutoplay = function() {
+      return OO.isSafari || OO.isIos || OO.isAndroid;
     };
 
     /**
