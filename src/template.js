@@ -244,6 +244,31 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
+     * Checks to see if autoplay requires the video to be muted
+     * @public
+     * @method TemplateVideoWrapper#requiresMutedAutoplay
+     * @param {boolean} true if video must be muted to autoplay, false otherwise
+     */
+    this.requiresMutedAutoplay = function() {
+    };
+
+    /**
+     * Triggers a mute on the video element.
+     * @public
+     * @method TemplateVideoWrapper#mute
+     */
+    this.mute = function() {
+    };
+
+    /**
+     * Triggers an unmute on the video element.
+     * @public
+     * @method TemplateVideoWrapper#unmute
+     */
+    this.unmute = function() {
+    };
+
+    /**
      * Triggers a volume change on the video element.
      * @public
      * @method TemplateVideoWrapper#setVolume
