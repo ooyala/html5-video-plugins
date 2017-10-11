@@ -427,11 +427,11 @@ describe('main_html5 wrapper tests', function () {
     expect(element.volume).to.eql(0);
   });
 
-  it('should unmute if setVolume is called with a value above 0', function(){
+  it('should not unmute if setVolume is called with a value above 0', function(){
     element.muted = true;
     wrapper.setVolume(0.5);
     expect(element.volume).to.eql(0.5);
-    expect(element.muted).to.eql(false);
+    expect(element.muted).to.eql(true);
   });
 
   it('should not unmute if setVolume is called with a value of 0', function(){
@@ -455,22 +455,17 @@ describe('main_html5 wrapper tests', function () {
   it('should notify VOLUME_CHANGE on volume change of video with empty string', function(){
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
     element.currentSrc = "";
-    vtc.notified = [];
+    vtc.notifyParametersHistory = [];
     wrapper.setVolume(0.3);
-    expect(vtc.notified.length).to.eql(2);
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
-    vtc.notifyParameters = null;
-    vtc.notified = [];
+    expect(vtc.notifyParametersHistory[0]).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
+    vtc.notifyParametersHistory = [];
     element.currentSrc = null;
     wrapper.setVolume(0.2);
-    expect(vtc.notified.length).to.eql(2);
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.2 }]);
-    vtc.notifyParameters = null;
-    vtc.notified = [];
+    expect(vtc.notifyParametersHistory[0]).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.2 }]);
+    vtc.notifyParametersHistory = [];
     element.currentSrc = "url";
     wrapper.setVolume(0.5);
-    expect(vtc.notified.length).to.eql(1);
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.5 }]);
+    expect(vtc.notifyParametersHistory[0]).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.5 }]);
   });
 
   it('should prime a video element with play and pause', function(){
