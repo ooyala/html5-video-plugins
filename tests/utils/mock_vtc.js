@@ -7,7 +7,30 @@ mock_vtc = function() {
   // The vtc interface to pass to the video wrapper
   this.interface = {
     PLUGIN_MAGIC: 'key',
-    EVENTS: {},
+    EVENTS: {
+      ASSET_DIMENSION: "assetDimension",
+      BUFFERING: "buffering",
+      BUFFERED: "buffered",
+      BITRATES_AVAILABLE:  "bitratesAvailable",
+      BITRATE_CHANGED:  "bitrateChanged",
+      CAPTIONS_FOUND_ON_PLAYING:  "captionsFoundOnPlaying",
+      CLOSED_CAPTION_CUE_CHANGED:  "closedCaptionCueChanged",
+      ERROR:  "error",
+      FULLSCREEN_CHANGED:  "fullScreenChanged",
+      METADATA_FOUND:  "metadataFound",
+      PAUSED:  "paused",
+      PLAY:  "play",
+      PLAYING:  "playing",
+      SEEKED:  "seeked",
+      SEEKING:  "seeking",
+      TIME_UPDATE:  "timeupdate",
+      VOLUME_CHANGE:  "volumechange",
+      MUTE_STATE_CHANGE:  "mutestatechange",
+      ON_DOWNLOAD_FINISHED:  "onDownloadFinished",
+      ON_SEGMENT_LOADED:  "onSegmentLoaded",
+      WAITING:  "waiting",
+      DURATION_CHANGE: "durationChange"
+    },
     notify: function(){
       if (arguments.length > 0) {
         this.notifyParameters = Array.prototype.slice.call(arguments);
