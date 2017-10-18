@@ -755,7 +755,11 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.setCrossorigin = function(crossorigin) {
       if (crossorigin) {
-        $(_video).attr("crossorigin", crossorigin);
+        var isIos11 = OO.isIos && OO.iosMajorVersion === 11;
+
+        if (!isIos11) {
+          $(_video).attr("crossorigin", crossorigin);
+        }
       } else {
         $(_video).removeAttr("crossorigin");
       }
