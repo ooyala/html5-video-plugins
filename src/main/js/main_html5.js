@@ -755,7 +755,19 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.setCrossorigin = function(crossorigin) {
       if (crossorigin) {
-        $(_video).attr("crossorigin", crossorigin);
+        // [PBW-6882]
+        // There's a strange bug in Safari on iOS11 that causes CORS errors to be
+        // incorrectly thrown when setting the crossorigin attribute after a video has
+        // played without it. This usually happens when a video with CC's is played
+        // after a preroll that's not using crossorigin.
+        // At the time of writing iOS Safari doesn't seem to enforce same origin policy
+        // for either HLS manifests/segments or VTT files. We avoid setting crossorigin
+        // as a workaround for iOS 11 since it currently appears to not be needed.
+        var isIos11 = OO.isIos && OO.iosMajorVersion === 11;
+
+        if (!isIos11) {
+          $(_video).attr("crossorigin", crossorigin);
+        }
       } else {
         $(_video).removeAttr("crossorigin");
       }
