@@ -682,6 +682,19 @@ describe('main_html5 wrapper tests', function () {
     expect(element.getAttribute("crossorigin")).to.not.be.ok();
   });
 
+  it('should NOT set the crossorigin attribute on iOS 11', function(){
+    OO.isIos = true;
+    OO.iosMajorVersion = 11;
+    expect(element.getAttribute("crossorigin")).to.not.be.ok();
+    wrapper.setCrossorigin("anonymous");
+    expect(element.getAttribute("crossorigin")).to.not.be.ok();
+    // Clearing crossorigin should still work
+    element.setAttribute("crossorigin", "anonymous");
+    expect(element.getAttribute("crossorigin")).to.be("anonymous");
+    wrapper.setCrossorigin(null);
+    expect(element.getAttribute("crossorigin")).to.not.be.ok();
+  });
+
   it('should return current time on getCurrentTime', function(){
     element.currentTime = 10;
     expect(wrapper.getCurrentTime()).to.eql(10);
