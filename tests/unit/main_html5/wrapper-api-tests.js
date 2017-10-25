@@ -441,15 +441,22 @@ describe('main_html5 wrapper tests', function () {
     expect(element.muted).to.eql(true);
   });
 
-  it('should mute video element when mute is called', function(){
+  it('should mute video element and send out mute_state_change event when mute is called', function(){
+    vtc.notifyParametersHistory = [];
     wrapper.mute();
     expect(element.muted).to.eql(true);
+    expect(vtc.notifyParametersHistory[1]).to.eql([vtc.interface.EVENTS.MUTE_STATE_CHANGE, { muted: true }]);
   });
 
-  it('should unmute video element when unmute is called', function(){
+  it('should unmute video element and send out mute_state_change event when unmute is called', function(){
+    vtc.notifyParametersHistory = [];
     element.muted = true;
     wrapper.unmute();
     expect(element.muted).to.eql(false);
+    //sent when element.muted is set to true in this unit test 3 lines aboe
+    expect(vtc.notifyParametersHistory[1]).to.eql([vtc.interface.EVENTS.MUTE_STATE_CHANGE, { muted: true }]);
+    //sent when the unmute() api is called
+    expect(vtc.notifyParametersHistory[3]).to.eql([vtc.interface.EVENTS.MUTE_STATE_CHANGE, { muted: false }]);
   });
 
   it('should notify VOLUME_CHANGE on volume change of video with empty string', function(){

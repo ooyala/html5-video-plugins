@@ -506,6 +506,11 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.mute = function() {
       _video.muted = true;
+
+      //the volumechange event is supposed to be fired when vide.muted is changed,
+      //but it doesn't always fire. Raising a volume event here with the current volume
+      //to cover these situations
+      raiseVolumeEvent({ target: { volume: _video.volume }});
     };
 
     /**
@@ -515,6 +520,11 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.unmute = function() {
       _video.muted = false;
+
+      //the volumechange event is supposed to be fired when vide.muted is changed,
+      //but it doesn't always fire. Raising a volume event here with the current volume
+      //to cover these situations
+      raiseVolumeEvent({ target: { volume: _video.volume }});
     };
 
     /**
@@ -1200,7 +1210,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var raiseVolumeEvent = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: event.target.volume });
-      this.controller.notify(this.controller.EVENTS.MUTE_STATE_CHANGE, { muted: event.target.muted });
+      this.controller.notify(this.controller.EVENTS.MUTE_STATE_CHANGE, { muted: _video.muted });
     }, this);
 
     /**
