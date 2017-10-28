@@ -273,8 +273,10 @@ require("../html5-common/js/utils/constants.js");
      * @public
      * @method TemplateVideoWrapper#setVolume
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
+     * @param {boolean} muteState True if the video is desired to be muted, false otherwise. This
+     *                            is useful for videos or SDKs that do not separate mute states and volumes
      */
-    this.setVolume = function(volume) {
+    this.setVolume = function(volume, muteState) {
     };
 
     /**
