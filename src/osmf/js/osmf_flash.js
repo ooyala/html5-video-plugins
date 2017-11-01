@@ -169,6 +169,7 @@ require("../../../html5-common/js/utils/constants.js");
     var loaded = false;
     var hasPlayed = false;
     var firstPlay = true;
+    var savedVolume = 1;
     var newController;
     var currentTime;
     var totalTime;
@@ -425,7 +426,29 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
+      //save volume here instead of volume callback as that seems to get delayed sometimes
+      savedVolume = volume;
       this.callToFlash("changeVolume(" + volume + ")");
+    };
+
+    /**
+     * Triggers a mute on the video element.
+     * @public
+     * @method OoyalaFlashVideoWrapper#mute
+     */
+    this.mute = function() {
+      //TODO: If possible, save volume from a getVolume API
+      this.callToFlash("changeVolume(0)");
+    };
+
+    /**
+     * Triggers an unmute on the video element.
+     * @public
+     * @method OoyalaFlashVideoWrapper#unmute
+     */
+    this.unmute = function() {
+      var unmuteVolume = savedVolume ? savedVolume : 1;
+      this.callToFlash("changeVolume(" + unmuteVolume + ")");
     };
 
     /**
@@ -437,7 +460,7 @@ require("../../../html5-common/js/utils/constants.js");
     this.getCurrentTime = function() {
       this.callToFlash("getCurrentTime");
       return currentTime;
-    }
+    };
 
     /**
      * Applies the given css to the video element.
@@ -547,7 +570,10 @@ require("../../../html5-common/js/utils/constants.js");
     };
 
     var raiseVolumeEvent = function(event) {
-      newController.notify(newController.EVENTS.VOLUME_CHANGE, { "volume" : event.eventObject.volume });
+      var volume = event.eventObject.volume;
+      var muted = volume === 0;
+      newController.notify(newController.EVENTS.VOLUME_CHANGE, { "volume" : volume});
+      newController.notify(newController.EVENTS.MUTE_STATE_CHANGE, { muted : muted });
     };
 
     var raiseWaitingEvent = function() {
