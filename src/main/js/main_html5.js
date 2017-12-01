@@ -455,7 +455,12 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video.seeking) {
         playQueued = true;
       } else {
-        executePlay(false);
+        var playPromise = executePlay(false);
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(_.bind(function(error) {
+            this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
+          }, this));
+        }
       }
     };
 
