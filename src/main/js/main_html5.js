@@ -495,16 +495,6 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
-     * Checks to see if autoplay requires the video to be muted
-     * @public
-     * @method OoyalaVideoWrapper#requiresMutedAutoplay
-     * @param {boolean} true if video must be muted to autoplay, false otherwise
-     */
-    this.requiresMutedAutoplay = function() {
-      return (OO.isSafari && OO.macOsSafariVersion >= 11) || OO.isIos || OO.isAndroid;
-    };
-
-    /**
      * Triggers a mute on the video element.
      * @public
      * @method OoyalaVideoWrapper#mute
