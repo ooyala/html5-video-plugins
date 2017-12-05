@@ -244,12 +244,22 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
+     * !!DEPRECATED!! - this check is now done automatically
      * Checks to see if autoplay requires the video to be muted
      * @public
      * @method TemplateVideoWrapper#requiresMutedAutoplay
      * @param {boolean} true if video must be muted to autoplay, false otherwise
      */
     this.requiresMutedAutoplay = function() {
+    };
+
+    /**
+     * Notifies a video plugin that an unmuted video playback succeeded. When a video plugin
+     * receives this, it should setup for unmuted auto playback.
+     * @public
+     * @method TemplateVideoWrapper#notifyUnmutedVideoPlaybackSucceeded
+     */
+    this.notifyUnmutedVideoPlaybackSucceeded = function() {
     };
 
     /**
