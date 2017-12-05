@@ -475,6 +475,26 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParametersHistory[0]).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.5 }]);
   });
 
+  it('should notify of UNMUTED_PLAYBACK_FAILED when play promise fails with an unmuted video', function(){
+    var catchCallback = null;
+    var originalPlayFunction = element.play;
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+        },
+        catch: function(callback) {
+          catchCallback = callback;
+        }
+      };
+    };
+    wrapper.play();
+    catchCallback();
+    expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.UNMUTED_PLAYBACK_FAILED);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
   it('should prime a video element with play and pause', function(){
     spyOn(element, "play");
     spyOn(element, "pause");
