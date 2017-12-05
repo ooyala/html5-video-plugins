@@ -254,12 +254,12 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
-     * Notifies a video plugin that an unmuted video playback succeeded. When a video plugin
-     * receives this, it should setup for unmuted auto playback.
+     * Notifies a video plugin that an unmuted content auto-playback succeeded. When a video plugin
+     * receives this, it should setup for unmuted auto-playback.
      * @public
-     * @method TemplateVideoWrapper#notifyUnmutedVideoPlaybackSucceeded
+     * @method TemplateVideoWrapper#notifyUnmutedContentAutoPlaybackSucceeded
      */
-    this.notifyUnmutedVideoPlaybackSucceeded = function() {
+    this.notifyUnmutedContentAutoPlaybackSucceeded = function() {
     };
 
     /**

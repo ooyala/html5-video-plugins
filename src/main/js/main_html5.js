@@ -456,12 +456,22 @@ require("../../../html5-common/js/utils/environment.js");
         playQueued = true;
       } else {
         var playPromise = executePlay(false);
-        if (playPromise && typeof playPromise.catch === 'function') {
-          playPromise.catch(_.bind(function(error) {
-            if (!_video.muted) {
-              this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
-            }
-          }, this));
+        if (playPromise) {
+          if (typeof playPromise.catch === 'function') {
+            playPromise.catch(_.bind(function(error) {
+              if (!_video.muted) {
+                this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
+              }
+            }, this));
+          }
+          if (typeof playPromise.then === 'function') {
+            playPromise.then(_.bind(function() {
+              //playback succeeded
+              if (!_video.muted) {
+                this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
+              }
+            }, this));
+          }
         }
       }
     };

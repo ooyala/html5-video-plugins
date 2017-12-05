@@ -478,6 +478,7 @@ describe('main_html5 wrapper tests', function () {
   it('should notify of UNMUTED_PLAYBACK_FAILED when play promise fails with an unmuted video', function(){
     var catchCallback = null;
     var originalPlayFunction = element.play;
+    element.muted = false;
     // Replace mock play function with one that returns a promise
     element.play = function() {
       return {
@@ -488,9 +489,54 @@ describe('main_html5 wrapper tests', function () {
         }
       };
     };
+    vtc.notified = [];
     wrapper.play();
     catchCallback();
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.UNMUTED_PLAYBACK_FAILED);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
+  it('should notify of UNMUTED_PLAYBACK_SUCCEEDED when play promise is fulfilled with an unmuted video', function(){
+    var thenCallback = null;
+    var originalPlayFunction = element.play;
+    element.muted = false;
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+          thenCallback = callback;
+        },
+        catch: function(callback) {
+        }
+      };
+    };
+    vtc.notified = [];
+    wrapper.play();
+    thenCallback();
+    expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
+  it('should not notify of UNMUTED_PLAYBACK_SUCCEEDED when play promise is fulfilled with an muted video', function(){
+    var thenCallback = null;
+    var originalPlayFunction = element.play;
+    element.muted = true;
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+          thenCallback = callback;
+        },
+        catch: function(callback) {
+        }
+      };
+    };
+    vtc.notified = [];
+    wrapper.play();
+    thenCallback();
+    expect(vtc.notified[0]).to.not.eql(vtc.interface.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
     // Restore original play function
     element.play = originalPlayFunction;
   });

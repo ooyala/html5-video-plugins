@@ -29,7 +29,9 @@ mock_vtc = function() {
       ON_DOWNLOAD_FINISHED:  "onDownloadFinished",
       ON_SEGMENT_LOADED:  "onSegmentLoaded",
       WAITING:  "waiting",
-      DURATION_CHANGE: "durationChange"
+      DURATION_CHANGE: "durationChange",
+      UNMUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed",
+      UNMUTED_PLAYBACK_SUCCEEDED: "unmutedPlaybackSucceeded"
     },
     notify: function(){
       if (arguments.length > 0) {
@@ -40,7 +42,7 @@ mock_vtc = function() {
     }.bind(this),
     markNotReady: function() {},
     markReady: function() {}
-  }
+  };
 
   // To clear the list of events notified to the mock vtc, call with this function
   this.reset = function() {
