@@ -455,7 +455,24 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video.seeking) {
         playQueued = true;
       } else {
-        executePlay(false);
+        var playPromise = executePlay(false);
+        if (playPromise) {
+          if (typeof playPromise.catch === 'function') {
+            playPromise.catch(_.bind(function(error) {
+              if (!_video.muted) {
+                this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
+              }
+            }, this));
+          }
+          if (typeof playPromise.then === 'function') {
+            playPromise.then(_.bind(function() {
+              //playback succeeded
+              if (!_video.muted) {
+                this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
+              }
+            }, this));
+          }
+        }
       }
     };
 
@@ -487,16 +504,6 @@ require("../../../html5-common/js/utils/environment.js");
       }
       queueSeek(time);
       return false;
-    };
-
-    /**
-     * Checks to see if autoplay requires the video to be muted
-     * @public
-     * @method OoyalaVideoWrapper#requiresMutedAutoplay
-     * @param {boolean} true if video must be muted to autoplay, false otherwise
-     */
-    this.requiresMutedAutoplay = function() {
-      return (OO.isSafari && OO.macOsSafariVersion >= 11) || OO.isIos || OO.isAndroid;
     };
 
     /**
