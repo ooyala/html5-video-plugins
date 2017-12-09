@@ -193,6 +193,7 @@ require("../../../html5-common/js/utils/environment.js");
     var playQueued = false;
     var isSeeking = false;
     var currentTime = 0;
+    var currentVolumeSet = 0;
     var isM3u8 = false;
     var TRACK_CLASS = "track_cc";
     var firstPlay = true;
@@ -527,6 +528,14 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.unmute = function() {
       _video.muted = false;
+      
+      //workaround of an issue where some external SDKs (such those used in ad/video plugins)
+      //are setting the volume to 0 when muting
+      //Set the volume to our last known setVolume setting.
+      //Since we're unmuting, we don't want to set volume to 0
+      if (currentVolumeSet > 0) {
+        this.setVolume(currentVolumeSet);
+      }
 
       //the volumechange event is supposed to be fired when video.muted is changed,
       //but it doesn't always fire. Raising a volume event here with the current volume
@@ -547,6 +556,8 @@ require("../../../html5-common/js/utils/environment.js");
       } else if (resolvedVolume > 1) {
         resolvedVolume = 1;
       }
+      
+      currentVolumeSet = resolvedVolume;
 
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
       _video.volume = resolvedVolume;

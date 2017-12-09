@@ -441,6 +441,16 @@ describe('main_html5 wrapper tests', function () {
     expect(element.muted).to.eql(true);
   });
 
+  it('should restore last known volume set when unmuting', function(){
+    wrapper.setVolume(1);
+    expect(element.volume).to.eql(1);
+    //external change
+    element.volume = 0;
+    expect(element.volume).to.eql(0);
+    wrapper.unmute();
+    expect(element.volume).to.eql(1);
+  });
+
   it('should mute video element and send out mute_state_change event when mute is called', function(){
     vtc.notifyParametersHistory = [];
     wrapper.mute();
