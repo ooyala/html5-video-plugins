@@ -41,6 +41,10 @@ describe('main_html5 wrapper tests', function () {
   jest.dontMock('../../../src/main/js/main_html5');
   require('../../../src/main/js/main_html5');
 
+  if (!OO.log) {
+    OO.log = function() {};
+  }
+
   beforeEach(function() {
     vtc = new mock_vtc();
     parentElement = $("<div>");
@@ -501,7 +505,41 @@ describe('main_html5 wrapper tests', function () {
     };
     vtc.notified = [];
     wrapper.play();
-    catchCallback();
+    catchCallback({});
+    expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.UNMUTED_PLAYBACK_FAILED);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
+  it('should handle differing play promise failures', function(){
+    //Chrome is a browser that throws different errors for play promise failures
+    OO.isChrome = true;
+    var catchCallback = null;
+    var originalPlayFunction = element.play;
+    element.muted = false;
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+        },
+        catch: function(callback) {
+          catchCallback = callback;
+        }
+      };
+    };
+    vtc.notified = [];
+    wrapper.play();
+    catchCallback(
+      {
+        name: "AbortError"
+      }
+    );
+    expect(vtc.notified.length).to.eql(0);
+    catchCallback(
+      {
+        name: "NotAllowedError"
+      }
+    );
     expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.UNMUTED_PLAYBACK_FAILED);
     // Restore original play function
     element.play = originalPlayFunction;
