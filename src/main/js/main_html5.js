@@ -447,6 +447,30 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
+     * Since there are no standards for error codes or names for play promises,
+     * we'll compile a list of errors that represent a user interaction required error.
+     * @private
+     * @method OoyalaVideoWrapper#userInteractionRequired
+     * @param {string} error The error object given by the play promise when it fails
+     * @returns {boolean} True if this error represents a user interaction required error, false otherwise
+     */
+    var userInteractionRequired = function(error) {
+      var userInteractionRequired = false;
+      if (error) {
+        var chromeError = error.name === "NotAllowedError";
+        //Safari throws the error "AbortError" for all play promise failures
+        //so we'll have to treat all of them the same
+        if (!OO.isChrome || chromeError) {
+          //There is no requirement for muted autoplay on Firefox,
+          //so we'll ignore any Firefox play promise errors
+          userInteractionRequired = !OO.isFirefox;
+        }
+      }
+
+      return userInteractionRequired;
+    };
+
+    /**
      * Triggers playback on the video element.
      * @public
      * @method OoyalaVideoWrapper#play
@@ -460,8 +484,13 @@ require("../../../html5-common/js/utils/environment.js");
         if (playPromise) {
           if (typeof playPromise.catch === 'function') {
             playPromise.catch(_.bind(function(error) {
-              if (!_video.muted) {
-                this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
+              if (error) {
+                OO.log("Play Promise Failure", error, error.name);
+                if (userInteractionRequired(error)) {
+                  if (!_video.muted) {
+                    this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
+                  }
+                }
               }
             }, this));
           }
