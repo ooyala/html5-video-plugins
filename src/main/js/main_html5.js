@@ -461,7 +461,9 @@ require("../../../html5-common/js/utils/environment.js");
         //Safari throws the error "AbortError" for all play promise failures
         //so we'll have to treat all of them the same
         if (!OO.isChrome || chromeError) {
-          userInteractionRequired = true;
+          //There is no requirement for muted autoplay on Firefox,
+          //so we'll ignore any Firefox play promise errors
+          userInteractionRequired = !OO.isFirefox;
         }
       }
 
