@@ -312,7 +312,9 @@ describe('main_html5 wrapper tests', function () {
     expect(returns).to.be(false);
   });
 
-  it('should ignore seek for live streams', function(){
+  it('should ignore seek for live streams with no DVR', function(){
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(0);
     wrapper.setVideoUrl("url", "mp4", true);
     element.duration = 100;
     var returns = wrapper.seek(1);

@@ -193,6 +193,7 @@ require("../../../html5-common/js/utils/environment.js");
     var playQueued = false;
     var isSeeking = false;
     var currentTime = 0;
+    var currentTimeShift = 0;
     var currentVolumeSet = 0;
     var isM3u8 = false;
     var TRACK_CLASS = "track_cc";
@@ -344,6 +345,7 @@ require("../../../html5-common/js/utils/environment.js");
       isSeeking = false;
       firstPlay = true;
       currentTime = 0;
+      currentTimeShift = 0;
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
       initialTime = { value: 0, reached: true };
@@ -523,12 +525,24 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      var seekTime;
+
       if (isLive) {
-        return false;
+        var maxTimeShift = getMaxTimeShift();
+        // Live videos without DVR can't be seeked
+        if (maxTimeShift === 0) {
+          return false;
+        }
+
+        var newTimeShift = time + maxTimeShift;
+        seekTime = (_video.currentTime - currentTimeShift) + newTimeShift;
+        currentTimeShift = newTimeShift;
+      } else {
+        seekTime = getSafeSeekTimeIfPossible(_video, time);
       }
-      var safeTime = getSafeSeekTimeIfPossible(_video, time);
-      if (safeTime !== null) {
-        _video.currentTime = safeTime;
+
+      if (seekTime !== null) {
+        _video.currentTime = seekTime;
         isSeeking = true;
         return true;
       }
@@ -557,7 +571,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.unmute = function() {
       _video.muted = false;
-      
+
       //workaround of an issue where some external SDKs (such those used in ad/video plugins)
       //are setting the volume to 0 when muting
       //Set the volume to our last known setVolume setting.
@@ -585,7 +599,7 @@ require("../../../html5-common/js/utils/environment.js");
       } else if (resolvedVolume > 1) {
         resolvedVolume = 1;
       }
-      
+
       currentVolumeSet = resolvedVolume;
 
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
@@ -860,6 +874,7 @@ require("../../../html5-common/js/utils/environment.js");
         _video.textTracks.onchange = onTextTracksChange;
       }
       dequeueSeek();
+      isLive = isLive || _video.currentTime === Infinity; // Just in case backend and video metadata disagree about this
       loaded = true;
     }, this);
 
@@ -1469,6 +1484,22 @@ require("../../../html5-common/js/utils/environment.js");
       if (this.seek(queuedSeekTime)) { queuedSeekTime = null; }
     }, this);
 
+    var getTimeShift = function(event) {
+      return currentTimeShift;
+    };
+
+    var getMaxTimeShift = function(event) {
+      var seekRange = getSafeSeekRange(getSafeSeekableObject());
+      if (!isLive || !seekRange) {
+        return 0;
+      }
+
+      var maxShift = 0;
+      maxShift = seekRange.end - seekRange.start;
+      maxShift = maxShift > 0 ? -maxShift : 0;
+      return maxShift;
+    };
+
     /**
      * Notifies the controller of events that provide playhead information.
      * @private
@@ -1479,7 +1510,6 @@ require("../../../html5-common/js/utils/environment.js");
       if (isPriming) {
         return;
       }
-
       // If the stream is seekable, supress playheads that come before the initialTime has been reached
       // or that come while seeking.
       // TODO: Check _video.seeking?
@@ -1488,22 +1518,38 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       var buffer = 0;
-      if (event.target.buffered && event.target.buffered.length > 0) {
-        buffer = event.target.buffered.end(0); // in sec;
-      }
+      var resolvedTime = null;
+      var currentLiveTime = 0;
+      var maxTimeShift = getMaxTimeShift();
+      var duration = resolveDuration(event.target.duration);
 
-      // durationchange event raises the currentTime as a string
-      var resolvedTime = (event && event.target) ? event.target.currentTime : null;
-      if (resolvedTime && (typeof resolvedTime !== "number")) {
-        resolvedTime = Number(resolvedTime);
+      if (isLive && maxTimeShift !== 0) {
+        resolvedTime = getTimeShift() - maxTimeShift;
+        duration = maxTimeShift === 0 ? maxTimeShift : -maxTimeShift;
+        buffer = duration;
+        // [PBW-5863] The skin displays current time a bit differently when dealing
+        // with live video, but we still need to keep track of the actual playhead for analytics purposes
+        currentLiveTime = video.currentTime;
+      } else {
+        if (event.target.buffered && event.target.buffered.length > 0) {
+          buffer = event.target.buffered.end(0); // in sec;
+        }
+
+        // durationchange event raises the currentTime as a string
+        resolvedTime = (event && event.target) ? event.target.currentTime : null;
+        if (resolvedTime && (typeof resolvedTime !== "number")) {
+          resolvedTime = Number(resolvedTime);
+        }
       }
 
       var seekable = getSafeSeekRange(getSafeSeekableObject());
-      this.controller.notify(eventname,
-                             { "currentTime": resolvedTime,
-                               "duration": resolveDuration(event.target.duration),
-                               "buffer": buffer,
-                               "seekRange": seekable });
+      this.controller.notify(eventname, {
+        currentTime: resolvedTime,
+        currentLiveTime: currentLiveTime,
+        duration: duration,
+        buffer: buffer,
+        seekRange: seekable
+      });
     }, this);
 
     /**

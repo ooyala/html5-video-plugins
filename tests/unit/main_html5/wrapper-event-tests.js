@@ -480,6 +480,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
       {
         "currentTime" : 3,
+        "currentLiveTime" : 0,
         "duration" : 10,
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
@@ -492,6 +493,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
       {
         "currentTime" : 3,
+        "currentLiveTime" : 0,
         "duration" : 10,
         "buffer" : 0,
         "seekRange" : {"start": 2, "end" : 10}
@@ -513,6 +515,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
       {
         "currentTime" : 3,
+        "currentLiveTime" : 0,
         "duration" : 10,
         "buffer" : 0,
         "seekRange" : {"start": 2, "end" : 10}
@@ -527,6 +530,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
       {
         "currentTime" : 3,
+        "currentLiveTime" : 0,
         "duration" : 10,
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
@@ -542,6 +546,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
       {
         "currentTime" : 3,
+        "currentLiveTime" : 0,
         "duration" : 10,
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
@@ -560,6 +565,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
       {
         "currentTime" : 3,
+        "currentLiveTime" : 0,
         "duration" : 10,
         "buffer" : 10,
         "seekRange" : {"start": 0, "end" : 10}
@@ -607,6 +613,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE,
       {
         "currentTime" : 3,
+        "currentLiveTime" : 0,
         "duration" : 10,
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
@@ -625,6 +632,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE,
       {
         "currentTime" : 3,
+        "currentLiveTime" : 0,
         "duration" : 10,
         "buffer" : 10,
         "seekRange" : {"start": 0, "end" : 10}
@@ -707,6 +715,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE,
     {
         "currentTime" : 10,
+        "currentLiveTime" : 0,
         "duration" : 20,
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
