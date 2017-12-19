@@ -533,9 +533,16 @@ require("../../../html5-common/js/utils/environment.js");
         if (maxTimeShift === 0) {
           return false;
         }
-
+        // Time should be a value from 0 to DVR Window Duration. Adding the value
+        // of maxTimeShift (which is the negative of DVR Window Duration) to time will
+        // give us the new value of time shift, which will be a negative value.
         var newTimeShift = time + maxTimeShift;
+        // Subtract the current time shift from the current time. Since the time shift value
+        // is negative, this will add up to the value of the live playhead (i.e. it's equivalent
+        // to removing the time shift). We then apply the new time shift to the live playhead in
+        // order to shift to the expected position.
         seekTime = (_video.currentTime - currentTimeShift) + newTimeShift;
+        // New time shift now becomes the current
         currentTimeShift = newTimeShift;
       } else {
         seekTime = getSafeSeekTimeIfPossible(_video, time);
@@ -1484,19 +1491,34 @@ require("../../../html5-common/js/utils/environment.js");
       if (this.seek(queuedSeekTime)) { queuedSeekTime = null; }
     }, this);
 
+    /**
+     * Returns the current time shift offset to the live edge in seconds for DVR-enabled streams.
+     * @private
+     * @method OoyalaVideoWrapper#getTimeShift
+     * @return {Number} The negative value of the current time shift offset, in seconds. Returns 0
+     * if currently at the live edge.
+     */
     var getTimeShift = function(event) {
       return currentTimeShift;
     };
 
+    /**
+     * Returns the max amount of time that the video can be seeked back for DVR-enabled
+     * live streams. The value of maxTimeShift is represented as a negative number.
+     * @private
+     * @method OoyalaVideoWrapper#getMaxTimeShift
+     * @return {Number} The maximum amount of seconds that the current video can be seeked back
+     * represented as a negative number, or zero, if DVR is not available.
+     */
     var getMaxTimeShift = function(event) {
       var seekRange = getSafeSeekRange(getSafeSeekableObject());
       if (!isLive || !seekRange) {
         return 0;
       }
-
+      // Get time shift and convert to negative
       var maxShift = 0;
       maxShift = seekRange.end - seekRange.start;
-      maxShift = maxShift > 0 ? -maxShift : 0;
+      maxShift = maxShift > 0 && isFinite(maxShift) ? -maxShift : 0;
       return maxShift;
     };
 
@@ -1518,33 +1540,30 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       var buffer = 0;
-      var resolvedTime = null;
+      var currentTime = null;
       var currentLiveTime = 0;
       var maxTimeShift = getMaxTimeShift();
       var duration = resolveDuration(event.target.duration);
 
+      // Live videos without DVR (i.e. maxTimeShift === 0) are treated as regular
+      // videos for playhead update purposes
       if (isLive && maxTimeShift !== 0) {
-        resolvedTime = getTimeShift() - maxTimeShift;
-        duration = maxTimeShift === 0 ? maxTimeShift : -maxTimeShift;
+        currentTime = getTimeShift() - maxTimeShift;
+        duration = maxTimeShift !== 0 ? -maxTimeShift : 0;
         buffer = duration;
         // [PBW-5863] The skin displays current time a bit differently when dealing
         // with live video, but we still need to keep track of the actual playhead for analytics purposes
         currentLiveTime = video.currentTime;
       } else {
-        if (event.target.buffered && event.target.buffered.length > 0) {
-          buffer = event.target.buffered.end(0); // in sec;
+        if (_video.buffered && _video.buffered.length > 0) {
+          buffer = _video.buffered.end(0); // in seconds
         }
-
-        // durationchange event raises the currentTime as a string
-        resolvedTime = (event && event.target) ? event.target.currentTime : null;
-        if (resolvedTime && (typeof resolvedTime !== "number")) {
-          resolvedTime = Number(resolvedTime);
-        }
+        currentTime = _video.currentTime;
       }
 
       var seekable = getSafeSeekRange(getSafeSeekableObject());
       this.controller.notify(eventname, {
-        currentTime: resolvedTime,
+        currentTime: currentTime,
         currentLiveTime: currentLiveTime,
         duration: duration,
         buffer: buffer,
