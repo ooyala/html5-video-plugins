@@ -525,12 +525,18 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      var seekTime;
+      var safeSeekTime = null;
 
       if (isLive) {
         var maxTimeShift = getMaxTimeShift();
-        // Live videos without DVR can't be seeked
-        if (maxTimeShift === 0) {
+        // If time isn't valid there's no way to recover, set to invalid value so
+        // that seek operation is ignored below
+        time = ensureNumber(time, -1);
+        if (
+          maxTimeShift === 0 || // Live videos without DVR can't be seeked
+          time < 0 || // Zero is bottom of DVR window
+          time > Math.abs(maxTimeShift) // Time should be within DVR window
+        ) {
           return false;
         }
         // Time should be a value from 0 to DVR Window Duration. Adding the value
@@ -541,15 +547,15 @@ require("../../../html5-common/js/utils/environment.js");
         // is negative, this will add up to the value of the live playhead (i.e. it's equivalent
         // to removing the time shift). We then apply the new time shift to the live playhead in
         // order to shift to the expected position.
-        seekTime = (_video.currentTime - currentTimeShift) + newTimeShift;
+        safeSeekTime = (ensureNumber(_video.currentTime, 0) - currentTimeShift) + newTimeShift;
         // New time shift now becomes the current
         currentTimeShift = newTimeShift;
       } else {
-        seekTime = getSafeSeekTimeIfPossible(_video, time);
+        safeSeekTime = getSafeSeekTimeIfPossible(_video, time);
       }
 
-      if (seekTime !== null) {
-        _video.currentTime = seekTime;
+      if (safeSeekTime !== null) {
+        _video.currentTime = safeSeekTime;
         isSeeking = true;
         return true;
       }
@@ -1518,7 +1524,7 @@ require("../../../html5-common/js/utils/environment.js");
       // Get time shift and convert to negative
       var maxShift = 0;
       maxShift = seekRange.end - seekRange.start;
-      maxShift = maxShift > 0 && isFinite(maxShift) ? -maxShift : 0;
+      maxShift = ensureNumber(maxShift, 0) > 0 ? -maxShift : 0;
       return maxShift;
     };
 
@@ -1558,7 +1564,8 @@ require("../../../html5-common/js/utils/environment.js");
         if (_video.buffered && _video.buffered.length > 0) {
           buffer = _video.buffered.end(0); // in seconds
         }
-        currentTime = _video.currentTime;
+        // Just a precaution for older browsers, this should already be a number
+        currentTime = ensureNumber(_video.currentTime, null);
       }
 
       var seekable = getSafeSeekRange(getSafeSeekableObject());
@@ -1570,6 +1577,28 @@ require("../../../html5-common/js/utils/environment.js");
         seekRange: seekable
       });
     }, this);
+
+    /**
+     * Converts a value to a number or returns null if it can't be converted or is not a finite value.
+     * @private
+     * @method OoyalaVideoWrapper#ensureNumber
+     * @param {*} value The value to convert.
+     * @param {*} defaultValue A default value to return when the input is not a valid number.
+     * @return {Number} The Number equivalent of value if it can be converted and is finite.
+     * When value doesn't meet the criteria the function will return either defaultValue (if provided) or null.
+     */
+    var ensureNumber = function(value, defaultValue) {
+      var number;
+      if (_.isNumber(value)) {
+        number = value;
+      } else {
+        number = Number(value);
+      }
+      if (!isFinite(number)) {
+        return (typeof defaultValue === 'undefined') ? null : defaultValue;
+      }
+      return number;
+    };
 
     /**
      * Resolves the duration of the video to a valid value.
