@@ -192,6 +192,7 @@ require("../../../html5-common/js/utils/environment.js");
     var queuedSeekTime = null;
     var playQueued = false;
     var isSeeking = false;
+    var isWrapperSeeking = false;
     var currentTime = 0;
     var currentTimeShift = 0;
     var currentVolumeSet = 0;
@@ -343,6 +344,7 @@ require("../../../html5-common/js/utils/environment.js");
       queuedSeekTime = null;
       loaded = false;
       isSeeking = false;
+      isWrapperSeeking = false;
       firstPlay = true;
       currentTime = 0;
       currentTimeShift = 0;
@@ -528,28 +530,16 @@ require("../../../html5-common/js/utils/environment.js");
       var safeSeekTime = null;
 
       if (isLive) {
-        var maxTimeShift = getMaxTimeShift();
-        // If time isn't valid there's no way to recover, set to invalid value so
-        // that seek operation is ignored below
-        time = ensureNumber(time, -1);
-        if (
-          maxTimeShift === 0 || // Live videos without DVR can't be seeked
-          time < 0 || // Zero is bottom of DVR window
-          time > Math.abs(maxTimeShift) // Time should be within DVR window
-        ) {
+        //Live videos without DVR can't be seeked
+        if (!isDvrAvailable()) {
           return false;
+        } else {
+          safeSeekTime = getSafeDvrSeekTime(_video, time);
+          // We update the shift time now in order to make sure that the value
+          // doesn't change after seeking, which would cause the playhead to jump.
+          // This approach is less accurate but it's more user-friendly.
+          currentTimeShift = getTimeShift(safeSeekTime);
         }
-        // Time should be a value from 0 to DVR Window Duration. Adding the value
-        // of maxTimeShift (which is the negative of DVR Window Duration) to time will
-        // give us the new value of time shift, which will be a negative value.
-        var newTimeShift = time + maxTimeShift;
-        // Subtract the current time shift from the current time. Since the time shift value
-        // is negative, this will add up to the value of the live playhead (i.e. it's equivalent
-        // to removing the time shift). We then apply the new time shift to the live playhead in
-        // order to shift to the expected position.
-        safeSeekTime = (ensureNumber(_video.currentTime, 0) - currentTimeShift) + newTimeShift;
-        // New time shift now becomes the current
-        currentTimeShift = newTimeShift;
       } else {
         safeSeekTime = getSafeSeekTimeIfPossible(_video, time);
       }
@@ -557,6 +547,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (safeSeekTime !== null) {
         _video.currentTime = safeSeekTime;
         isSeeking = true;
+        isWrapperSeeking = true;
         return true;
       }
       queueSeek(time);
@@ -1178,6 +1169,19 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
 
+      // Code below is mostly for fullscreen mode on iOS, where the video can be seeked
+      // using the native player controls. We haven't updated currentTimeShift in this case,
+      // so we do it at this point in order to show the correct shift in our inline controls
+      // when the user exits fullscreen mode.
+      if (
+        isLive &&
+        isDvrAvailable() &&
+        !isWrapperSeeking // Seeking wasn't initiated by the wrapper, which means this is a native seek
+      ) {
+        currentTimeShift = getTimeShift(_video.currentTime);
+      }
+      isWrapperSeeking = false;
+
       // If the stream is seekable, supress seeks that come before or at the time initialTime is been reached
       // or that come while seeking.
       if (!initialTime.reached) {
@@ -1478,6 +1482,34 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
+     * Returns the actual playhead time that we need to seek to in order to shift to a time in
+     * the DVR window represented by a number from 0 to DVR Window Length. The values returned
+     * are always constrained to the size of the DVR window.
+     * @private
+     * @method OoyalaVideoWrapper#getSafeDvrSeekTime
+     * @param {HTMLVideoElement} video The video element on which the DVR-enabled stream is loaded.
+     * @param {Number} seekTime The time from 0 to DVR Window Length to which we want to shift.
+     * @return {Number} The playhead time that corresponds to the given DVR window position (seekTime).
+     * The return value will be constrained to valid values within the DVR window. The current playhead
+     * will be returned when seekTime is not a valid, finite or positive number.
+     */
+    var getSafeDvrSeekTime = function(video, seekTime) {
+      // Note that we set seekTime to an invalid negative value if not a number
+      seekTime = ensureNumber(seekTime, -1);
+      // When seekTime is negative or not a valid number, return the current time
+      // in order to avoid seeking
+      if (seekTime < 0) {
+        return (video || {}).currentTime || 0;
+      }
+      var seekRange = getSafeSeekRange(getSafeSeekableObject());
+      var safeSeekTime = seekRange.start + seekTime;
+      // Make sure seek time isn't larger than maximum seekable value, if it is,
+      // seek to maximum value instead
+      safeSeekTime = Math.min(safeSeekTime, seekRange.end);
+      return safeSeekTime;
+    };
+
+    /**
      * Adds the desired seek time to a queue so as to be used later.
      * @private
      * @method OoyalaVideoWrapper#queueSeek
@@ -1498,14 +1530,33 @@ require("../../../html5-common/js/utils/environment.js");
     }, this);
 
     /**
+     * Determines whether or not the current stream has DVR currently enabled.
+     * @private
+     * @method OoyalaVideoWrapper#isDvrAvailable
+     * @return {Boolean} True if DVR is available, false otherwise.
+     */
+    var isDvrAvailable = function() {
+      var maxTimeShift = getMaxTimeShift();
+      var result = maxTimeShift !== 0;
+      return result;
+    };
+
+    /**
      * Returns the current time shift offset to the live edge in seconds for DVR-enabled streams.
      * @private
      * @method OoyalaVideoWrapper#getTimeShift
      * @return {Number} The negative value of the current time shift offset, in seconds. Returns 0
      * if currently at the live edge.
      */
-    var getTimeShift = function(event) {
-      return currentTimeShift;
+    var getTimeShift = function(currentTime) {
+      var timeShift = 0;
+      var seekRange = getSafeSeekRange(getSafeSeekableObject());
+      // If not a valid number set to seekRange.end so that timeShift equals zero
+      currentTime = ensureNumber(currentTime, seekRange.end);
+      timeShift = currentTime - seekRange.end;
+      // Discard positive time shifts
+      timeShift = Math.min(timeShift, 0);
+      return timeShift;
     };
 
     /**
@@ -1546,16 +1597,16 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       var buffer = 0;
-      var currentTime = null;
+      var newCurrentTime = null;
       var currentLiveTime = 0;
-      var maxTimeShift = getMaxTimeShift();
       var duration = resolveDuration(event.target.duration);
 
       // Live videos without DVR (i.e. maxTimeShift === 0) are treated as regular
       // videos for playhead update purposes
-      if (isLive && maxTimeShift !== 0) {
-        currentTime = getTimeShift() - maxTimeShift;
-        duration = maxTimeShift !== 0 ? -maxTimeShift : 0;
+      if (isLive && isDvrAvailable()) {
+        var maxTimeShift = getMaxTimeShift();
+        newCurrentTime = currentTimeShift - maxTimeShift;
+        duration = -maxTimeShift;
         buffer = duration;
         // [PBW-5863] The skin displays current time a bit differently when dealing
         // with live video, but we still need to keep track of the actual playhead for analytics purposes
@@ -1565,12 +1616,12 @@ require("../../../html5-common/js/utils/environment.js");
           buffer = _video.buffered.end(0); // in seconds
         }
         // Just a precaution for older browsers, this should already be a number
-        currentTime = ensureNumber(_video.currentTime, null);
+        newCurrentTime = ensureNumber(_video.currentTime, null);
       }
 
       var seekable = getSafeSeekRange(getSafeSeekableObject());
       this.controller.notify(eventname, {
-        currentTime: currentTime,
+        currentTime: newCurrentTime,
         currentLiveTime: currentLiveTime,
         duration: duration,
         buffer: buffer,

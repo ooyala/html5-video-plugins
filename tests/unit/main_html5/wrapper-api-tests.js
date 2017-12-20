@@ -316,9 +316,19 @@ describe('main_html5 wrapper tests', function () {
     spyOn(element.seekable, "start").andReturn(0);
     spyOn(element.seekable, "end").andReturn(0);
     wrapper.setVideoUrl("url", "mp4", true);
-    element.duration = 100;
+    element.duration = Infinity;
     var returns = wrapper.seek(1);
     expect(returns).to.be(false);
+  });
+
+  it('should NOT ignore seek for live streams with DVR enabled', function() {
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(1750);
+    element.seekable.length = 1;
+    wrapper.setVideoUrl("url", "mp4", true);
+    element.duration = Infinity;
+    var returns = wrapper.seek(1);
+    expect(returns).to.be(true);
   });
 
   it('should NOT ignore seek for VOD stream even if duration of video is zero or Infinity or NaN', function(){
