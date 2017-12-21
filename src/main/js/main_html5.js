@@ -1610,7 +1610,7 @@ require("../../../html5-common/js/utils/environment.js");
         buffer = duration;
         // [PBW-5863] The skin displays current time a bit differently when dealing
         // with live video, but we still need to keep track of the actual playhead for analytics purposes
-        currentLiveTime = video.currentTime;
+        currentLiveTime = _video.currentTime;
       } else {
         if (_video.buffered && _video.buffered.length > 0) {
           buffer = _video.buffered.end(0); // in seconds
@@ -1640,6 +1640,9 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var ensureNumber = function(value, defaultValue) {
       var number;
+      if (value === null || _.isArray(value)) {
+        value = NaN;
+      }
       if (_.isNumber(value)) {
         number = value;
       } else {

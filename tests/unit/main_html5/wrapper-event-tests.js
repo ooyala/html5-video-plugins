@@ -572,6 +572,71 @@ describe('main_html5 wrapper tests', function () {
       }]);
   });
 
+  it('should notify DURATION_CHANGE on video \'durationchange\' event with DVR-formatted values when playing DVR-enabled stream', function() {
+    var dvrWindowSize = 2000;
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    element.currentTime = dvrWindowSize;
+    element.duration = Infinity;
+    element.seekable.length = 1;
+    element.buffered.length = 1;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(dvrWindowSize);
+    spyOn(element.buffered, "end").andReturn(10);
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE, {
+      currentTime: dvrWindowSize,
+      currentLiveTime: element.currentTime,
+      duration: dvrWindowSize,
+      buffer: dvrWindowSize,
+      seekRange: { start: 0, end: dvrWindowSize }
+    }]);
+  });
+
+  it('should apply time shift to currentTime and report video.currentTime as currentLiveTime when notifying DURATION_CHANGE for DVR-enabled streams', function() {
+    var dvrWindowStart = 100;
+    var dvrWindowSize = 1400;
+    var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    element.currentTime = dvrWindowEnd;
+    element.duration = Infinity;
+    element.seekable.length = 1;
+    element.buffered.length = 1;
+    spyOn(element.seekable, "start").andReturn(dvrWindowStart);
+    spyOn(element.seekable, "end").andReturn(dvrWindowEnd);
+    spyOn(element.buffered, "end").andReturn(10);
+    wrapper.seek(700);
+    $(element).triggerHandler("seeked");
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE, {
+      currentTime: 700,
+      currentLiveTime: element.currentTime,
+      duration: dvrWindowSize,
+      buffer: dvrWindowSize,
+      seekRange: {
+        start: dvrWindowStart,
+        end: dvrWindowEnd
+      }
+    }]);
+  });
+
+  it('should set duration and buffer to the size of the DVR window when notifying DURATION_CHANGE for DVR-enabled streams', function() {
+    var dvrWindowStart = 1000;
+    var dvrWindowSize = 1750;
+    var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    element.currentTime = 2700;
+    element.duration = Infinity;
+    element.seekable.length = 1;
+    element.buffered.length = 1;
+    spyOn(element.seekable, "start").andReturn(dvrWindowStart);
+    spyOn(element.seekable, "end").andReturn(dvrWindowEnd);
+    spyOn(element.buffered, "end").andReturn(100);
+    $(element).triggerHandler("durationchange");
+    var params = vtc.notifyParameters[1];
+    expect(params.duration).to.be(dvrWindowSize);
+    expect(params.buffer).to.be(dvrWindowSize);
+  });
+
   it('should not raise durationChange before initial time is used', function(){
     OO.isAndroid = true;
     element.duration = 20;
