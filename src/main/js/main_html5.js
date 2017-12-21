@@ -1549,6 +1549,9 @@ require("../../../html5-common/js/utils/environment.js");
      * if currently at the live edge.
      */
     var getTimeShift = function(currentTime) {
+      if (!isLive) {
+        return 0;
+      }
       var timeShift = 0;
       var seekRange = getSafeSeekRange(getSafeSeekableObject());
       // If not a valid number set to seekRange.end so that timeShift equals zero
@@ -1568,12 +1571,11 @@ require("../../../html5-common/js/utils/environment.js");
      * represented as a negative number, or zero, if DVR is not available.
      */
     var getMaxTimeShift = function(event) {
-      var seekRange = getSafeSeekRange(getSafeSeekableObject());
-      if (!isLive || !seekRange) {
+      if (!isLive) {
         return 0;
       }
-      // Get time shift and convert to negative
       var maxShift = 0;
+      var seekRange = getSafeSeekRange(getSafeSeekableObject());
       maxShift = seekRange.end - seekRange.start;
       maxShift = ensureNumber(maxShift, 0) > 0 ? -maxShift : 0;
       return maxShift;
