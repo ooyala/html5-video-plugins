@@ -1173,11 +1173,8 @@ require("../../../html5-common/js/utils/environment.js");
       // using the native player controls. We haven't updated currentTimeShift in this case,
       // so we do it at this point in order to show the correct shift in our inline controls
       // when the user exits fullscreen mode.
-      if (
-        isLive &&
-        isDvrAvailable() &&
-        !isWrapperSeeking // Seeking wasn't initiated by the wrapper, which means this is a native seek
-      ) {
+      if (isDvrAvailable() && !isWrapperSeeking) {
+        // Seeking wasn't initiated by the wrapper, which means this is a native seek
         currentTimeShift = getTimeShift(_video.currentTime);
       }
       isWrapperSeeking = false;
@@ -1605,7 +1602,7 @@ require("../../../html5-common/js/utils/environment.js");
 
       // Live videos without DVR (i.e. maxTimeShift === 0) are treated as regular
       // videos for playhead update purposes
-      if (isLive && isDvrAvailable()) {
+      if (isDvrAvailable()) {
         var maxTimeShift = getMaxTimeShift();
         newCurrentTime = currentTimeShift - maxTimeShift;
         duration = -maxTimeShift;

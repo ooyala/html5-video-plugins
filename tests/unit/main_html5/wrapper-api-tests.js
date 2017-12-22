@@ -339,140 +339,6 @@ describe('main_html5 wrapper tests', function () {
     expect(returns).to.be(false);
   });
 
-  it('DVR: should NOT ignore seek for live streams with DVR enabled', function() {
-    enableDvr();
-    expect(wrapper.seek(1)).to.be(true);
-  });
-
-  it('DVR: should NOT update currentTime when seek() is called with invalid value', function() {
-    enableDvr();
-    element.currentTime = 1000;
-    wrapper.seek(-1);
-    // JSDOM returns currentTime as string, browsers don't
-    expect(Number(element.currentTime)).to.be(1000);
-    wrapper.seek(-10);
-    expect(Number(element.currentTime)).to.be(1000);
-    wrapper.seek('w00t');
-    expect(Number(element.currentTime)).to.be(1000);
-    wrapper.seek();
-    expect(Number(element.currentTime)).to.be(1000);
-    wrapper.seek(null);
-    expect(Number(element.currentTime)).to.be(1000);
-    wrapper.seek({});
-    expect(Number(element.currentTime)).to.be(1000);
-    wrapper.seek([]);
-    expect(Number(element.currentTime)).to.be(1000);
-  });
-
-  it('DVR: should constrain seek time to DVR window', function() {
-    var dvrWindowStart = 500;
-    var dvrWindowSize = 1750;
-    var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
-    enableDvr(dvrWindowStart, dvrWindowEnd);
-    element.currentTime = 1000;
-    wrapper.seek(dvrWindowSize);
-    // JSDOM returns currentTime as string, browsers don't
-    expect(Number(element.currentTime)).to.be(dvrWindowEnd);
-    wrapper.seek(0);
-    expect(Number(element.currentTime)).to.be(dvrWindowStart);
-    wrapper.seek(dvrWindowSize + 100);
-    expect(Number(element.currentTime)).to.be(dvrWindowEnd);
-  });
-
-  it('DVR: should calculate DVR seek time relative to DVR start and end values', function() {
-    var dvrWindowStart = 2000;
-    var dvrWindowSize = 2000;
-    var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
-    enableDvr(dvrWindowStart, dvrWindowEnd);
-    element.currentTime = 3900;
-    wrapper.seek(dvrWindowSize / 2);
-    // JSDOM returns currentTime as string, browsers don't
-    expect(Number(element.currentTime)).to.be(dvrWindowStart + (dvrWindowSize / 2));
-    wrapper.seek(dvrWindowSize);
-    expect(Number(element.currentTime)).to.be(dvrWindowEnd);
-  });
-
-  it('DVR: should update time shift when seeking', function() {
-    var params;
-    var dvrWindowStart = 100;
-    var dvrWindowSize = 1600;
-    var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
-    enableDvr(dvrWindowStart, dvrWindowEnd);
-    element.currentTime = dvrWindowSize;
-    // currentTime without shift should equal DVR window size
-    $(element).triggerHandler("durationchange");
-    params = vtc.notifyParameters[1];
-    expect(params.currentTime).to.be(dvrWindowSize);
-    // Seek to the middle of the stream
-    wrapper.seek(dvrWindowSize / 2);
-    $(element).triggerHandler("seeked");
-    // Time shift should be reflected in the value of currentTime
-    $(element).triggerHandler("durationchange");
-    params = vtc.notifyParameters[1];
-    expect(params.currentTime).to.be(dvrWindowSize / 2);
-  });
-
-  it('DVR: should update time shift after natively triggered SEEKED events', function() {
-    var params;
-    var dvrWindowSize = 1750;
-    enableDvr(0, dvrWindowSize);
-    $(element).triggerHandler("durationchange");
-    params = vtc.notifyParameters[1];
-    expect(params.currentTime).to.be(dvrWindowSize);
-    // Trigger seeked without calling wrapper.seek() in order to simulate native controls
-    element.currentTime = 875;
-    $(element).triggerHandler("seeked");
-    // Time shift should be reflected in the value of currentTime
-    $(element).triggerHandler("durationchange");
-    params = vtc.notifyParameters[1];
-    expect(params.currentTime).to.be(875);
-  });
-
-  it('DVR: should NOT update time shift after SEEKED events when seeking with wrapper.seek()', function() {
-    var params;
-    var dvrWindowSize = 1750;
-    var spy = enableDvr(0, dvrWindowSize);
-    element.currentTime = dvrWindowSize;
-    $(element).triggerHandler("durationchange");
-    params = vtc.notifyParameters[1];
-    expect(params.currentTime).to.be(dvrWindowSize);
-    // Time shift is updated when calling seek, but shouldn't be updated again when seeked is fired
-    wrapper.seek(dvrWindowSize / 2);
-    // Simulating that DVR window changes while we were seeking, which would result in a different shift value
-    spy.restore();
-    enableDvr(100, dvrWindowSize + 100);
-    $(element).triggerHandler("seeked");
-    // Current time should reflect shift calculated on wrapper.seeked() and shouldn't be updated after seeked event
-    $(element).triggerHandler("durationchange");
-    params = vtc.notifyParameters[1];
-    expect(params.currentTime).to.be(dvrWindowSize / 2);
-  });
-
-  it('DVR: should adapt to changes in the DVR window', function() {
-    var params;
-    var dvrWindowSize = 1750;
-    var midpoint = dvrWindowSize / 2;
-    var spy = enableDvr(0, dvrWindowSize);
-    element.currentTime = dvrWindowSize;
-    // Test seek with initial DVR window
-    wrapper.seek(midpoint);
-    $(element).triggerHandler("seeked");
-    $(element).triggerHandler("durationchange");
-    params = vtc.notifyParameters[1];
-    expect(params.currentTime).to.be(midpoint);
-    expect(Number(params.currentLiveTime)).to.be(midpoint);
-    // Move DVR window forward
-    spy.restore();
-    enableDvr(100, dvrWindowSize + 100);
-    // Test seek with updated DVR window
-    wrapper.seek(midpoint);
-    $(element).triggerHandler("seeked");
-    $(element).triggerHandler("durationchange");
-    params = vtc.notifyParameters[1];
-    expect(params.currentTime).to.be(midpoint);
-    expect(Number(params.currentLiveTime)).to.be(midpoint + 100);
-  });
-
   it('should NOT ignore seek for VOD stream even if duration of video is zero or Infinity or NaN', function(){
     wrapper.setVideoUrl("url", "mp4", false);
     element.duration = 0;
@@ -560,6 +426,140 @@ describe('main_html5 wrapper tests', function () {
     wrapper.seek(8);
     expect(element.seekable.start.wasCalled).to.be(false);
     expect(element.seekable.end.wasCalled).to.be(false);
+  });
+
+  it('DVR: should NOT ignore seek for live streams with DVR enabled', function() {
+    enableDvr();
+    expect(wrapper.seek(1)).to.be(true);
+  });
+
+  it('DVR: should NOT update currentTime when seek() is called with invalid value', function() {
+    enableDvr();
+    element.currentTime = 1000;
+    wrapper.seek(-1);
+    // JSDOM returns currentTime as string, browsers don't
+    expect(Number(element.currentTime)).to.be(1000);
+    wrapper.seek(-10);
+    expect(Number(element.currentTime)).to.be(1000);
+    wrapper.seek('w00t');
+    expect(Number(element.currentTime)).to.be(1000);
+    wrapper.seek();
+    expect(Number(element.currentTime)).to.be(1000);
+    wrapper.seek(null);
+    expect(Number(element.currentTime)).to.be(1000);
+    wrapper.seek({});
+    expect(Number(element.currentTime)).to.be(1000);
+    wrapper.seek([]);
+    expect(Number(element.currentTime)).to.be(1000);
+  });
+
+  it('DVR: should constrain seek time to DVR window', function() {
+    var dvrWindowStart = 500;
+    var dvrWindowSize = 1750;
+    var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
+    enableDvr(dvrWindowStart, dvrWindowEnd);
+    element.currentTime = 1000;
+    wrapper.seek(dvrWindowSize);
+    // JSDOM returns currentTime as string, browsers don't
+    expect(Number(element.currentTime)).to.be(dvrWindowEnd);
+    wrapper.seek(0);
+    expect(Number(element.currentTime)).to.be(dvrWindowStart);
+    wrapper.seek(dvrWindowSize + 100);
+    expect(Number(element.currentTime)).to.be(dvrWindowEnd);
+  });
+
+  it('DVR: should calculate DVR seek time relative to DVR start and end values', function() {
+    var dvrWindowStart = 2000;
+    var dvrWindowSize = 2000;
+    var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
+    enableDvr(dvrWindowStart, dvrWindowEnd);
+    element.currentTime = 3900;
+    wrapper.seek(dvrWindowSize / 2);
+    // JSDOM returns currentTime as string, browsers don't
+    expect(Number(element.currentTime)).to.be(dvrWindowStart + (dvrWindowSize / 2));
+    wrapper.seek(dvrWindowSize);
+    expect(Number(element.currentTime)).to.be(dvrWindowEnd);
+  });
+
+  it('DVR: should update time shift when seeking', function() {
+    var params;
+    var dvrWindowStart = 100;
+    var dvrWindowSize = 1600;
+    var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
+    enableDvr(dvrWindowStart, dvrWindowEnd);
+    element.currentTime = dvrWindowSize;
+    // currentTime without shift should equal DVR window size
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    expect(params.currentTime).to.be(dvrWindowSize);
+    // Seek to the middle of the stream
+    wrapper.seek(dvrWindowSize / 2);
+    $(element).triggerHandler("seeked");
+    // Time shift should be reflected in the value of currentTime
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    expect(params.currentTime).to.be(dvrWindowSize / 2);
+  });
+
+  it('DVR: should update time shift after natively triggered SEEKED events', function() {
+    var params;
+    var dvrWindowSize = 1750;
+    enableDvr(0, dvrWindowSize);
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    expect(params.currentTime).to.be(dvrWindowSize);
+    // Trigger seeked without calling wrapper.seek() in order to simulate native controls
+    element.currentTime = 875;
+    $(element).triggerHandler("seeked");
+    // Time shift should be reflected in the value of currentTime
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    expect(params.currentTime).to.be(875);
+  });
+
+  it('DVR: should NOT update time shift after SEEKED events when seeking with wrapper.seek()', function() {
+    var params;
+    var dvrWindowSize = 1750;
+    var spy = enableDvr(0, dvrWindowSize);
+    element.currentTime = dvrWindowSize;
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    expect(params.currentTime).to.be(dvrWindowSize);
+    // Time shift is updated when calling seek, but shouldn't be updated again when seeked is fired
+    wrapper.seek(dvrWindowSize / 2);
+    // Simulating that DVR window changes while we were seeking, which would result in a different shift value
+    spy.restore();
+    enableDvr(100, dvrWindowSize + 100);
+    $(element).triggerHandler("seeked");
+    // Current time should reflect shift calculated on wrapper.seeked() and shouldn't be updated after seeked event
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    expect(params.currentTime).to.be(dvrWindowSize / 2);
+  });
+
+  it('DVR: should adapt to changes in the DVR window', function() {
+    var params;
+    var dvrWindowSize = 1750;
+    var midpoint = dvrWindowSize / 2;
+    var spy = enableDvr(0, dvrWindowSize);
+    element.currentTime = dvrWindowSize;
+    // Test seek with initial DVR window
+    wrapper.seek(midpoint);
+    $(element).triggerHandler("seeked");
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    expect(params.currentTime).to.be(midpoint);
+    expect(Number(params.currentLiveTime)).to.be(midpoint);
+    // Move DVR window forward
+    spy.restore();
+    enableDvr(100, dvrWindowSize + 100);
+    // Test seek with updated DVR window
+    wrapper.seek(midpoint);
+    $(element).triggerHandler("seeked");
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    expect(params.currentTime).to.be(midpoint);
+    expect(Number(params.currentLiveTime)).to.be(midpoint + 100);
   });
 
   it('should set volume if between 0 and 1', function(){
