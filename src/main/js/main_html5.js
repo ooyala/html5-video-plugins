@@ -193,6 +193,7 @@ require("../../../html5-common/js/utils/environment.js");
     var playQueued = false;
     var isSeeking = false;
     var isWrapperSeeking = false;
+    var wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
     var currentTime = 0;
     var currentTimeShift = 0;
     var currentVolumeSet = 0;
@@ -346,6 +347,7 @@ require("../../../html5-common/js/utils/environment.js");
       isSeeking = false;
       isWrapperSeeking = false;
       firstPlay = true;
+      wasPausedBeforePlaying = false;
       currentTime = 0;
       currentTimeShift = 0;
       videoEnded = false;
@@ -1107,6 +1109,15 @@ require("../../../html5-common/js/utils/environment.js");
         return;
       }
 
+      // Update time shift in case the video was paused and then resumed,
+      // which means that we were falling behind the live playhead while the video
+      // wasn't playing. Note that Safari will sometimes keep loading the live content
+      // in the background and will resume with the latest content. Time shift should
+      // resolve to the same value in those cases.
+      if (!firstPlay && wasPausedBeforePlaying && isDvrAvailable()) {
+        currentTimeShift = getTimeShift(_video.currentTime);
+      }
+
       this.controller.notify(this.controller.EVENTS.PLAYING);
       startUnderflowWatcher();
       checkForClosedCaptions();
@@ -1114,6 +1125,7 @@ require("../../../html5-common/js/utils/environment.js");
       firstPlay = false;
       canSeek = true;
       isSeeking = false;
+      wasPausedBeforePlaying = false;
       setVideoCentering();
     }, this);
 
@@ -1275,6 +1287,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (isPriming) {
         return;
       }
+      wasPausedBeforePlaying = true;
       if (!(OO.isIpad && _video.currentTime === 0)) {
         this.controller.notify(this.controller.EVENTS.PAUSED);
       }
