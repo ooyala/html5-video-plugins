@@ -192,7 +192,10 @@ require("../../../html5-common/js/utils/environment.js");
     var queuedSeekTime = null;
     var playQueued = false;
     var isSeeking = false;
+    var isWrapperSeeking = false;
+    var wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
     var currentTime = 0;
+    var currentTimeShift = 0;
     var currentVolumeSet = 0;
     var isM3u8 = false;
     var TRACK_CLASS = "track_cc";
@@ -342,8 +345,11 @@ require("../../../html5-common/js/utils/environment.js");
       queuedSeekTime = null;
       loaded = false;
       isSeeking = false;
+      isWrapperSeeking = false;
       firstPlay = true;
+      wasPausedBeforePlaying = false;
       currentTime = 0;
+      currentTimeShift = 0;
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
       initialTime = { value: 0, reached: true };
@@ -523,13 +529,27 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
+      var safeSeekTime = null;
+
       if (isLive) {
-        return false;
+        //Live videos without DVR can't be seeked
+        if (!isDvrAvailable()) {
+          return false;
+        } else {
+          safeSeekTime = getSafeDvrSeekTime(_video, time);
+          // We update the shift time now in order to make sure that the value
+          // doesn't change after seeking, which would cause the playhead to jump.
+          // This approach is less accurate but it's more user-friendly.
+          currentTimeShift = getTimeShift(safeSeekTime);
+        }
+      } else {
+        safeSeekTime = getSafeSeekTimeIfPossible(_video, time);
       }
-      var safeTime = getSafeSeekTimeIfPossible(_video, time);
-      if (safeTime !== null) {
-        _video.currentTime = safeTime;
+
+      if (safeSeekTime !== null) {
+        _video.currentTime = safeSeekTime;
         isSeeking = true;
+        isWrapperSeeking = true;
         return true;
       }
       queueSeek(time);
@@ -557,7 +577,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.unmute = function() {
       _video.muted = false;
-      
+
       //workaround of an issue where some external SDKs (such those used in ad/video plugins)
       //are setting the volume to 0 when muting
       //Set the volume to our last known setVolume setting.
@@ -585,7 +605,7 @@ require("../../../html5-common/js/utils/environment.js");
       } else if (resolvedVolume > 1) {
         resolvedVolume = 1;
       }
-      
+
       currentVolumeSet = resolvedVolume;
 
       //  TODO check if we need to capture any exception here. ios device will not allow volume set.
@@ -860,6 +880,7 @@ require("../../../html5-common/js/utils/environment.js");
         _video.textTracks.onchange = onTextTracksChange;
       }
       dequeueSeek();
+      isLive = isLive || _video.currentTime === Infinity; // Just in case backend and video metadata disagree about this
       loaded = true;
     }, this);
 
@@ -1088,6 +1109,15 @@ require("../../../html5-common/js/utils/environment.js");
         return;
       }
 
+      // Update time shift in case the video was paused and then resumed,
+      // which means that we were falling behind the live playhead while the video
+      // wasn't playing. Note that Safari will sometimes keep loading the live content
+      // in the background and will resume with the latest content. Time shift should
+      // resolve to the same value in those cases.
+      if (!firstPlay && wasPausedBeforePlaying && isDvrAvailable()) {
+        currentTimeShift = getTimeShift(_video.currentTime);
+      }
+
       this.controller.notify(this.controller.EVENTS.PLAYING);
       startUnderflowWatcher();
       checkForClosedCaptions();
@@ -1095,6 +1125,7 @@ require("../../../html5-common/js/utils/environment.js");
       firstPlay = false;
       canSeek = true;
       isSeeking = false;
+      wasPausedBeforePlaying = false;
       setVideoCentering();
     }, this);
 
@@ -1149,6 +1180,16 @@ require("../../../html5-common/js/utils/environment.js");
           _video.currentTime = currentTime;
         }
       }
+
+      // Code below is mostly for fullscreen mode on iOS, where the video can be seeked
+      // using the native player controls. We haven't updated currentTimeShift in this case,
+      // so we do it at this point in order to show the correct shift in our inline controls
+      // when the user exits fullscreen mode.
+      if (isDvrAvailable() && !isWrapperSeeking) {
+        // Seeking wasn't initiated by the wrapper, which means this is a native seek
+        currentTimeShift = getTimeShift(_video.currentTime);
+      }
+      isWrapperSeeking = false;
 
       // If the stream is seekable, supress seeks that come before or at the time initialTime is been reached
       // or that come while seeking.
@@ -1246,6 +1287,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (isPriming) {
         return;
       }
+      wasPausedBeforePlaying = true;
       if (!(OO.isIpad && _video.currentTime === 0)) {
         this.controller.notify(this.controller.EVENTS.PAUSED);
       }
@@ -1450,6 +1492,34 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
+     * Returns the actual playhead time that we need to seek to in order to shift to a time in
+     * the DVR window represented by a number from 0 to DVR Window Length. The values returned
+     * are always constrained to the size of the DVR window.
+     * @private
+     * @method OoyalaVideoWrapper#getSafeDvrSeekTime
+     * @param {HTMLVideoElement} video The video element on which the DVR-enabled stream is loaded.
+     * @param {Number} seekTime The time from 0 to DVR Window Length to which we want to shift.
+     * @return {Number} The playhead time that corresponds to the given DVR window position (seekTime).
+     * The return value will be constrained to valid values within the DVR window. The current playhead
+     * will be returned when seekTime is not a valid, finite or positive number.
+     */
+    var getSafeDvrSeekTime = function(video, seekTime) {
+      // Note that we set seekTime to an invalid negative value if not a number
+      seekTime = ensureNumber(seekTime, -1);
+      // When seekTime is negative or not a valid number, return the current time
+      // in order to avoid seeking
+      if (seekTime < 0) {
+        return (video || {}).currentTime || 0;
+      }
+      var seekRange = getSafeSeekRange(getSafeSeekableObject());
+      var safeSeekTime = seekRange.start + seekTime;
+      // Make sure seek time isn't larger than maximum seekable value, if it is,
+      // seek to maximum value instead
+      safeSeekTime = Math.min(safeSeekTime, seekRange.end);
+      return safeSeekTime;
+    };
+
+    /**
      * Adds the desired seek time to a queue so as to be used later.
      * @private
      * @method OoyalaVideoWrapper#queueSeek
@@ -1470,6 +1540,58 @@ require("../../../html5-common/js/utils/environment.js");
     }, this);
 
     /**
+     * Determines whether or not the current stream has DVR currently enabled.
+     * @private
+     * @method OoyalaVideoWrapper#isDvrAvailable
+     * @return {Boolean} True if DVR is available, false otherwise.
+     */
+    var isDvrAvailable = function() {
+      var maxTimeShift = getMaxTimeShift();
+      var result = maxTimeShift !== 0;
+      return result;
+    };
+
+    /**
+     * Returns the current time shift offset to the live edge in seconds for DVR-enabled streams.
+     * @private
+     * @method OoyalaVideoWrapper#getTimeShift
+     * @return {Number} The negative value of the current time shift offset, in seconds. Returns 0
+     * if currently at the live edge.
+     */
+    var getTimeShift = function(currentTime) {
+      if (!isLive) {
+        return 0;
+      }
+      var timeShift = 0;
+      var seekRange = getSafeSeekRange(getSafeSeekableObject());
+      // If not a valid number set to seekRange.end so that timeShift equals zero
+      currentTime = ensureNumber(currentTime, seekRange.end);
+      timeShift = currentTime - seekRange.end;
+      // Discard positive time shifts
+      timeShift = Math.min(timeShift, 0);
+      return timeShift;
+    };
+
+    /**
+     * Returns the max amount of time that the video can be seeked back for DVR-enabled
+     * live streams. The value of maxTimeShift is represented as a negative number.
+     * @private
+     * @method OoyalaVideoWrapper#getMaxTimeShift
+     * @return {Number} The maximum amount of seconds that the current video can be seeked back
+     * represented as a negative number, or zero, if DVR is not available.
+     */
+    var getMaxTimeShift = function(event) {
+      if (!isLive) {
+        return 0;
+      }
+      var maxShift = 0;
+      var seekRange = getSafeSeekRange(getSafeSeekableObject());
+      maxShift = seekRange.end - seekRange.start;
+      maxShift = ensureNumber(maxShift, 0) > 0 ? -maxShift : 0;
+      return maxShift;
+    };
+
+    /**
      * Notifies the controller of events that provide playhead information.
      * @private
      * @method OoyalaVideoWrapper#raisePlayhead
@@ -1479,7 +1601,6 @@ require("../../../html5-common/js/utils/environment.js");
       if (isPriming) {
         return;
       }
-
       // If the stream is seekable, supress playheads that come before the initialTime has been reached
       // or that come while seeking.
       // TODO: Check _video.seeking?
@@ -1488,23 +1609,62 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       var buffer = 0;
-      if (event.target.buffered && event.target.buffered.length > 0) {
-        buffer = event.target.buffered.end(0); // in sec;
-      }
+      var newCurrentTime = null;
+      var currentLiveTime = 0;
+      var duration = resolveDuration(event.target.duration);
 
-      // durationchange event raises the currentTime as a string
-      var resolvedTime = (event && event.target) ? event.target.currentTime : null;
-      if (resolvedTime && (typeof resolvedTime !== "number")) {
-        resolvedTime = Number(resolvedTime);
+      // Live videos without DVR (i.e. maxTimeShift === 0) are treated as regular
+      // videos for playhead update purposes
+      if (isDvrAvailable()) {
+        var maxTimeShift = getMaxTimeShift();
+        newCurrentTime = currentTimeShift - maxTimeShift;
+        duration = -maxTimeShift;
+        buffer = duration;
+        // [PBW-5863] The skin displays current time a bit differently when dealing
+        // with live video, but we still need to keep track of the actual playhead for analytics purposes
+        currentLiveTime = _video.currentTime;
+      } else {
+        if (_video.buffered && _video.buffered.length > 0) {
+          buffer = _video.buffered.end(0); // in seconds
+        }
+        // Just a precaution for older browsers, this should already be a number
+        newCurrentTime = ensureNumber(_video.currentTime, null);
       }
 
       var seekable = getSafeSeekRange(getSafeSeekableObject());
-      this.controller.notify(eventname,
-                             { "currentTime": resolvedTime,
-                               "duration": resolveDuration(event.target.duration),
-                               "buffer": buffer,
-                               "seekRange": seekable });
+      this.controller.notify(eventname, {
+        currentTime: newCurrentTime,
+        currentLiveTime: currentLiveTime,
+        duration: duration,
+        buffer: buffer,
+        seekRange: seekable
+      });
     }, this);
+
+    /**
+     * Converts a value to a number or returns null if it can't be converted or is not a finite value.
+     * @private
+     * @method OoyalaVideoWrapper#ensureNumber
+     * @param {*} value The value to convert.
+     * @param {*} defaultValue A default value to return when the input is not a valid number.
+     * @return {Number} The Number equivalent of value if it can be converted and is finite.
+     * When value doesn't meet the criteria the function will return either defaultValue (if provided) or null.
+     */
+    var ensureNumber = function(value, defaultValue) {
+      var number;
+      if (value === null || _.isArray(value)) {
+        value = NaN;
+      }
+      if (_.isNumber(value)) {
+        number = value;
+      } else {
+        number = Number(value);
+      }
+      if (!isFinite(number)) {
+        return (typeof defaultValue === 'undefined') ? null : defaultValue;
+      }
+      return number;
+    };
 
     /**
      * Resolves the duration of the video to a valid value.
