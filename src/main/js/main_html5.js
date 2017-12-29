@@ -495,6 +495,9 @@ require("../../../html5-common/js/utils/environment.js");
                 if (userInteractionRequired(error)) {
                   if (!_video.muted) {
                     this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
+                  } else if (_video.paused) {
+                    raisePlayingEvent();
+                    raisePauseEvent();
                   }
                 }
               }
