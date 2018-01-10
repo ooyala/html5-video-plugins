@@ -498,7 +498,7 @@ require("../../../html5-common/js/utils/environment.js");
                   } else {
                     // [PBW-6990]
                     // There seems to be an issue on random Android devices that prevents muted
-                    // autoplay from working at all under certain (currently unkown) conditions.
+                    // autoplay from working at all under certain (currently unknown) conditions.
                     // As a workaround for these cases, we raise a PLAYING event followed by a PAUSE
                     // event in order to force the player out its initial loading state and allow manual
                     // playback with the control bar.
