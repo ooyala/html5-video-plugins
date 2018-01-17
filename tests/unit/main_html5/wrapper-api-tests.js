@@ -641,6 +641,29 @@ describe('main_html5 wrapper tests', function () {
     expect(params.currentTime).to.be(midpoint);
   });
 
+  it('DVR: time shift should not exceed max time shift value', function() {
+    var params;
+    var dvrWindowSize = 1750;
+    setDvr(0, dvrWindowSize);
+    element.currentTime = dvrWindowSize;
+    // Initial play
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    // Pause
+    wrapper.pause();
+    $(element).triggerHandler("pause");
+    // Move DVR window way past window size, but keep current time the same
+    setDvr(5000, dvrWindowSize + 5000);
+    element.currentTime = dvrWindowSize;
+    // Resume playback in order to update time shift
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    $(element).triggerHandler("timeupdate");
+    params = vtc.notifyParameters[1];
+    // Current time would shift to a negative value if check wasn't working
+    expect(params.currentTime).to.be(0);
+  });
+
   it('should set volume if between 0 and 1', function(){
     wrapper.setVolume(0.1);
     expect(element.volume).to.eql(0.1);

@@ -1569,6 +1569,8 @@ require("../../../html5-common/js/utils/environment.js");
       timeShift = currentTime - seekRange.end;
       // Discard positive time shifts
       timeShift = Math.min(timeShift, 0);
+      // Shouldn't be greater than max time shift
+      timeShift = Math.max(timeShift, getMaxTimeShift());
       return timeShift;
     };
 
