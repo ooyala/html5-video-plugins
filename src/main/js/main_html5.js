@@ -499,14 +499,7 @@ require("../../../html5-common/js/utils/environment.js");
                     // [PBW-6990]
                     // There seems to be an issue on random Android devices that prevents muted
                     // autoplay from working at all under certain (currently unknown) conditions.
-                    // As a workaround for these cases, we raise a PLAYING event followed by a PAUSE
-                    // event in order to force the player out its initial loading state and allow manual
-                    // playback with the control bar.
-                    if (firstPlay && _video.paused) {
-                      OO.log("MainHtml5: Muted autoplay not possible, enabling controls for manual playback.");
-                      raisePlayingEvent();
-                      raisePauseEvent();
-                    }
+                    this.controller.notify(this.controller.EVENTS.MUTED_PLAYBACK_FAILED, {error: error});
                   }
                 }
               }

@@ -31,7 +31,8 @@ mock_vtc = function() {
       WAITING:  "waiting",
       DURATION_CHANGE: "durationChange",
       UNMUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed",
-      UNMUTED_PLAYBACK_SUCCEEDED: "unmutedPlaybackSucceeded"
+      UNMUTED_PLAYBACK_SUCCEEDED: "unmutedPlaybackSucceeded",
+      MUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed"
     },
     notify: function(){
       if (arguments.length > 0) {

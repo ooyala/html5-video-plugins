@@ -767,7 +767,7 @@ describe('main_html5 wrapper tests', function () {
     element.play = originalPlayFunction;
   });
 
-  it('should notify PLAYING followed by PAUSED when play promise fails and player detects that muted autoplay is not possible', function(){
+  it('should notify of MUTED_PLAYBACK_FAILED when play promise fails and player detects that muted autoplay is not possible', function(){
     var catchCallback = null;
     var originalPlayFunction = element.play;
     // Video muted successfully but playback still failed
@@ -786,8 +786,7 @@ describe('main_html5 wrapper tests', function () {
     vtc.notified = [];
     wrapper.play();
     catchCallback({});
-    expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.PLAYING);
-    expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.PAUSED);
+    expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.MUTED_PLAYBACK_FAILED);
     // Restore original play function
     element.play = originalPlayFunction;
   });
