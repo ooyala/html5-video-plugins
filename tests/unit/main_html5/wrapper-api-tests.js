@@ -1105,6 +1105,27 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.getCurrentTime()).to.eql(1000000);
   });
 
+  it('should not unmute if setVolume is called with a value of 0', function(){
+    element.muted = true;
+    wrapper.setVolume(0);
+    expect(element.volume).to.eql(0);
+    expect(element.muted).to.eql(true);
+  });
+
+  it('getAvailableAudio should return array of audio tracks', function(){
+    var audioTracks;
+    element.audioTracks = [
+      {id: "0", kind: "main", label: "eng", language: "eng", enabled: true},
+      {id: "1", kind: "main", label: "ger", language: "ger", enabled: false}
+    ];
+    expect(element.audioTracks[0].id).to.eql('0');
+    audioTracks = wrapper.getAvailableAudio();
+    expect(audioTracks).to.eql([
+      {id: "0", kind: "main", label: "eng", lang: "eng", enabled: true},
+      {id: "1", kind: "main", label: "ger", lang: "ger", enabled: false}
+    ]);
+  });
+
   /*
   // TODO: implement unsubscription test
   it('should unsubscribe from events on destroy', function(){

@@ -855,6 +855,31 @@ require("../../../html5-common/js/utils/environment.js");
       }
     };
 
+    /**
+     * For multi audio we can get a list of available audio tracks
+     * @public
+     * method OoyalaVideoWrapper#getAvailableAudio
+     * @returns {(boolean|Array)} false - if an array with tracks is not available or Array - an array of all available audio tracks.
+     */
+    this.getAvailableAudio = function() {
+      var audioTrack = _video.audioTracks;
+      if (audioTrack !== undefined && audioTrack.length) {
+        var audioTrackList = [];
+        for (var i = 0; i < audioTrack.length; i++) {
+          var element = {
+            id: audioTrack[i].id,
+            kind: audioTrack[i].kind,
+            label: audioTrack[i].label,
+            lang: audioTrack[i].language,
+            enabled: audioTrack[i].enabled
+          };
+          audioTrackList.push(element);
+        }
+        return audioTrackList;
+      }
+      return false;
+    };
+
     // **********************************************************************************/
     // Event callback methods
     // **********************************************************************************/
@@ -1090,6 +1115,11 @@ require("../../../html5-common/js/utils/environment.js");
       //Notify controller of video width and height.
       if (firstPlay) {
         this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, {width: _video.videoWidth, height: _video.videoHeight});
+      }
+
+      var availableAudio = this.getAvailableAudio();
+      if (availableAudio) {
+        this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
       }
     }, this);
 
