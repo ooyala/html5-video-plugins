@@ -216,6 +216,8 @@ require("../../../html5-common/js/utils/environment.js");
     var waitingEventRaised = false;
     var watcherTime = -1;
 
+    var currentAudioId = null;
+
     // iPad CSS constants
     var IPAD_CSS_DEFAULT = {
       "width":"",
@@ -858,7 +860,7 @@ require("../../../html5-common/js/utils/environment.js");
     /**
      * For multi audio we can get a list of available audio tracks
      * @public
-     * method OoyalaVideoWrapper#getAvailableAudio
+     * @method OoyalaVideoWrapper#getAvailableAudio
      * @returns {(boolean|Array)} false - if an array with tracks is not available or Array - an array of all available audio tracks.
      */
     this.getAvailableAudio = function() {
@@ -873,11 +875,28 @@ require("../../../html5-common/js/utils/environment.js");
             lang: audioTrack[i].language,
             enabled: audioTrack[i].enabled
           };
+          if (audioTrack[i].enabled) {
+            currentAudioId = audioTrack[i].id;
+          }
           audioTrackList.push(element);
         }
         return audioTrackList;
       }
       return false;
+    };
+
+    /**
+     * Sets the audio track to the ID specified by trackID
+     * @public
+     * @method OoyalaVideoWrapper#setAudio
+     * @param {String} trackId - the ID of the audio track to activate
+     */
+    this.setAudio = function(trackId) {
+      var newAudioTrack = _video.audioTracks.getTrackById(trackId);
+      var prevAudioTrack = _video.audioTracks.getTrackById(currentAudioId);
+      newAudioTrack.enabled = true;
+      prevAudioTrack.enabled = false;
+      currentAudioId = trackId;
     };
 
     // **********************************************************************************/
