@@ -859,25 +859,25 @@ require("../../../html5-common/js/utils/environment.js");
      * For multi audio we can get a list of available audio tracks
      * @public
      * method OoyalaVideoWrapper#getAvailableAudio
-     * @returns {(boolean|Array)} false - if an array with tracks is not available or Array - an array of all available audio tracks.
+     * @returns {Array} - an array of all available audio tracks.
      */
     this.getAvailableAudio = function() {
-      var audioTrack = _video.audioTracks;
-      if (audioTrack !== undefined && audioTrack.length) {
+      var audioTracks = _video.audioTracks;
+      if (audioTracks !== undefined && audioTracks.length) {
         var audioTrackList = [];
-        for (var i = 0; i < audioTrack.length; i++) {
+        for (var index = 0; index < audioTracks.length; index++) {
           var element = {
-            id: audioTrack[i].id,
-            kind: audioTrack[i].kind,
-            label: audioTrack[i].label,
-            lang: audioTrack[i].language,
-            enabled: audioTrack[i].enabled
+            id: audioTracks[index].id,
+            kind: audioTracks[index].kind,
+            label: audioTracks[index].label,
+            lang: audioTracks[index].language,
+            enabled: audioTracks[index].enabled
           };
           audioTrackList.push(element);
         }
         return audioTrackList;
       }
-      return false;
+      return [];
     };
 
     // **********************************************************************************/
@@ -1118,7 +1118,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       var availableAudio = this.getAvailableAudio();
-      if (availableAudio) {
+      if (availableAudio && availableAudio.length) {
         this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
       }
     }, this);
