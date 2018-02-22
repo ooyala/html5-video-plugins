@@ -216,6 +216,8 @@ require("../../../html5-common/js/utils/environment.js");
     var waitingEventRaised = false;
     var watcherTime = -1;
 
+    var currentAudioId = null;
+
     // iPad CSS constants
     var IPAD_CSS_DEFAULT = {
       "width":"",
@@ -859,23 +861,49 @@ require("../../../html5-common/js/utils/environment.js");
      * For multi audio we can get a list of available audio tracks
      * @public
      * method OoyalaVideoWrapper#getAvailableAudio
-     * @returns {(boolean|Array)} false - if an array with tracks is not available or Array - an array of all available audio tracks.
+     * @returns {Array} - an array of all available audio tracks.
      */
     this.getAvailableAudio = function() {
-      var audioTrack = _video.audioTracks;
-      if (audioTrack !== undefined && audioTrack.length) {
-        var audioTrackList = [];
-        for (var i = 0; i < audioTrack.length; i++) {
+      var audioTracks = _video.audioTracks;
+      var audioTrackList = [];
+      if (audioTracks !== undefined && audioTracks.length) {
+        for (var index = 0; index < audioTracks.length; index++) {
           var element = {
-            id: audioTrack[i].id,
-            kind: audioTrack[i].kind,
-            label: audioTrack[i].label,
-            lang: audioTrack[i].language,
-            enabled: audioTrack[i].enabled
+            id: audioTracks[index].id,
+            kind: audioTracks[index].kind,
+            label: audioTracks[index].label,
+            lang: audioTracks[index].language,
+            enabled: audioTracks[index].enabled
           };
+          if (audioTracks[index].enabled) {
+            currentAudioId = audioTracks[index].id;
+          }
           audioTrackList.push(element);
         }
-        return audioTrackList;
+      }
+      return audioTrackList;
+    };
+
+    /**
+     * Sets the audio track to the ID specified by trackID
+     * @public
+     * @method OoyalaVideoWrapper#setAudio
+     * @param {String} trackId - the ID of the audio track to activate
+     * @returns {Boolean} true - if new audio track was set; false is in otherwise;
+     */
+    this.setAudio = function(trackId) {
+      var audioTracks = _video.audioTracks;
+      if (audioTracks && audioTracks.length) { //if audioTracks exist
+        var newAudioTrack = audioTracks.getTrackById(trackId);
+        if (typeof newAudioTrack !== 'undefined') { //if trackId is correct and the audio exists
+          var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
+          if (typeof newAudioTrack !== 'undefined') { //if currentAudioId is correct and the audio exists
+            prevAudioTrack.enabled = false; //the audio is not active anymore
+          }
+          newAudioTrack.enabled = true; //the audio is active
+          currentAudioId = trackId;
+          return true;
+        }
       }
       return false;
     };
@@ -1118,7 +1146,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       var availableAudio = this.getAvailableAudio();
-      if (availableAudio) {
+      if (availableAudio && availableAudio.length) {
         this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
       }
     }, this);
