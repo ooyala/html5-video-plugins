@@ -890,13 +890,23 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#setAudio
      * @param {String} trackId - the ID of the audio track to activate
+     * @returns {Boolean} true - if new audio track was set; false is in otherwise;
      */
     this.setAudio = function(trackId) {
-      var newAudioTrack = _video.audioTracks.getTrackById(trackId);
-      var prevAudioTrack = _video.audioTracks.getTrackById(currentAudioId);
-      newAudioTrack.enabled = true;
-      prevAudioTrack.enabled = false;
-      currentAudioId = trackId;
+      var audioTracks = _video.audioTracks;
+      if (audioTracks && audioTracks.length) { //if audioTracks exist
+        var newAudioTrack = audioTracks.getTrackById(trackId);
+        if (typeof newAudioTrack !== 'undefined') { //if trackId is correct and the audio exists
+          var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
+          if (typeof newAudioTrack !== 'undefined') { //if currentAudioId is correct and the audio exists
+            prevAudioTrack.enabled = false; //the audio is not active anymore
+          }
+          newAudioTrack.enabled = true; //the audio is active
+          currentAudioId = trackId;
+          return true;
+        }
+      }
+      return false;
     };
 
     // **********************************************************************************/

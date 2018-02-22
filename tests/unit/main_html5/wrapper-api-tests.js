@@ -1126,6 +1126,16 @@ describe('main_html5 wrapper tests', function () {
     ]);
   });
 
+  it('setAudio should set the audio by id and return true', function(){
+    element.currentAudioId = "0";
+    element.audioTracks = [
+      {id: "0", kind: "main", label: "eng", language: "eng", enabled: true},
+      {id: "1", kind: "main", label: "ger", language: "ger", enabled: false}
+    ];
+    var returns = wrapper.setVideoUrl("1");
+    expect(returns).to.be(true);
+  });
+
   /*
   // TODO: implement unsubscription test
   it('should unsubscribe from events on destroy', function(){
