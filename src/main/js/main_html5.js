@@ -865,8 +865,8 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.getAvailableAudio = function() {
       var audioTracks = _video.audioTracks;
+      var audioTrackList = [];
       if (audioTracks !== undefined && audioTracks.length) {
-        var audioTrackList = [];
         for (var index = 0; index < audioTracks.length; index++) {
           var element = {
             id: audioTracks[index].id,
@@ -880,9 +880,8 @@ require("../../../html5-common/js/utils/environment.js");
           }
           audioTrackList.push(element);
         }
-        return audioTrackList;
       }
-      return [];
+      return audioTrackList;
     };
 
     /**
