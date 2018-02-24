@@ -180,6 +180,7 @@ require("../../../html5-common/js/utils/environment.js");
   var OoyalaVideoWrapper = function(domId, video, dimension, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
+    this.currentAudioId = null;
 
     var _video = video;
     var _playerId = playerId;
@@ -215,8 +216,6 @@ require("../../../html5-common/js/utils/environment.js");
     var underflowWatcherTimer = null;
     var waitingEventRaised = false;
     var watcherTime = -1;
-
-    var currentAudioId = null;
 
     // iPad CSS constants
     var IPAD_CSS_DEFAULT = {
@@ -868,17 +867,19 @@ require("../../../html5-common/js/utils/environment.js");
       var audioTrackList = [];
       if (audioTracks !== undefined && audioTracks.length) {
         for (var index = 0; index < audioTracks.length; index++) {
-          var element = {
-            id: audioTracks[index].id,
-            kind: audioTracks[index].kind,
-            label: audioTracks[index].label,
-            lang: audioTracks[index].language,
-            enabled: audioTracks[index].enabled
-          };
-          if (audioTracks[index].enabled) {
-            currentAudioId = audioTracks[index].id;
+          if (audioTracks[index]) {
+            var element = {
+              id: audioTracks[index].id,
+              kind: audioTracks[index].kind,
+              label: audioTracks[index].label,
+              lang: audioTracks[index].language,
+              enabled: audioTracks[index].enabled
+            };
+            if (audioTracks[index].enabled) {
+              this.currentAudioId = audioTracks[index].id;
+            }
+            audioTrackList.push(element);
           }
-          audioTrackList.push(element);
         }
       }
       return audioTrackList;
@@ -889,20 +890,25 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#setAudio
      * @param {String} trackId - the ID of the audio track to activate
-     * @returns {Boolean} true - if new audio track was set; false is in otherwise;
+     * @returns {Boolean} true - if new audio track was set; false otherwise;
      */
     this.setAudio = function(trackId) {
-      var audioTracks = _video.audioTracks;
-      if (audioTracks && audioTracks.length) { //if audioTracks exist
-        var newAudioTrack = audioTracks.getTrackById(trackId);
-        if (typeof newAudioTrack !== 'undefined') { //if trackId is correct and the audio exists
-          var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
-          if (typeof newAudioTrack !== 'undefined') { //if currentAudioId is correct and the audio exists
-            prevAudioTrack.enabled = false; //the audio is not active anymore
+      if (this.currentAudioId !== trackId) {
+        var audioTracks = _video.audioTracks;
+        if (audioTracks && audioTracks.length) { //if audioTracks exist
+
+          var newAudioTrack = audioTracks.getTrackById(trackId);
+          if (newAudioTrack && typeof newAudioTrack !== 'undefined') { //if trackId is correct and the audio exists
+
+            var prevAudioTrack = audioTracks.getTrackById(this.currentAudioId);
+            if (prevAudioTrack && typeof prevAudioTrack !== 'undefined') { //if this.currentAudioId is correct and the audio exists
+              prevAudioTrack.enabled = false; //the audio is not active anymore
+            }
+
+            newAudioTrack.enabled = true; //the audio is active
+            this.currentAudioId = trackId;
+            return true;
           }
-          newAudioTrack.enabled = true; //the audio is active
-          currentAudioId = trackId;
-          return true;
         }
       }
       return false;
