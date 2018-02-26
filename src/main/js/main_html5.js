@@ -893,8 +893,8 @@ require("../../../html5-common/js/utils/environment.js");
      * @returns {Boolean} true - if new audio track was set; false otherwise;
      */
     this.setAudio = function(trackId) {
+      var audioTracks = _video.audioTracks;
       if (this.currentAudioId !== trackId) {
-        var audioTracks = _video.audioTracks;
         if (audioTracks && audioTracks.length) { //if audioTracks exist
 
           var newAudioTrack = audioTracks.getTrackById(trackId);
@@ -907,11 +907,11 @@ require("../../../html5-common/js/utils/environment.js");
 
             newAudioTrack.enabled = true; //the audio is active
             this.currentAudioId = trackId;
-            return true;
+            return audioTracks;
           }
         }
       }
-      return false;
+      return audioTracks;
     };
 
     // **********************************************************************************/
@@ -1153,9 +1153,19 @@ require("../../../html5-common/js/utils/environment.js");
 
       var availableAudio = this.getAvailableAudio();
       if (availableAudio && availableAudio.length) {
+        // var id = this.getChosenAudioId();
+        // console.log('BBB id', id);
+        // if (id !== "" && typeof id !== 'undefined') {
+        //   var res = this.setAudio(id);
+        //   console.log('BBB res', res);
+        // }
         this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
       }
     }, this);
+
+    this.getChosenAudioId = function() {
+      return OO.localStorage.getItem('currentAudioId');
+    };
 
     /**
      * Notifies the controller that a buffered event was raised.
