@@ -45,6 +45,22 @@ mock_vtc = function() {
     markReady: function() {}
   };
 
+  this.getTrackById = function(id) {
+    var currentElement = null;
+    if (typeof id !== "undefined") {
+      var array = this;
+      if (Array.isArray(array)) {
+        for (var index=0; index<array.length; index++) {
+          if (array[index] && array[index].id === id) {
+            currentElement = array[index];
+            break;
+          }
+        }
+      }
+    }
+    return currentElement;
+  };
+
   // To clear the list of events notified to the mock vtc, call with this function
   this.reset = function() {
     this.notifyParameters = null;
