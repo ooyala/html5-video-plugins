@@ -1152,7 +1152,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       var availableAudio = this.getAvailableAudio();
-      if (availableAudio && availableAudio.length) {
+      if (availableAudio && availableAudio.length  > 1) {
         this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
       }
     }, this);
