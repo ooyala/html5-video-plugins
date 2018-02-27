@@ -360,6 +360,23 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
+     * Gets the list of all available audio tracks
+     * @public
+     * @method TemplateVideoWrapper#getAvailableAudio
+     * @returns {Array} - an array of all available audio tracks
+     */
+    this.getAvailableAudio = function() {};
+
+    /**
+     * ets the audio track to the ID specified by trackID
+     * @public
+     * @method TemplateVideoWrapper#setAudio
+     * @param {String} trackID - the ID of the audio track to activate
+     * @returns {Boolean} true - if new audio track was set; false otherwise;
+     */
+    this.setAudio = function(trackID) {};
+
+    /**
      * Sets the stream to play back based on given stream ID. Plugin must support the
      * BITRATE_CONTROL feature to have this method called.
      * @public
