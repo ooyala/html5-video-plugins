@@ -32,7 +32,8 @@ mock_vtc = function() {
       DURATION_CHANGE: "durationChange",
       UNMUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed",
       UNMUTED_PLAYBACK_SUCCEEDED: "unmutedPlaybackSucceeded",
-      MUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed"
+      MUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed",
+      MULTI_AUDIO_AVAILABLE: "multiAudioAvailable"
     },
     notify: function(){
       if (arguments.length > 0) {
