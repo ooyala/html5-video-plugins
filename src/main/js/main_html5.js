@@ -893,25 +893,24 @@ require("../../../html5-common/js/utils/environment.js");
      * @returns {Boolean} true - if new audio track was set; false otherwise;
      */
     this.setAudio = function(trackId) {
-      var audioTracks = _video.audioTracks;
       if (this.currentAudioId !== trackId) {
+        var audioTracks = _video.audioTracks;
         if (audioTracks && audioTracks.length) { //if audioTracks exist
 
           var newAudioTrack = audioTracks.getTrackById(trackId);
-          if (newAudioTrack && typeof newAudioTrack !== 'undefined') { //if trackId is correct and the audio exists
+          if (newAudioTrack) { //if trackId is correct and the audio exists
 
             var prevAudioTrack = audioTracks.getTrackById(this.currentAudioId);
-            if (prevAudioTrack && typeof prevAudioTrack !== 'undefined') { //if this.currentAudioId is correct and the audio exists
+            if (prevAudioTrack) { //if this.currentAudioId is correct and the audio exists
               prevAudioTrack.enabled = false; //the audio is not active anymore
             }
 
             newAudioTrack.enabled = true; //the audio is active
-            this.currentAudioId = trackId;
-            return audioTracks;
           }
         }
       }
-      return audioTracks;
+      var tracks = this.getAvailableAudio();
+      return tracks;
     };
 
     // **********************************************************************************/
@@ -1149,23 +1148,12 @@ require("../../../html5-common/js/utils/environment.js");
       //Notify controller of video width and height.
       if (firstPlay) {
         this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, {width: _video.videoWidth, height: _video.videoHeight});
-      }
-
-      var availableAudio = this.getAvailableAudio();
-      if (availableAudio && availableAudio.length) {
-        // var id = this.getChosenAudioId();
-        // console.log('BBB id', id);
-        // if (id !== "" && typeof id !== 'undefined') {
-        //   var res = this.setAudio(id);
-        //   console.log('BBB res', res);
-        // }
-        this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
+        var availableAudio = this.getAvailableAudio();
+        if (availableAudio && availableAudio.length  > 1) {
+          this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
+        }
       }
     }, this);
-
-    this.getChosenAudioId = function() {
-      return OO.localStorage.getItem('currentAudioId');
-    };
 
     /**
      * Notifies the controller that a buffered event was raised.
