@@ -187,6 +187,22 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ASSET_DIMENSION, videoDimensions]);
   });
 
+  it('should notify MULTI_AUDIO_AVAILABLE on first \'canPlay\' event', function(){
+    wrapper.getAvailableAudio = function() {
+      return [{"id": 1}, {"id": 2}];
+    };
+    $(element).triggerHandler("canplay");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.MULTI_AUDIO_AVAILABLE);
+  });
+
+  it('should not notify MULTI_AUDIO_AVAILABLE on first \'canPlay\' event when getAvailableAudio returns too short array', function(){
+    wrapper.getAvailableAudio = function() {
+      return [{"id": 1}];
+    };
+    $(element).triggerHandler("canplay");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.MULTI_AUDIO_AVAILABLE);
+  });
+
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){
     element.textTracks = [{ kind: "captions" }];
     $(element).triggerHandler("playing"); // this adds in-stream captions

@@ -898,10 +898,10 @@ require("../../../html5-common/js/utils/environment.js");
         if (audioTracks && audioTracks.length) { //if audioTracks exist
 
           var newAudioTrack = audioTracks.getTrackById(trackId);
-          if (newAudioTrack && typeof newAudioTrack !== 'undefined') { //if trackId is correct and the audio exists
+          if (newAudioTrack) { //if trackId is correct and the audio exists
 
             var prevAudioTrack = audioTracks.getTrackById(this.currentAudioId);
-            if (prevAudioTrack && typeof prevAudioTrack !== 'undefined') { //if this.currentAudioId is correct and the audio exists
+            if (prevAudioTrack) { //if this.currentAudioId is correct and the audio exists
               prevAudioTrack.enabled = false; //the audio is not active anymore
             }
 
@@ -1149,11 +1149,11 @@ require("../../../html5-common/js/utils/environment.js");
       //Notify controller of video width and height.
       if (firstPlay) {
         this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, {width: _video.videoWidth, height: _video.videoHeight});
-      }
 
-      var availableAudio = this.getAvailableAudio();
-      if (availableAudio && availableAudio.length) {
-        this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
+        var availableAudio = this.getAvailableAudio();
+        if (availableAudio && availableAudio.length  > 1) {
+          this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
+        }
       }
     }, this);
 
