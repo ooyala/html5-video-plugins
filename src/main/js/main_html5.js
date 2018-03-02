@@ -906,12 +906,11 @@ require("../../../html5-common/js/utils/environment.js");
             }
 
             newAudioTrack.enabled = true; //the audio is active
-            this.currentAudioId = trackId;
-            return true;
           }
         }
       }
-      return false;
+      var tracks = this.getAvailableAudio();
+      return tracks;
     };
 
     // **********************************************************************************/

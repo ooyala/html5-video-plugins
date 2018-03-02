@@ -1127,7 +1127,7 @@ describe('main_html5 wrapper tests', function () {
     ]);
   });
 
-  it('setAudio should set the audio by id and return true', function(){
+  it('setAudio should set the audio by id and return array with audio objects', function(){
     wrapper.currentAudioId = "0";
     element.audioTracks = audioTracks;
     element.audioTracks.__proto__ = {
@@ -1135,7 +1135,10 @@ describe('main_html5 wrapper tests', function () {
     };
     //pass correct id
     var resWithCorrectId = wrapper.setAudio("1");
-    expect(resWithCorrectId).to.be(true);
+    expect(resWithCorrectId).to.eql([
+      {id: "0", kind: "main", label: "eng", lang: "eng", enabled: false},
+      {id: "1", kind: "main", label: "ger", lang: "ger", enabled: true}
+    ]);
     expect(element.audioTracks).to.eql([
       {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
       {id: "1", kind: "main", label: "ger", language: "ger", enabled: true}
@@ -1143,7 +1146,10 @@ describe('main_html5 wrapper tests', function () {
 
     //pass wrong id
     var resWithWrongId = wrapper.setAudio("6789");
-    expect(resWithWrongId).to.be(false);
+    expect(resWithWrongId).to.eql([
+      {id: "0", kind: "main", label: "eng", lang: "eng", enabled: false},
+      {id: "1", kind: "main", label: "ger", lang: "ger", enabled: true}
+    ]);
     expect(element.audioTracks).to.eql([
       {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
       {id: "1", kind: "main", label: "ger", language: "ger", enabled: true}

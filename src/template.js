@@ -372,7 +372,7 @@ require("../html5-common/js/utils/constants.js");
      * @public
      * @method TemplateVideoWrapper#setAudio
      * @param {String} trackID - the ID of the audio track to activate
-     * @returns {Boolean} true - if new audio track was set; false otherwise;
+     * @returns {Array} - an array of all available audio tracks
      */
     this.setAudio = function(trackID) {};
 
