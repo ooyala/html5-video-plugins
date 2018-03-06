@@ -890,7 +890,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#setAudio
      * @param {String} trackId - the ID of the audio track to activate
-     * @returns {Boolean} true - if new audio track was set; false otherwise;
+     * @returns {array} - list of available audio streams
      */
     this.setAudio = function(trackId) {
       if (this.currentAudioId !== trackId) {
