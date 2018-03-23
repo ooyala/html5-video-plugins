@@ -27,8 +27,11 @@ require("../../../html5-common/js/utils/constants.js");
     }
   }
   if (!pluginPath) {
-    console.error("Can't get path to script", filename);
-    return;
+    // [PLAYER-3129]
+    // It's safe to hard-code the path to this file since this plugin isn't
+    // being developed further. The .swf file shouldn't change anymore.
+    console.log("[OSMF]: Failed to determine .swf file path, will use default.");
+    pluginPath = "//player.ooyala.com/static/v4/production/video-plugin/";
   }
   pluginPath += "osmf_flash.swf";
   var flexPath = "playerProductInstall.swf";
@@ -281,7 +284,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaFlashVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
      * @param {string} encoding The encoding of video stream
-     * @param {boolean} isLive Notifies whether the stream is live. 
+     * @param {boolean} isLive Notifies whether the stream is live.
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding, isLive) {
@@ -499,7 +502,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Calls a Flash method
     this.callToFlash = function (data,dataObj) {
-      if(_video == undefined) { 
+      if(_video == undefined) {
         javascriptCommandQueue.push([data,dataObj]);
       } else {
         if (_video.sendToActionScript) {
@@ -687,7 +690,7 @@ require("../../../html5-common/js/utils/constants.js");
         OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
 
         var klass = flashItems[arguments[0]];
-  
+
         if (klass) {
           klass.onCallback(arguments[2]);
         }
@@ -1594,4 +1597,3 @@ var swfobject = function() {
     }
   };
 }();
-

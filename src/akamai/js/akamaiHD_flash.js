@@ -27,8 +27,11 @@ require("../../../html5-common/js/utils/constants.js");
     }
   }
   if (!pluginPath) {
-    console.error("Can't get path to script", filename);
-    return;
+    // [PLAYER-3129]
+    // It's safe to hard-code the path to this file since this plugin isn't
+    // being developed further. The .swf file shouldn't change anymore.
+    console.log("[AkamaiHD]: Failed to determine .swf file path, will use default.");
+    pluginPath = "//player.ooyala.com/static/v4/production/video-plugin/";
   }
   pluginPath += "akamaiHD_flash.swf";
   var flexPath = "playerProductInstall.swf";
@@ -228,7 +231,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaAkamaiHDFlashVideoWrapper#setVideoUrl
      * @param {string} url The new url to insert into the video element's src attribute
      * @param {string} encoding The encoding of video stream
-     * @param {string} isLive Notifies whether the stream is live (unused here). 
+     * @param {string} isLive Notifies whether the stream is live (unused here).
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(url, encoding) {
@@ -265,7 +268,7 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {object} contentMetadata The object with the content metadata info.
      */
     this.setSecureContent = function(contentMetadata)
-    {      
+    {
       this.callToFlash("setSecureContent()", contentMetadata);
     };
 
@@ -455,7 +458,7 @@ require("../../../html5-common/js/utils/constants.js");
 
     // Calls a Flash method
     this.callToFlash = function (data,dataObj) {
-      if(videoItem == undefined) { 
+      if(videoItem == undefined) {
         javascriptCommandQueue.push([data,dataObj]);
       } else {
         if (videoItem.sendToActionScript) {
@@ -1567,4 +1570,3 @@ var swfobject = function() {
     }
   };
 }();
-
