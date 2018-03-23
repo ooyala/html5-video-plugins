@@ -1122,8 +1122,8 @@ describe('main_html5 wrapper tests', function () {
     expect(element.audioTracks[0].id).to.eql('0');
     resAudioTracks = wrapper.getAvailableAudio();
     expect(resAudioTracks).to.eql([
-      {id: "0", kind: "main", label: "eng", lang: "eng", enabled: true},
-      {id: "1", kind: "main", label: "ger", lang: "ger", enabled: false}
+      {id: "0", label: "eng", lang: "eng", enabled: true},
+      {id: "1", label: "ger", lang: "ger", enabled: false}
     ]);
   });
 
@@ -1136,8 +1136,8 @@ describe('main_html5 wrapper tests', function () {
     //pass correct id
     var resWithCorrectId = wrapper.setAudio("1");
     expect(resWithCorrectId).to.eql([
-      {id: "0", kind: "main", label: "eng", lang: "eng", enabled: false},
-      {id: "1", kind: "main", label: "ger", lang: "ger", enabled: true}
+      {id: "0", label: "eng", lang: "eng", enabled: false},
+      {id: "1", label: "ger", lang: "ger", enabled: true}
     ]);
     expect(element.audioTracks).to.eql([
       {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
@@ -1147,8 +1147,8 @@ describe('main_html5 wrapper tests', function () {
     //pass wrong id
     var resWithWrongId = wrapper.setAudio("6789");
     expect(resWithWrongId).to.eql([
-      {id: "0", kind: "main", label: "eng", lang: "eng", enabled: false},
-      {id: "1", kind: "main", label: "ger", lang: "ger", enabled: true}
+      {id: "0", label: "eng", lang: "eng", enabled: false},
+      {id: "1", label: "ger", lang: "ger", enabled: true}
     ]);
     expect(element.audioTracks).to.eql([
       {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
