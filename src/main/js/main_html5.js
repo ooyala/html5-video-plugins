@@ -192,6 +192,8 @@ require("../../../html5-common/js/utils/environment.js");
     var hasPlayed = false;
     var queuedSeekTime = null;
     var playQueued = false;
+    var isPlaying = false;
+    var pauseOnPlaying = false;
     var isSeeking = false;
     var isWrapperSeeking = false;
     var wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
@@ -345,6 +347,8 @@ require("../../../html5-common/js/utils/environment.js");
       hasPlayed = false;
       queuedSeekTime = null;
       loaded = false;
+      isPlaying = false;
+      pauseOnPlaying = false;
       isSeeking = false;
       isWrapperSeeking = false;
       firstPlay = true;
@@ -483,6 +487,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#play
      */
     this.play = function() {
+      pauseOnPlaying = false;
       // enqueue play command if in the process of seeking
       if (_video.seeking) {
         playQueued = true;
@@ -525,7 +530,11 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.pause = function() {
       playQueued = false;
-      _video.pause();
+      if (isPlaying) {
+        _video.pause();
+      } else {
+        pauseOnPlaying = true;
+      }
     };
 
     /**
@@ -738,7 +747,7 @@ require("../../../html5-common/js/utils/environment.js");
             src: captions.url,
             language: languageKey,
             inStream: false
-          }
+          };
           addClosedCaptions(captionInfo);
         });
       }
@@ -1060,7 +1069,7 @@ require("../../../html5-common/js/utils/environment.js");
       var closedCaptionInfo = {
         languages: [],
         locale: {}
-      }
+      };
       _.each(availableClosedCaptions, function(value, key) {
         closedCaptionInfo.languages.push(key);
         closedCaptionInfo.locale[key] = value.label;
@@ -1185,6 +1194,12 @@ require("../../../html5-common/js/utils/environment.js");
       if (!firstPlay && wasPausedBeforePlaying && isDvrAvailable()) {
         currentTimeShift = getTimeShift(_video.currentTime);
       }
+
+      if (_video && pauseOnPlaying) {
+        _video.pause();
+      }
+
+      isPlaying = true;
 
       this.controller.notify(this.controller.EVENTS.PLAYING);
       startUnderflowWatcher();
