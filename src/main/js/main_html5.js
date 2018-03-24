@@ -192,7 +192,7 @@ require("../../../html5-common/js/utils/environment.js");
     var hasPlayed = false;
     var queuedSeekTime = null;
     var playQueued = false;
-    var isPlaying = false;
+    var hasStartedPlaying = false;
     var pauseOnPlaying = false;
     var isSeeking = false;
     var isWrapperSeeking = false;
@@ -347,7 +347,7 @@ require("../../../html5-common/js/utils/environment.js");
       hasPlayed = false;
       queuedSeekTime = null;
       loaded = false;
-      isPlaying = false;
+      hasStartedPlaying = false;
       pauseOnPlaying = false;
       isSeeking = false;
       isWrapperSeeking = false;
@@ -530,7 +530,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.pause = function() {
       playQueued = false;
-      if (isPlaying) {
+      if (hasStartedPlaying) {
         _video.pause();
       } else {
         pauseOnPlaying = true;
@@ -1199,7 +1199,7 @@ require("../../../html5-common/js/utils/environment.js");
         _video.pause();
       }
 
-      isPlaying = true;
+      hasStartedPlaying = true;
 
       this.controller.notify(this.controller.EVENTS.PLAYING);
       startUnderflowWatcher();
