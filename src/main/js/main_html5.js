@@ -292,11 +292,10 @@ require("../../../html5-common/js/utils/environment.js");
       // suspend, abort, emptied, loadeddata, resize, change, addtrack, removetrack
       _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
       // The volumechange event does not seem to fire for mute state changes when using jQuery
-      // to add the event listener or when using addEventListener("volumechange"). It does
-      // work using the below line. We need this event to fire properly or else other SDKs
-      // (such as the Freewheel ad SDK) that make use of this video element may have issues with
-      // the mute state
-      _video.onvolumechange = raiseVolumeEvent;
+      // to add the event listener. It does work using the below line. We need this event to fire properly
+      // or else other SDKs (such as the Freewheel ad SDK) that make use of this video element may have
+      // issues with the mute state
+      _video.addEventListener('volumechange', raiseVolumeEvent);
     };
 
     /**
@@ -307,6 +306,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var unsubscribeAllEvents = function() {
       _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
+      _video.removeEventListener('volumechange', raiseVolumeEvent);
     };
 
     /**
