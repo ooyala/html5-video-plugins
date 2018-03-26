@@ -873,15 +873,6 @@ describe('main_html5 wrapper tests', function () {
   //  expect(vtc.notifyParametersHistory[1]).to.eql([vtc.interface.EVENTS.MUTE_STATE_CHANGE, { muted: true }]);
   //});
 
-  it('should notify VOLUME_CHANGE on video \'volumechangeNew\' event', function(){
-    vtc.notifyParametersHistory = [];
-    $(element).triggerHandler({
-      type: "volumechangeNew",
-      target: {volume: 0.3}
-    });
-    expect(vtc.notifyParametersHistory[0]).to.eql([vtc.interface.EVENTS.VOLUME_CHANGE, { volume: 0.3 }]);
-  });
-
   it('should notify VOLUME_CHANGE on setting video volume', function(){
     vtc.notifyParametersHistory = [];
     element.volume = 0.3;
