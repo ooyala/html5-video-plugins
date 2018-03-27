@@ -860,21 +860,20 @@ require("../../../html5-common/js/utils/environment.js");
       var audioTracks = _video.audioTracks;
       var audioTrackList = [];
       if (audioTracks !== undefined && audioTracks.length) {
-        for (var index = 0; index < audioTracks.length; index++) {
-          if (audioTracks[index]) {
-            var element = {
-              id: audioTracks[index].id,
-              kind: audioTracks[index].kind,
-              label: audioTracks[index].label,
-              lang: audioTracks[index].language,
-              enabled: audioTracks[index].enabled
-            };
-            if (audioTracks[index].enabled) {
-              this.currentAudioId = audioTracks[index].id;
-            }
-            audioTrackList.push(element);
+        audioTracks = _.filter(audioTracks, function(track){
+          return track;
+        });
+        audioTrackList = _.map(audioTracks, function (track) {
+          if (track.enabled) {
+            this.currentAudioId = track.id;
           }
-        }
+          return {
+            id: track.id,
+            label: track.label,
+            lang: track.language,
+            enabled: track.enabled
+          }
+        }, this);
       }
       return audioTrackList;
     };
