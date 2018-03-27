@@ -284,8 +284,6 @@ require("../../../html5-common/js/utils/environment.js");
                     "play": raisePlayEvent,
                     "pause": raisePauseEvent,
                     "ratechange": raiseRatechangeEvent,
-                    "volumechange": raiseVolumeEvent,
-                    "volumechangeNew": raiseVolumeEvent,
                         // ios webkit browser fullscreen events
                     "webkitbeginfullscreen": raiseFullScreenBegin,
                     "webkitendfullscreen": raiseFullScreenEnd
@@ -293,6 +291,11 @@ require("../../../html5-common/js/utils/environment.js");
       // events not used:
       // suspend, abort, emptied, loadeddata, resize, change, addtrack, removetrack
       _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
+      // The volumechange event does not seem to fire for mute state changes when using jQuery
+      // to add the event listener. It does work using the below line. We need this event to fire properly
+      // or else other SDKs (such as the Freewheel ad SDK) that make use of this video element may have
+      // issues with the mute state
+      _video.addEventListener('volumechange', raiseVolumeEvent);
     };
 
     /**
@@ -303,6 +306,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var unsubscribeAllEvents = function() {
       _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
+      _video.removeEventListener('volumechange', raiseVolumeEvent);
     };
 
     /**
@@ -569,11 +573,6 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.mute = function() {
       _video.muted = true;
-
-      //the volumechange event is supposed to be fired when video.muted is changed,
-      //but it doesn't always fire. Raising a volume event here with the current volume
-      //to cover these situations
-      raiseVolumeEvent({ target: { volume: _video.volume }});
     };
 
     /**
@@ -591,11 +590,6 @@ require("../../../html5-common/js/utils/environment.js");
       if (currentVolumeSet > 0) {
         this.setVolume(currentVolumeSet);
       }
-
-      //the volumechange event is supposed to be fired when video.muted is changed,
-      //but it doesn't always fire. Raising a volume event here with the current volume
-      //to cover these situations
-      raiseVolumeEvent({ target: { volume: _video.volume }});
     };
 
     /**
