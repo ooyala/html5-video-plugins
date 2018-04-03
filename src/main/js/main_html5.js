@@ -180,7 +180,7 @@ require("../../../html5-common/js/utils/environment.js");
   var OoyalaVideoWrapper = function(domId, video, dimension, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
-    this.currentAudioId = null;
+    this.audioTracks = [];
 
     var _video = video;
     var _playerId = playerId;
@@ -864,9 +864,6 @@ require("../../../html5-common/js/utils/environment.js");
           return track;
         });
         audioTrackList = _.map(audioTracks, function (track) {
-          if (track.enabled) {
-            this.currentAudioId = track.id;
-          }
           return {
             id: track.id,
             label: track.label,
@@ -886,24 +883,30 @@ require("../../../html5-common/js/utils/environment.js");
      * @returns {array} - list of available audio streams
      */
     this.setAudio = function(trackId) {
-      if (this.currentAudioId !== trackId) {
-        var audioTracks = _video.audioTracks;
-        if (audioTracks && audioTracks.length) { //if audioTracks exist
+      var audioTracks = _video.audioTracks;
+      
+      if (audioTracks && audioTracks.length) { // if audioTracks exist
+        
+        var currentAudio = _.find(audioTracks, function (track) {
+          return track.enabled;
+        });
 
+        var currentAudioId = currentAudio.id;
+
+        if (currentAudioId !== trackId) {
           var newAudioTrack = audioTracks.getTrackById(trackId);
-          if (newAudioTrack) { //if trackId is correct and the audio exists
-
-            var prevAudioTrack = audioTracks.getTrackById(this.currentAudioId);
-            if (prevAudioTrack) { //if this.currentAudioId is correct and the audio exists
-              prevAudioTrack.enabled = false; //the audio is not active anymore
+          
+          if (newAudioTrack) { // if trackId is correct and the audio exists
+            var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
+            
+            if (prevAudioTrack) { // if currentAudioId is correct and the audio exists
+              prevAudioTrack.enabled = false; // the audio is not active anymore
             }
 
-            newAudioTrack.enabled = true; //the audio is active
+            newAudioTrack.enabled = true; // the audio is active
           }
         }
       }
-      var tracks = this.getAvailableAudio();
-      return tracks;
     };
 
     // **********************************************************************************/
@@ -935,9 +938,31 @@ require("../../../html5-common/js/utils/environment.js");
       if (OO.isSafari && _video && _video.textTracks) {
         _video.textTracks.onchange = onTextTracksChange;
       }
+
+      if (_video.audioTracks) {
+        _video.audioTracks.onchange = _onAudioChange;
+      }
+
       dequeueSeek();
       isLive = isLive || _video.currentTime === Infinity; // Just in case backend and video metadata disagree about this
       loaded = true;
+    }, this);
+
+    /**
+     * Fired when there's a change on audioTracks
+     * @private
+     * @method OoyalaVideoFactory#onAudioChange
+     * @fires VideoController#EVENTS.MULTI_AUDIO_AVAILABLE
+     */
+    var _onAudioChange = _.bind(function(event) {
+      var audioTracks = this.getAvailableAudio();
+
+      if (!_.isEqual(this.audioTracks, audioTracks)) {
+        this.audioTracks = this.getAvailableAudio();
+        console.log('CHANGE IN TRACKS -> ', this.audioTracks);
+      } 
+
+      this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_CHANGED, audioTracks);
     }, this);
 
     /**
