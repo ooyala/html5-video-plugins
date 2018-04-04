@@ -189,9 +189,19 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify MULTI_AUDIO_AVAILABLE on first \'canPlay\' event', function(){
     wrapper.getAvailableAudio = function() {
-      return [{"id": 1}, {"id": 2}];
+      return [{
+        "id": 1,
+        "label": "eng",
+        "lang": "eng",
+        "enabled": true
+      }, {
+        "id": 2,
+        "label": "ger",
+        "lang": "ger",
+        enabled: false
+      }];
     };
-    $(element).triggerHandler("canplay");
+    $(element).triggerHandler('canplay');
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.MULTI_AUDIO_AVAILABLE);
   });
 
@@ -201,6 +211,33 @@ describe('main_html5 wrapper tests', function () {
     };
     $(element).triggerHandler("canplay");
     expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.MULTI_AUDIO_AVAILABLE);
+  });
+
+  it('should notify MULTI_AUDIO_CHANGED after setAudio', function() {
+    element.audioTracks[0] = { id: 0, language: 'en', label: '', enabled: true };
+    element.audioTracks[1] = { id: 1, language: 'en', label: '', enabled: false };
+    
+    element.audioTracks.__proto__ = {
+      getTrackById: vtc.getTrackById
+    };
+
+    wrapper.setAudio(1);
+    wrapper.setAudio(1);
+    wrapper.setAudio(1);
+    wrapper.setAudio(1);
+    wrapper.setAudio(1);
+    wrapper.setAudio(1);
+    wrapper.setAudio(1);
+    wrapper.setAudio(1);
+    wrapper.setAudio(1);
+
+    var callCount = vtc.notified.reduce(function (accumulator, event) {
+      return event === vtc.interface.EVENTS.MULTI_AUDIO_CHANGED ? 
+        accumulator = accumulator + 1 :
+        accumulator;
+    }, 0);
+
+    expect(callCount).to.be(1);
   });
 
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){

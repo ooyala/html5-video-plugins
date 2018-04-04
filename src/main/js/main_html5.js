@@ -907,6 +907,7 @@ require("../../../html5-common/js/utils/environment.js");
           }
         }
       }
+      raiseAudioChange(audioTracks);
     };
 
     // **********************************************************************************/
@@ -952,17 +953,27 @@ require("../../../html5-common/js/utils/environment.js");
      * Fired when there's a change on audioTracks
      * @private
      * @method OoyalaVideoFactory#onAudioChange
-     * @fires VideoController#EVENTS.MULTI_AUDIO_AVAILABLE
+     * @fires VideoController#EVENTS.MULTI_AUDIO_CHANGE
      */
     var _onAudioChange = _.bind(function(event) {
       var audioTracks = this.getAvailableAudio();
-
+      raiseAudioChange(audioTracks);
+    }, this);
+    
+    /**
+     * Raised notification to VideoController
+     * @private
+     * @method OoyalaVideoFactory#onAudioChange
+     * @fires VideoController#EVENTS.MULTI_AUDIO_CHANGE
+     */
+    var raiseAudioChange = _.bind(function(audioTracks) {
+      // the problem here is that onchange gets triggered twice so
+      // we compare old this.audioTracks with new audioTracks
+      // to get updated tracks just once
       if (!_.isEqual(this.audioTracks, audioTracks)) {
-        this.audioTracks = this.getAvailableAudio();
-        console.log('CHANGE IN TRACKS -> ', this.audioTracks);
+        this.audioTracks = audioTracks;
+        this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_CHANGED, audioTracks);
       } 
-
-      this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_CHANGED, audioTracks);
     }, this);
 
     /**
