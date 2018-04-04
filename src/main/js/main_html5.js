@@ -853,7 +853,7 @@ require("../../../html5-common/js/utils/environment.js");
     /**
      * For multi audio we can get a list of available audio tracks
      * @public
-     * method OoyalaVideoWrapper#getAvailableAudio
+     * @method OoyalaVideoWrapper#getAvailableAudio
      * @returns {Array} - an array of all available audio tracks.
      */
     this.getAvailableAudio = function() {
@@ -880,29 +880,22 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#setAudio
      * @param {String} trackId - the ID of the audio track to activate
-     * @returns {array} - list of available audio streams
+     * @callback OoyalaVideoFactory#raiseAudioChange
      */
     this.setAudio = function(trackId) {
       var audioTracks = _video.audioTracks;
-      
       if (audioTracks && audioTracks.length) { // if audioTracks exist
-        
         var currentAudio = _.find(audioTracks, function (track) {
           return track.enabled;
         });
-
         var currentAudioId = currentAudio.id;
-
         if (currentAudioId !== trackId) {
           var newAudioTrack = audioTracks.getTrackById(trackId);
-          
           if (newAudioTrack) { // if trackId is correct and the audio exists
             var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
-            
             if (prevAudioTrack) { // if currentAudioId is correct and the audio exists
               prevAudioTrack.enabled = false; // the audio is not active anymore
             }
-
             newAudioTrack.enabled = true; // the audio is active
           }
         }
@@ -953,7 +946,7 @@ require("../../../html5-common/js/utils/environment.js");
      * Fired when there's a change on audioTracks
      * @private
      * @method OoyalaVideoFactory#onAudioChange
-     * @fires VideoController#EVENTS.MULTI_AUDIO_CHANGE
+     * @callback OoyalaVideoFactory#raiseAudioChange
      */
     var _onAudioChange = _.bind(function(event) {
       var audioTracks = this.getAvailableAudio();
