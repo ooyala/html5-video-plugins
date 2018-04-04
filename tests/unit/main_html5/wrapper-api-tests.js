@@ -1140,21 +1140,11 @@ describe('main_html5 wrapper tests', function () {
       {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
       {id: "1", kind: "main", label: "ger", language: "ger", enabled: true}
     ]);
-
-    expect(element.audioTracks).to.eql([
-      {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
-      {id: "1", kind: "main", label: "ger", language: "ger", enabled: true}
-    ]);
-
+    
     //pass wrong id
     var resWithWrongId = wrapper.setAudio("6789");
 
     expect(audioTracks).to.eql([
-      {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
-      {id: "1", kind: "main", label: "ger", language: "ger", enabled: true}
-    ]);
-
-    expect(element.audioTracks).to.eql([
       {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
       {id: "1", kind: "main", label: "ger", language: "ger", enabled: true}
     ]);
