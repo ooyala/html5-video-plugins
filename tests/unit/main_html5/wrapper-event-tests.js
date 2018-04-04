@@ -190,14 +190,14 @@ describe('main_html5 wrapper tests', function () {
   it('should notify MULTI_AUDIO_AVAILABLE on first \'canPlay\' event', function(){
     wrapper.getAvailableAudio = function() {
       return [{
-        "id": 1,
-        "label": "eng",
-        "lang": "eng",
-        "enabled": true
+        'id': 1,
+        'label': 'eng',
+        'lang': 'eng',
+        'enabled': true
       }, {
-        "id": 2,
-        "label": "ger",
-        "lang": "ger",
+        'id': 2,
+        'label': 'ger',
+        'lang': 'ger',
         enabled: false
       }];
     };
@@ -207,9 +207,9 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not notify MULTI_AUDIO_AVAILABLE on first \'canPlay\' event when getAvailableAudio returns too short array', function(){
     wrapper.getAvailableAudio = function() {
-      return [{"id": 1}];
+      return [{'id': 1}];
     };
-    $(element).triggerHandler("canplay");
+    $(element).triggerHandler('canplay');
     expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.MULTI_AUDIO_AVAILABLE);
   });
 
