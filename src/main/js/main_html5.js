@@ -900,7 +900,10 @@ require("../../../html5-common/js/utils/environment.js");
           }
         }
       }
-      raiseAudioChange(audioTracks);
+      // audioTracks right now is Array-like, not actually an array
+      // so we need to make it so
+      var newTracks = this.getAvailableAudio();
+      raiseAudioChange(newTracks);
     };
 
     // **********************************************************************************/
