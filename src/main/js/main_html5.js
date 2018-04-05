@@ -888,19 +888,26 @@ require("../../../html5-common/js/utils/environment.js");
         var currentAudio = _.find(audioTracks, function (track) {
           return track.enabled;
         });
-        var currentAudioId = currentAudio.id;
-        if (currentAudioId !== trackId) {
-          var newAudioTrack = audioTracks.getTrackById(trackId);
-          if (newAudioTrack) { // if trackId is correct and the audio exists
-            var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
-            if (prevAudioTrack) { // if currentAudioId is correct and the audio exists
-              prevAudioTrack.enabled = false; // the audio is not active anymore
+        var currentAudioId = null;
+        if (currentAudio && currentAudio.id) {
+          currentAudioId = currentAudio.id;
+          if (currentAudioId !== trackId) {
+            var newAudioTrack = audioTracks.getTrackById(trackId);
+            if (newAudioTrack) { // if trackId is correct and the audio exists
+              var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
+              if (prevAudioTrack) { // if currentAudioId is correct and the audio exists
+                prevAudioTrack.enabled = false; // the audio is not active anymore
+              }
+              newAudioTrack.enabled = true; // the audio is active
             }
-            newAudioTrack.enabled = true; // the audio is active
           }
         }
       }
-      raiseAudioChange(audioTracks);
+      
+      // audioTracks right now is Array-like, not actually an array
+      // so we need to make it so
+      var newTracks = this.getAvailableAudio();
+      raiseAudioChange(newTracks);
     };
 
     // **********************************************************************************/
