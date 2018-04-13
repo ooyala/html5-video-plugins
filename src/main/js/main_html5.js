@@ -956,6 +956,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @callback OoyalaVideoFactory#raiseAudioChange
      */
     var _onAudioChange = _.bind(function(event) {
+      console.log('BBB H5VP _onAudioChange');
       var audioTracks = this.getAvailableAudio();
       raiseAudioChange(audioTracks);
     }, this);
@@ -1181,6 +1182,8 @@ require("../../../html5-common/js/utils/environment.js");
         var availableAudio = this.getAvailableAudio();
         if (availableAudio && availableAudio.length  > 1) {
           this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
+        } else if (availableAudio && availableAudio.length < 2) {
+          this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_NOT_AVAILABLE);
         }
       }
     }, this);
