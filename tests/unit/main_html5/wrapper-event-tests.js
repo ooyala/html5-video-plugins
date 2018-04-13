@@ -183,6 +183,9 @@ describe('main_html5 wrapper tests', function () {
     var videoDimensions = {width: 640, height: 480};
     element.videoWidth = videoDimensions.width;
     element.videoHeight = videoDimensions.height;
+    wrapper.getAvailableAudio = function() {
+      return null;
+    };
     $(element).triggerHandler("canplay");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ASSET_DIMENSION, videoDimensions]);
   });
@@ -207,10 +210,28 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not notify MULTI_AUDIO_AVAILABLE on first \'canPlay\' event when getAvailableAudio returns too short array', function(){
     wrapper.getAvailableAudio = function() {
-      return [{'id': 1}];
+      return [{
+        'id': 1,
+        'label': 'eng',
+        'lang': 'eng',
+        'enabled': true
+      }];
     };
     $(element).triggerHandler('canplay');
     expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.MULTI_AUDIO_AVAILABLE);
+  });
+
+  it('should notify MULTI_AUDIO_NOT_AVAILABLE on first \'canPlay\' event when getAvailableAudio returns an array with less than 2 elements', function(){
+    wrapper.getAvailableAudio = function() {
+      return [{
+        'id': 1,
+        'label': 'eng',
+        'lang': 'eng',
+        'enabled': true
+      }];
+    };
+    $(element).triggerHandler('canplay');
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.MULTI_AUDIO_NOT_AVAILABLE);
   });
 
   it('should notify MULTI_AUDIO_CHANGED after setAudio', function() {
