@@ -180,7 +180,7 @@ require("../../../html5-common/js/utils/environment.js");
   var OoyalaVideoWrapper = function(domId, video, dimension, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
-    this.currentAudioId = null;
+    this.audioTracks = [];
 
     var _video = video;
     var _playerId = playerId;
@@ -286,8 +286,6 @@ require("../../../html5-common/js/utils/environment.js");
                     "play": raisePlayEvent,
                     "pause": raisePauseEvent,
                     "ratechange": raiseRatechangeEvent,
-                    "volumechange": raiseVolumeEvent,
-                    "volumechangeNew": raiseVolumeEvent,
                         // ios webkit browser fullscreen events
                     "webkitbeginfullscreen": raiseFullScreenBegin,
                     "webkitendfullscreen": raiseFullScreenEnd
@@ -295,6 +293,11 @@ require("../../../html5-common/js/utils/environment.js");
       // events not used:
       // suspend, abort, emptied, loadeddata, resize, change, addtrack, removetrack
       _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
+      // The volumechange event does not seem to fire for mute state changes when using jQuery
+      // to add the event listener. It does work using the below line. We need this event to fire properly
+      // or else other SDKs (such as the Freewheel ad SDK) that make use of this video element may have
+      // issues with the mute state
+      _video.addEventListener('volumechange', raiseVolumeEvent);
     };
 
     /**
@@ -305,6 +308,7 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var unsubscribeAllEvents = function() {
       _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
+      _video.removeEventListener('volumechange', raiseVolumeEvent);
     };
 
     /**
@@ -578,11 +582,6 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.mute = function() {
       _video.muted = true;
-
-      //the volumechange event is supposed to be fired when video.muted is changed,
-      //but it doesn't always fire. Raising a volume event here with the current volume
-      //to cover these situations
-      raiseVolumeEvent({ target: { volume: _video.volume }});
     };
 
     /**
@@ -600,11 +599,6 @@ require("../../../html5-common/js/utils/environment.js");
       if (currentVolumeSet > 0) {
         this.setVolume(currentVolumeSet);
       }
-
-      //the volumechange event is supposed to be fired when video.muted is changed,
-      //but it doesn't always fire. Raising a volume event here with the current volume
-      //to cover these situations
-      raiseVolumeEvent({ target: { volume: _video.volume }});
     };
 
     /**
@@ -868,28 +862,24 @@ require("../../../html5-common/js/utils/environment.js");
     /**
      * For multi audio we can get a list of available audio tracks
      * @public
-     * method OoyalaVideoWrapper#getAvailableAudio
+     * @method OoyalaVideoWrapper#getAvailableAudio
      * @returns {Array} - an array of all available audio tracks.
      */
     this.getAvailableAudio = function() {
       var audioTracks = _video.audioTracks;
       var audioTrackList = [];
       if (audioTracks !== undefined && audioTracks.length) {
-        for (var index = 0; index < audioTracks.length; index++) {
-          if (audioTracks[index]) {
-            var element = {
-              id: audioTracks[index].id,
-              kind: audioTracks[index].kind,
-              label: audioTracks[index].label,
-              lang: audioTracks[index].language,
-              enabled: audioTracks[index].enabled
-            };
-            if (audioTracks[index].enabled) {
-              this.currentAudioId = audioTracks[index].id;
-            }
-            audioTrackList.push(element);
+        audioTracks = _.filter(audioTracks, function(track){
+          return track;
+        });
+        audioTrackList = _.map(audioTracks, function (track) {
+          return {
+            id: track.id,
+            label: track.label,
+            lang: track.language,
+            enabled: track.enabled
           }
-        }
+        }, this);
       }
       return audioTrackList;
     };
@@ -899,27 +889,34 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#setAudio
      * @param {String} trackId - the ID of the audio track to activate
-     * @returns {array} - list of available audio streams
+     * @callback OoyalaVideoFactory#raiseAudioChange
      */
     this.setAudio = function(trackId) {
-      if (this.currentAudioId !== trackId) {
-        var audioTracks = _video.audioTracks;
-        if (audioTracks && audioTracks.length) { //if audioTracks exist
-
-          var newAudioTrack = audioTracks.getTrackById(trackId);
-          if (newAudioTrack) { //if trackId is correct and the audio exists
-
-            var prevAudioTrack = audioTracks.getTrackById(this.currentAudioId);
-            if (prevAudioTrack) { //if this.currentAudioId is correct and the audio exists
-              prevAudioTrack.enabled = false; //the audio is not active anymore
+      var audioTracks = _video.audioTracks;
+      if (audioTracks && audioTracks.length) { // if audioTracks exist
+        var currentAudio = _.find(audioTracks, function (track) {
+          return track.enabled;
+        });
+        var currentAudioId = null;
+        if (currentAudio && currentAudio.id) {
+          currentAudioId = currentAudio.id;
+          if (currentAudioId !== trackId) {
+            var newAudioTrack = audioTracks.getTrackById(trackId);
+            if (newAudioTrack) { // if trackId is correct and the audio exists
+              var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
+              if (prevAudioTrack) { // if currentAudioId is correct and the audio exists
+                prevAudioTrack.enabled = false; // the audio is not active anymore
+              }
+              newAudioTrack.enabled = true; // the audio is active
             }
-
-            newAudioTrack.enabled = true; //the audio is active
           }
         }
       }
-      var tracks = this.getAvailableAudio();
-      return tracks;
+      
+      // audioTracks right now is Array-like, not actually an array
+      // so we need to make it so
+      var newTracks = this.getAvailableAudio();
+      raiseAudioChange(newTracks);
     };
 
     // **********************************************************************************/
@@ -951,9 +948,41 @@ require("../../../html5-common/js/utils/environment.js");
       if (OO.isSafari && _video && _video.textTracks) {
         _video.textTracks.onchange = onTextTracksChange;
       }
+
+      if (_video.audioTracks) {
+        _video.audioTracks.onchange = _onAudioChange;
+      }
+
       dequeueSeek();
       isLive = isLive || _video.currentTime === Infinity; // Just in case backend and video metadata disagree about this
       loaded = true;
+    }, this);
+
+    /**
+     * Fired when there's a change on audioTracks
+     * @private
+     * @method OoyalaVideoFactory#onAudioChange
+     * @callback OoyalaVideoFactory#raiseAudioChange
+     */
+    var _onAudioChange = _.bind(function(event) {
+      var audioTracks = this.getAvailableAudio();
+      raiseAudioChange(audioTracks);
+    }, this);
+    
+    /**
+     * Raised notification to VideoController
+     * @private
+     * @method OoyalaVideoFactory#onAudioChange
+     * @fires VideoController#EVENTS.MULTI_AUDIO_CHANGE
+     */
+    var raiseAudioChange = _.bind(function(audioTracks) {
+      // the problem here is that onchange gets triggered twice so
+      // we compare old this.audioTracks with new audioTracks
+      // to get updated tracks just once
+      if (!_.isEqual(this.audioTracks, audioTracks)) {
+        this.audioTracks = audioTracks;
+        this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_CHANGED, audioTracks);
+      } 
     }, this);
 
     /**
