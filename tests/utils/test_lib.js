@@ -9,6 +9,8 @@ global.window.setTimeout = setTimeout;
 global.window.setInterval = setInterval;
 global.window.clearInterval = clearInterval;
 global.navigator = window.navigator;
+global.window.$ = require("jquery");
+OO.$ = global.window.$;
 
 global.expect = require('expect.js');
 
@@ -26,6 +28,4 @@ OO._.extend(window.DOMParser.prototype, {
 // In a browser environment, all of the properties of "window" (like navigator) are in the global scope:
 OO._.extend(global, window);
 
-// This needs to come after the extend(global, window) line above otherwise $ gets set to undefined.
-require.requireActual("../../html5-common/js/utils/InitModules/InitOOJQuery.js");
 require.requireActual("../../html5-common/js/utils/InitModules/InitOOHazmat.js");
