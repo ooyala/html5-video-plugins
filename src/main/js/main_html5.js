@@ -1215,6 +1215,11 @@ require("../../../html5-common/js/utils/environment.js");
         return;
       }
 
+      if (_video && pauseOnPlaying) {
+        _video.pause();
+        return;
+      }
+
       // Update time shift in case the video was paused and then resumed,
       // which means that we were falling behind the live playhead while the video
       // wasn't playing. Note that Safari will sometimes keep loading the live content
@@ -1222,10 +1227,6 @@ require("../../../html5-common/js/utils/environment.js");
       // resolve to the same value in those cases.
       if (!firstPlay && wasPausedBeforePlaying && isDvrAvailable()) {
         currentTimeShift = getTimeShift(_video.currentTime);
-      }
-
-      if (_video && pauseOnPlaying) {
-        _video.pause();
       }
 
       hasStartedPlaying = true;
