@@ -240,6 +240,104 @@ describe('main_html5 wrapper tests', function () {
     expect(callCount).to.be(1);
   });
 
+  it('should reset audio tracks when switching streams and allow for MULTI_AUDIO_CHANGED to get fired when audio is set with same available audio as first stream', function () {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    //language already set to German on canPlay
+    wrapper.getAvailableAudio = function() {
+      return [{
+        'id': 1,
+        'label': 'eng',
+        'lang': 'eng',
+        'enabled': false
+      }, {
+        'id': 2,
+        'label': 'ger',
+        'lang': 'ger',
+        enabled: true
+      }];
+    };
+    $(element).triggerHandler('canplay');
+    expect(wrapper.audioTracks).to.eql([{
+      'id': 1,
+      'label': 'eng',
+      'lang': 'eng',
+      'enabled': false
+    }, {
+      'id': 2,
+      'label': 'ger',
+      'lang': 'ger',
+      enabled: true
+    }]);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MULTI_AUDIO_AVAILABLE)).to.eql(true);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MULTI_AUDIO_CHANGED)).to.eql(false);
+
+    //attempt to set to German again, but no MULTI_AUDIO_CHANGED will be published
+    wrapper.setAudio(1);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MULTI_AUDIO_CHANGED)).to.eql(false);
+
+    //next stream defaults to English
+    vtc.notified = [];
+    vtc.notifyParameters = [];
+
+    wrapper.setVideoUrl("url2", OO.VIDEO.ENCODING.HLS);
+    wrapper.getAvailableAudio = function() {
+      return [{
+        'id': 1,
+        'label': 'eng',
+        'lang': 'eng',
+        'enabled': true
+      }, {
+        'id': 2,
+        'label': 'ger',
+        'lang': 'ger',
+        enabled: false
+      }];
+    };
+    $(element).triggerHandler('canplay');
+    expect(wrapper.audioTracks).to.eql([{
+      'id': 1,
+      'label': 'eng',
+      'lang': 'eng',
+      'enabled': true
+    }, {
+      'id': 2,
+      'label': 'ger',
+      'lang': 'ger',
+      enabled: false
+    }]);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MULTI_AUDIO_AVAILABLE)).to.eql(true);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MULTI_AUDIO_CHANGED)).to.eql(false);
+
+    //set audio to German again
+    wrapper.getAvailableAudio = function() {
+      return [{
+        'id': 1,
+        'label': 'eng',
+        'lang': 'eng',
+        'enabled': false
+      }, {
+        'id': 2,
+        'label': 'ger',
+        'lang': 'ger',
+        enabled: true
+      }];
+    };
+
+    wrapper.setAudio(2);
+    expect(wrapper.audioTracks).to.eql([{
+      'id': 1,
+      'label': 'eng',
+      'lang': 'eng',
+      'enabled': false
+    }, {
+      'id': 2,
+      'label': 'ger',
+      'lang': 'ger',
+      enabled: true
+    }]);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MULTI_AUDIO_CHANGED)).to.eql(true);
+  });
+
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){
     element.textTracks = [{ kind: "captions" }];
     $(element).triggerHandler("playing"); // this adds in-stream captions
