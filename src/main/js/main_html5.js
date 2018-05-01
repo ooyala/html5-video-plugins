@@ -521,6 +521,8 @@ require("../../../html5-common/js/utils/environment.js");
               //playback succeeded
               if (!_video.muted) {
                 this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
+              } else {
+                this.controller.notify(this.controller.EVENTS.MUTED_PLAYBACK_SUCCEEDED);
               }
             }, this));
           }
