@@ -341,7 +341,7 @@ require("../../../html5-common/js/utils/environment.js");
           _video.src = _currentUrl;
         }
       }
-      _video.playbackRate = 2.0;
+
       return urlChanged;
     };
 
@@ -1504,6 +1504,7 @@ require("../../../html5-common/js/utils/environment.js");
         hasPlayed = true;
         videoEnded = false;
       }
+      _video.playbackRate = 2.0;
       return playPromise;
     }, this);
 
