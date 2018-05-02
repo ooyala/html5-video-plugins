@@ -115,6 +115,8 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
 
+      //video.attr("playbackRate", 2.0);
+
       // Set initial container dimension
       var dimension = {
         width: parentContainer.width(),
@@ -339,7 +341,7 @@ require("../../../html5-common/js/utils/environment.js");
           _video.src = _currentUrl;
         }
       }
-
+      _video.playbackRate = 2.0;
       return urlChanged;
     };
 
@@ -904,7 +906,7 @@ require("../../../html5-common/js/utils/environment.js");
           }
         }
       }
-      
+
       // audioTracks right now is Array-like, not actually an array
       // so we need to make it so
       var newTracks = this.getAvailableAudio();
@@ -960,7 +962,7 @@ require("../../../html5-common/js/utils/environment.js");
       var audioTracks = this.getAvailableAudio();
       raiseAudioChange(audioTracks);
     }, this);
-    
+
     /**
      * Raised notification to VideoController
      * @private
@@ -974,7 +976,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (!_.isEqual(this.audioTracks, audioTracks)) {
         this.audioTracks = audioTracks;
         this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_CHANGED, audioTracks);
-      } 
+      }
     }, this);
 
     /**
