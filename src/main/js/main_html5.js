@@ -194,6 +194,7 @@ require("../../../html5-common/js/utils/environment.js");
     var playQueued = false;
     var hasStartedPlaying = false;
     var pauseOnPlaying = false;
+    var playPromiseSupported = false;
     var isSeeking = false;
     var isWrapperSeeking = false;
     var wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
@@ -499,6 +500,7 @@ require("../../../html5-common/js/utils/environment.js");
       } else {
         var playPromise = executePlay(false);
         if (playPromise) {
+          playPromiseSupported = true;
           if (typeof playPromise.catch === 'function') {
             playPromise.catch(_.bind(function(error) {
               if (error) {
@@ -523,6 +525,10 @@ require("../../../html5-common/js/utils/environment.js");
                 this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
               } else {
                 this.controller.notify(this.controller.EVENTS.MUTED_PLAYBACK_SUCCEEDED);
+              }
+
+              if (!pauseOnPlaying) {
+                this.controller.notify(this.controller.EVENTS.PLAYING);
               }
             }, this));
           }
@@ -653,6 +659,7 @@ require("../../../html5-common/js/utils/environment.js");
       // Safar iOS seems to freeze when pausing right after playing when using preloading.
       // On this platform we wait for the play promise to be resolved before pausing.
       if (OO.isIos && playPromise && typeof playPromise.then === 'function') {
+        playPromiseSupported = true;
         playPromise.then(function() {
           // There is no point in pausing anymore if actual playback has already been requested
           // by the time the promise is resolved
@@ -1235,7 +1242,10 @@ require("../../../html5-common/js/utils/environment.js");
 
       hasStartedPlaying = true;
 
-      this.controller.notify(this.controller.EVENTS.PLAYING);
+      if (!playPromiseSupported) {
+        this.controller.notify(this.controller.EVENTS.PLAYING);
+      }
+
       startUnderflowWatcher();
       checkForClosedCaptions();
 
