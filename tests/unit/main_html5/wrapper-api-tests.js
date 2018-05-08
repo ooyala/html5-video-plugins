@@ -329,9 +329,35 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should call pause on element when wrapper paused', function(){
-    spyOn(wrapper, "pause");
+    wrapper.load();
+    //wrapper.load calls element.pause, so spy on the pause after loading
+    spyOn(element, "pause");
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    expect(element.pause.wasCalled).to.be(false);
     wrapper.pause();
-    expect(wrapper.pause.wasCalled).to.be(true);
+    expect(element.pause.wasCalled).to.be(true);
+  });
+
+  it('should pause with no VTC notifications on the playing event if calling pause after calling play but before receiving the playing event', function(){
+    wrapper.load();
+    //wrapper.load calls element.pause, so spy on the pause after loading
+    spyOn(element, "pause");
+    wrapper.play();
+    wrapper.pause();
+    expect(element.pause.wasCalled).to.be(false);
+    $(element).triggerHandler("playing");
+    expect(element.pause.wasCalled).to.be(true);
+    expect(element.pause.callCount).to.be(1);
+
+    //check that another playing event does not pause the player again
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    expect(element.pause.callCount).to.be(1);
+
+    //check that another pause is immediately honoroed rather than waiting on the playing event
+    wrapper.pause();
+    expect(element.pause.callCount).to.be(2);
   });
 
   it('should ignore seek if seekrange is 0', function(){
@@ -851,7 +877,7 @@ describe('main_html5 wrapper tests', function () {
     element.play = originalPlayFunction;
   });
 
-  it('should not notify of UNMUTED_PLAYBACK_SUCCEEDED when play promise is fulfilled with an muted video', function(){
+  it('should notify of MUTED_PLAYBACK_SUCCEEDED when play promise is fulfilled with an muted video', function(){
     var thenCallback = null;
     var originalPlayFunction = element.play;
     element.muted = true;
@@ -868,7 +894,8 @@ describe('main_html5 wrapper tests', function () {
     vtc.notified = [];
     wrapper.play();
     thenCallback();
-    expect(vtc.notified[0]).to.not.eql(vtc.interface.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED)).to.be(false);
+    expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.MUTED_PLAYBACK_SUCCEEDED);
     // Restore original play function
     element.play = originalPlayFunction;
   });

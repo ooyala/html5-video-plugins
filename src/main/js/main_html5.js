@@ -501,6 +501,9 @@ require("../../../html5-common/js/utils/environment.js");
         var playPromise = executePlay(false);
         if (playPromise) {
           playPromiseSupported = true;
+          //TODO: Handle MUTED/UNMUTED_PLAYBACK_SUCCEEDED/FAILED in environments that do not support play promises.
+          //Right now this is not needed because environments that do not support play promises do not have
+          //autoplay restrictions.
           if (typeof playPromise.catch === 'function') {
             playPromise.catch(_.bind(function(error) {
               if (error) {
