@@ -848,9 +848,22 @@ describe('main_html5 wrapper tests', function () {
     wrapper.setInitialTime(10);
     element.currentTime = 9;
     $(element).triggerHandler("seeked");
-    $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters[0]).not.to.eql(vtc.interface.EVENTS.TIME_UPDATE);
-    element.currentTime = 11;
+    element.currentTime = 10;
+    $(element).triggerHandler("timeupdate");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
+  });
+
+  it('should raise timeUpdate on times before initial time if initial time has been reached previously', function(){
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(20);
+    element.duration = 20;
+    element.seekable.length = 1;
+    wrapper.setInitialTime(10);
+    element.currentTime = 10;
+    $(element).triggerHandler("seeked");
+    expect(vtc.notifyParameters[0]).not.to.eql(vtc.interface.EVENTS.TIME_UPDATE);
+    element.currentTime = 9;
     $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
   });

@@ -1372,7 +1372,7 @@ require("../../../html5-common/js/utils/environment.js");
         currentTime = _video.currentTime;
       }
 
-      if (initialTime.value > 0 && (event.target.currentTime >= initialTime.value)) {
+      if (initialTime.value > 0 && (event.target.currentTime >= initialTime.value || initialTime.reached)) {
         initialTime.value = 0;
       }
 
