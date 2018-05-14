@@ -272,10 +272,10 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.seek.wasCalled).to.be(true);
   });
 
-  it('should not act on initialTime if initial time is 0', function(){
+  it('should act on initialTime if initial time is 0', function(){
     spyOn(wrapper, "seek");
     wrapper.setInitialTime(0);
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(wrapper.seek.wasCalled).to.be(true);
   });
 
   it('should delay initialTime on Android until timeupdate is called', function(){
@@ -313,11 +313,11 @@ describe('main_html5 wrapper tests', function () {
     expect(element.play.wasCalled).to.be(false);
   });
 
-  it('should not act on initialTime if has played', function(){
+  it('should act on initialTime if has played', function(){
     spyOn(wrapper, "seek");
     wrapper.play();
     wrapper.setInitialTime(10);
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(wrapper.seek.wasCalled).to.be(true);
   });
 
   it('should act on initialTime if has played and video ended', function(){

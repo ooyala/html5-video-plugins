@@ -500,12 +500,15 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.SEEKING);
   });
 
-  it('should raise seeking before initial time has seeked if initialtime is 0', function(){
+  it('should not raise seeking before initial time has seeked if initialtime is 0', function(){
     element.duration = 20;
     spyOn(element.seekable, "start").andReturn(0);
     spyOn(element.seekable, "end").andReturn(20);
     element.seekable.length = 1;
     wrapper.setInitialTime(0);
+    $(element).triggerHandler("seeking");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.SEEKING);
+    $(element).triggerHandler("seeked");
     $(element).triggerHandler("seeking");
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.SEEKING);
   });
@@ -546,12 +549,14 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.SEEKED);
   });
 
-  it('should raise seeked before initial time has seeked if initialtime is 0', function(){
+  it('should not raise seeked before initial time has seeked if initialtime is 0', function(){
     element.duration = 20;
     spyOn(element.seekable, "start").andReturn(0);
     spyOn(element.seekable, "end").andReturn(20);
     element.seekable.length = 1;
     wrapper.setInitialTime(0);
+    $(element).triggerHandler("seeked");
+    expect(vtc.notified[1]).to.not.eql(vtc.interface.EVENTS.SEEKED);
     $(element).triggerHandler("seeked");
     expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.SEEKED);
   });
