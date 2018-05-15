@@ -495,6 +495,7 @@ require("../../../html5-common/js/utils/environment.js");
         playQueued = true;
       } else {
         var playPromise = executePlay(false);
+        var originalUrl = _video.src;
         if (playPromise) {
           playPromiseSupported = true;
           //TODO: Handle MUTED/UNMUTED_PLAYBACK_SUCCEEDED/FAILED in environments that do not support play promises.
@@ -504,6 +505,12 @@ require("../../../html5-common/js/utils/environment.js");
             playPromise.catch(_.bind(function(error) {
               if (error) {
                 OO.log("Play Promise Failure", error, error.name);
+                //Changing the source while attempting to play will cause a play promise error to be thrown.
+                //We don't want to publish an UNMUTED/MUTED playback failed notification in these situations.
+                if (_video.src !== originalUrl) {
+                  OO.log("Url has changed, ignoring play promise failure");
+                  return;
+                }
                 if (userInteractionRequired(error)) {
                   if (!_video.muted) {
                     this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});

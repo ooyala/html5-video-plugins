@@ -821,6 +821,58 @@ describe('main_html5 wrapper tests', function () {
     element.play = originalPlayFunction;
   });
 
+  it('should not notify of UNMUTED_PLAYBACK_FAILED when play promise fails with an unmuted video when the source has changed', function(){
+    var catchCallback = null;
+    var originalPlayFunction = element.play;
+    element.src = "src1";
+    element.muted = false;
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+        },
+        catch: function(callback) {
+          catchCallback = callback;
+        }
+      };
+    };
+    vtc.notified = [];
+    wrapper.play();
+    element.src = "src2";
+    catchCallback({});
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.UNMUTED_PLAYBACK_FAILED)).to.eql(false);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MUTED_PLAYBACK_FAILED)).to.eql(false);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
+  it('should not notify of MUTED_PLAYBACK_FAILED when play promise fails with a muted video when the source has changed', function(){
+    var catchCallback = null;
+    var originalPlayFunction = element.play;
+    // Video muted successfully but playback still failed
+    element.muted = true;
+    element.paused = true;
+    element.src = "src1";
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+        },
+        catch: function(callback) {
+          catchCallback = callback;
+        }
+      };
+    };
+    vtc.notified = [];
+    wrapper.play();
+    element.src = "src2";
+    catchCallback({});
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.UNMUTED_PLAYBACK_FAILED)).to.eql(false);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MUTED_PLAYBACK_FAILED)).to.eql(false);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
   it('should handle differing play promise failures', function(){
     //Chrome is a browser that throws different errors for play promise failures
     OO.isChrome = true;
