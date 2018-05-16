@@ -567,7 +567,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @return {boolean} True if the seek was performed, false otherwise
      */
     this.seek = function(time) {
-      if (time === _video.currentTime) {
+      if (time === Math.round(_video.currentTime)) {
         return false;
       }
 
@@ -1383,7 +1383,8 @@ require("../../../html5-common/js/utils/environment.js");
         currentTime = _video.currentTime;
       }
 
-      if (initialTime.value > 0 && (event.target.currentTime >= initialTime.value || initialTime.reached)) {
+      if (initialTime.value >= 0 && (event.target.currentTime >= initialTime.value || initialTime.reached)) {
+        initialTime.reached = true;
         initialTime.value = 0;
       }
 

@@ -411,12 +411,15 @@ describe('main_html5 wrapper tests', function () {
   it('should NOT ignore seek for VOD stream even if duration of video is zero or Infinity or NaN', function(){
     wrapper.setVideoUrl("url", "mp4", false);
     element.duration = 0;
+    element.currentTime = 0;
     setFullSeekRange(10);
     var returns = wrapper.seek(1);
     expect(returns).to.be(true);
+    element.currentTime = 0;
     element.duration = Infinity;
     returns = wrapper.seek(1);
     expect(returns).to.be(true);
+    element.currentTime = 0;
     element.duration = "abcde";
     returns = wrapper.seek(1);
     expect(returns).to.be(true);
@@ -621,6 +624,7 @@ describe('main_html5 wrapper tests', function () {
     // Move DVR window forward
     setDvr(100, dvrWindowSize + 100);
     // Test seek with updated DVR window
+    element.currentTime = dvrWindowSize + 100;
     wrapper.seek(midpoint);
     $(element).triggerHandler("seeked");
     $(element).triggerHandler("timeupdate");
