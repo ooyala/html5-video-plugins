@@ -378,6 +378,16 @@ describe('main_html5 wrapper tests', function () {
     expect(element.pause.callCount).to.be(2);
   });
 
+  it('should ignore seek if current time is equal to seek time', function(){
+    element.duration = 10;
+    element.currentTime = 0;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(0);
+    element.seekable.length = 0;
+    var returns = wrapper.seek(0);
+    expect(returns).to.be(false);
+  });
+
   it('should ignore seek if seekrange is 0', function(){
     element.duration = 10;
     spyOn(element.seekable, "start").andReturn(0);

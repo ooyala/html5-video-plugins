@@ -564,8 +564,13 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#seek
      * @param {number} time The time to seek the video to (in seconds)
+     * @return {boolean} True if the seek was performed, false otherwise
      */
     this.seek = function(time) {
+      if (time === _video.currentTime) {
+        return false;
+      }
+
       var safeSeekTime = null;
 
       if (isLive) {
