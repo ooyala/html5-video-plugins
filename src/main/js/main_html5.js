@@ -439,6 +439,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The initial time of the video (seconds)
      */
     this.setInitialTime = function(time) {
+      if (typeof time !== "number") {
+        return;
+      }
       // [PBW-5539] On Safari (iOS and Desktop), when triggering replay after the current browser tab looses focus, the
       // current time seems to fall a few milliseconds behind the video duration, which
       // makes the video play for a fraction of a second and then stop again at the end.

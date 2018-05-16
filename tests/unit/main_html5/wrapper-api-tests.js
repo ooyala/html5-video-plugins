@@ -278,6 +278,24 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.seek.wasCalled).to.be(true);
   });
 
+  it('should not act on initialTime if initial time is null', function(){
+    spyOn(wrapper, "seek");
+    wrapper.setInitialTime(null);
+    expect(wrapper.seek.wasCalled).to.be(false);
+  });
+
+  it('should not act on initialTime if initial time is undefined', function(){
+    spyOn(wrapper, "seek");
+    wrapper.setInitialTime();
+    expect(wrapper.seek.wasCalled).to.be(false);
+  });
+
+  it('should not act on initialTime if initial time is a string', function(){
+    spyOn(wrapper, "seek");
+    wrapper.setInitialTime("string");
+    expect(wrapper.seek.wasCalled).to.be(false);
+  });
+
   it('should delay initialTime on Android until timeupdate is called', function(){
     OO.isAndroid = true;
     spyOn(wrapper, "seek");
