@@ -272,9 +272,27 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.seek.wasCalled).to.be(true);
   });
 
-  it('should not act on initialTime if initial time is 0', function(){
+  it('should act on initialTime if initial time is 0', function(){
     spyOn(wrapper, "seek");
     wrapper.setInitialTime(0);
+    expect(wrapper.seek.wasCalled).to.be(true);
+  });
+
+  it('should not act on initialTime if initial time is null', function(){
+    spyOn(wrapper, "seek");
+    wrapper.setInitialTime(null);
+    expect(wrapper.seek.wasCalled).to.be(false);
+  });
+
+  it('should not act on initialTime if initial time is undefined', function(){
+    spyOn(wrapper, "seek");
+    wrapper.setInitialTime();
+    expect(wrapper.seek.wasCalled).to.be(false);
+  });
+
+  it('should not act on initialTime if initial time is a string', function(){
+    spyOn(wrapper, "seek");
+    wrapper.setInitialTime("string");
     expect(wrapper.seek.wasCalled).to.be(false);
   });
 
@@ -313,11 +331,11 @@ describe('main_html5 wrapper tests', function () {
     expect(element.play.wasCalled).to.be(false);
   });
 
-  it('should not act on initialTime if has played', function(){
+  it('should act on initialTime if has played', function(){
     spyOn(wrapper, "seek");
     wrapper.play();
     wrapper.setInitialTime(10);
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(wrapper.seek.wasCalled).to.be(true);
   });
 
   it('should act on initialTime if has played and video ended', function(){
@@ -329,9 +347,45 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should call pause on element when wrapper paused', function(){
-    spyOn(wrapper, "pause");
+    wrapper.load();
+    //wrapper.load calls element.pause, so spy on the pause after loading
+    spyOn(element, "pause");
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    expect(element.pause.wasCalled).to.be(false);
     wrapper.pause();
-    expect(wrapper.pause.wasCalled).to.be(true);
+    expect(element.pause.wasCalled).to.be(true);
+  });
+
+  it('should pause with no VTC notifications on the playing event if calling pause after calling play but before receiving the playing event', function(){
+    wrapper.load();
+    //wrapper.load calls element.pause, so spy on the pause after loading
+    spyOn(element, "pause");
+    wrapper.play();
+    wrapper.pause();
+    expect(element.pause.wasCalled).to.be(false);
+    $(element).triggerHandler("playing");
+    expect(element.pause.wasCalled).to.be(true);
+    expect(element.pause.callCount).to.be(1);
+
+    //check that another playing event does not pause the player again
+    wrapper.play();
+    $(element).triggerHandler("playing");
+    expect(element.pause.callCount).to.be(1);
+
+    //check that another pause is immediately honoroed rather than waiting on the playing event
+    wrapper.pause();
+    expect(element.pause.callCount).to.be(2);
+  });
+
+  it('should ignore seek if current time is equal to seek time', function(){
+    element.duration = 10;
+    element.currentTime = 0;
+    spyOn(element.seekable, "start").andReturn(0);
+    spyOn(element.seekable, "end").andReturn(0);
+    element.seekable.length = 0;
+    var returns = wrapper.seek(0);
+    expect(returns).to.be(false);
   });
 
   it('should ignore seek if seekrange is 0', function(){
@@ -357,12 +411,15 @@ describe('main_html5 wrapper tests', function () {
   it('should NOT ignore seek for VOD stream even if duration of video is zero or Infinity or NaN', function(){
     wrapper.setVideoUrl("url", "mp4", false);
     element.duration = 0;
+    element.currentTime = 0;
     setFullSeekRange(10);
     var returns = wrapper.seek(1);
     expect(returns).to.be(true);
+    element.currentTime = 0;
     element.duration = Infinity;
     returns = wrapper.seek(1);
     expect(returns).to.be(true);
+    element.currentTime = 0;
     element.duration = "abcde";
     returns = wrapper.seek(1);
     expect(returns).to.be(true);
@@ -567,6 +624,7 @@ describe('main_html5 wrapper tests', function () {
     // Move DVR window forward
     setDvr(100, dvrWindowSize + 100);
     // Test seek with updated DVR window
+    element.currentTime = dvrWindowSize + 100;
     wrapper.seek(midpoint);
     $(element).triggerHandler("seeked");
     $(element).triggerHandler("timeupdate");
@@ -795,6 +853,58 @@ describe('main_html5 wrapper tests', function () {
     element.play = originalPlayFunction;
   });
 
+  it('should not notify of UNMUTED_PLAYBACK_FAILED when play promise fails with an unmuted video when the source has changed', function(){
+    var catchCallback = null;
+    var originalPlayFunction = element.play;
+    element.src = "src1";
+    element.muted = false;
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+        },
+        catch: function(callback) {
+          catchCallback = callback;
+        }
+      };
+    };
+    vtc.notified = [];
+    wrapper.play();
+    element.src = "src2";
+    catchCallback({});
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.UNMUTED_PLAYBACK_FAILED)).to.eql(false);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MUTED_PLAYBACK_FAILED)).to.eql(false);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
+  it('should not notify of MUTED_PLAYBACK_FAILED when play promise fails with a muted video when the source has changed', function(){
+    var catchCallback = null;
+    var originalPlayFunction = element.play;
+    // Video muted successfully but playback still failed
+    element.muted = true;
+    element.paused = true;
+    element.src = "src1";
+    // Replace mock play function with one that returns a promise
+    element.play = function() {
+      return {
+        then: function(callback) {
+        },
+        catch: function(callback) {
+          catchCallback = callback;
+        }
+      };
+    };
+    vtc.notified = [];
+    wrapper.play();
+    element.src = "src2";
+    catchCallback({});
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.UNMUTED_PLAYBACK_FAILED)).to.eql(false);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.MUTED_PLAYBACK_FAILED)).to.eql(false);
+    // Restore original play function
+    element.play = originalPlayFunction;
+  });
+
   it('should handle differing play promise failures', function(){
     //Chrome is a browser that throws different errors for play promise failures
     OO.isChrome = true;
@@ -851,7 +961,7 @@ describe('main_html5 wrapper tests', function () {
     element.play = originalPlayFunction;
   });
 
-  it('should not notify of UNMUTED_PLAYBACK_SUCCEEDED when play promise is fulfilled with an muted video', function(){
+  it('should notify of MUTED_PLAYBACK_SUCCEEDED when play promise is fulfilled with an muted video', function(){
     var thenCallback = null;
     var originalPlayFunction = element.play;
     element.muted = true;
@@ -868,7 +978,8 @@ describe('main_html5 wrapper tests', function () {
     vtc.notified = [];
     wrapper.play();
     thenCallback();
-    expect(vtc.notified[0]).to.not.eql(vtc.interface.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED)).to.be(false);
+    expect(vtc.notified[0]).to.eql(vtc.interface.EVENTS.MUTED_PLAYBACK_SUCCEEDED);
     // Restore original play function
     element.play = originalPlayFunction;
   });

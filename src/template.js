@@ -181,9 +181,10 @@ require("../html5-common/js/utils/constants.js");
      * @param {string} url The new url to insert into the video element's src attribute
      * @param {string} encoding The encoding of video stream, possible values are found in OO.VIDEO.ENCODING
      * @param {boolean} isLive True if it is a live asset, false otherwise
+     * @param {number} initialTime The initial time to set, in seconds
      * @returns {boolean} True or false indicating success
      */
-    this.setVideoUrl = function(url, encoding, isLive) {
+    this.setVideoUrl = function(url, encoding, isLive, initialTime) {
       return true;
     };
 

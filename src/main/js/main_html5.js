@@ -192,6 +192,9 @@ require("../../../html5-common/js/utils/environment.js");
     var hasPlayed = false;
     var queuedSeekTime = null;
     var playQueued = false;
+    var hasStartedPlaying = false;
+    var pauseOnPlaying = false;
+    var playPromiseSupported = false;
     var isSeeking = false;
     var isWrapperSeeking = false;
     var wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
@@ -350,6 +353,8 @@ require("../../../html5-common/js/utils/environment.js");
       hasPlayed = false;
       queuedSeekTime = null;
       loaded = false;
+      hasStartedPlaying = false;
+      pauseOnPlaying = false;
       isSeeking = false;
       isWrapperSeeking = false;
       firstPlay = true;
@@ -434,27 +439,26 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The initial time of the video (seconds)
      */
     this.setInitialTime = function(time) {
-      var canSetInitialTime = (!hasPlayed || videoEnded) && (time !== 0);
+      if (typeof time !== "number") {
+        return;
+      }
       // [PBW-5539] On Safari (iOS and Desktop), when triggering replay after the current browser tab looses focus, the
       // current time seems to fall a few milliseconds behind the video duration, which
       // makes the video play for a fraction of a second and then stop again at the end.
       // In this case we allow setting the initial time back to 0 as a workaround for this
-      var initialTimeRequired = OO.isSafari && videoEnded && time === 0;
+      var queuedSeekRequired = OO.isSafari && videoEnded && time === 0;
 
-      if (canSetInitialTime || initialTimeRequired) {
-        initialTime.value = time;
-        initialTime.reached = false;
+      initialTime.value = time;
+      initialTime.reached = false;
 
-        // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
-        // never raised, even if the seekable property returns an endtime greater than the seek time.
-        // To avoid this, save seeking information for use later.
-        // [PBW-5539] Same issue with desktop Safari when setting initialTime after video ends
-        if (OO.isAndroid || (initialTimeRequired && !OO.isIos)) {
-          queueSeek(initialTime.value);
-        }
-        else {
-          this.seek(initialTime.value);
-        }
+      // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
+      // never raised, even if the seekable property returns an endtime greater than the seek time.
+      // To avoid this, save seeking information for use later.
+      // [PBW-5539] Same issue with desktop Safari when setting initialTime after video ends
+      if (OO.isAndroid || (queuedSeekRequired && !OO.isIos)) {
+        queueSeek(initialTime.value);
+      } else {
+        this.seek(initialTime.value);
       }
     };
 
@@ -488,16 +492,28 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#play
      */
     this.play = function() {
+      pauseOnPlaying = false;
       // enqueue play command if in the process of seeking
       if (_video.seeking) {
         playQueued = true;
       } else {
         var playPromise = executePlay(false);
+        var originalUrl = _video.src;
         if (playPromise) {
+          playPromiseSupported = true;
+          //TODO: Handle MUTED/UNMUTED_PLAYBACK_SUCCEEDED/FAILED in environments that do not support play promises.
+          //Right now this is not needed because environments that do not support play promises do not have
+          //autoplay restrictions.
           if (typeof playPromise.catch === 'function') {
             playPromise.catch(_.bind(function(error) {
               if (error) {
                 OO.log("Play Promise Failure", error, error.name);
+                //Changing the source while attempting to play will cause a play promise error to be thrown.
+                //We don't want to publish an UNMUTED/MUTED playback failed notification in these situations.
+                if (_video.src !== originalUrl) {
+                  OO.log("Url has changed, ignoring play promise failure");
+                  return;
+                }
                 if (userInteractionRequired(error)) {
                   if (!_video.muted) {
                     this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
@@ -516,6 +532,12 @@ require("../../../html5-common/js/utils/environment.js");
               //playback succeeded
               if (!_video.muted) {
                 this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
+              } else {
+                this.controller.notify(this.controller.EVENTS.MUTED_PLAYBACK_SUCCEEDED);
+              }
+
+              if (!pauseOnPlaying) {
+                this.controller.notify(this.controller.EVENTS.PLAYING);
               }
             }, this));
           }
@@ -530,7 +552,11 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.pause = function() {
       playQueued = false;
-      _video.pause();
+      if (hasStartedPlaying) {
+        _video.pause();
+      } else {
+        pauseOnPlaying = true;
+      }
     };
 
     /**
@@ -538,8 +564,13 @@ require("../../../html5-common/js/utils/environment.js");
      * @public
      * @method OoyalaVideoWrapper#seek
      * @param {number} time The time to seek the video to (in seconds)
+     * @return {boolean} True if the seek was performed, false otherwise
      */
     this.seek = function(time) {
+      if (time === Math.round(_video.currentTime)) {
+        return false;
+      }
+
       var safeSeekTime = null;
 
       if (isLive) {
@@ -642,6 +673,7 @@ require("../../../html5-common/js/utils/environment.js");
       // Safar iOS seems to freeze when pausing right after playing when using preloading.
       // On this platform we wait for the play promise to be resolved before pausing.
       if (OO.isIos && playPromise && typeof playPromise.then === 'function') {
+        playPromiseSupported = true;
         playPromise.then(function() {
           // There is no point in pausing anymore if actual playback has already been requested
           // by the time the promise is resolved
@@ -733,7 +765,7 @@ require("../../../html5-common/js/utils/environment.js");
             src: captions.url,
             language: languageKey,
             inStream: false
-          }
+          };
           addClosedCaptions(captionInfo);
         });
       }
@@ -1090,7 +1122,7 @@ require("../../../html5-common/js/utils/environment.js");
       var closedCaptionInfo = {
         languages: [],
         locale: {}
-      }
+      };
       _.each(availableClosedCaptions, function(value, key) {
         closedCaptionInfo.languages.push(key);
         closedCaptionInfo.locale[key] = value.label;
@@ -1208,6 +1240,11 @@ require("../../../html5-common/js/utils/environment.js");
         return;
       }
 
+      if (_video && pauseOnPlaying) {
+        _video.pause();
+        return;
+      }
+
       // Update time shift in case the video was paused and then resumed,
       // which means that we were falling behind the live playhead while the video
       // wasn't playing. Note that Safari will sometimes keep loading the live content
@@ -1217,7 +1254,12 @@ require("../../../html5-common/js/utils/environment.js");
         currentTimeShift = getTimeShift(_video.currentTime);
       }
 
-      this.controller.notify(this.controller.EVENTS.PLAYING);
+      hasStartedPlaying = true;
+
+      if (!playPromiseSupported) {
+        this.controller.notify(this.controller.EVENTS.PLAYING);
+      }
+
       startUnderflowWatcher();
       checkForClosedCaptions();
 
@@ -1290,7 +1332,7 @@ require("../../../html5-common/js/utils/environment.js");
       }
       isWrapperSeeking = false;
 
-      // If the stream is seekable, supress seeks that come before or at the time initialTime is been reached
+      // If the stream is seekable, suppress seeks that come before or at the time initialTime is been reached
       // or that come while seeking.
       if (!initialTime.reached) {
         initialTime.reached = true;
@@ -1341,7 +1383,8 @@ require("../../../html5-common/js/utils/environment.js");
         currentTime = _video.currentTime;
       }
 
-      if (initialTime.value > 0 && (event.target.currentTime >= initialTime.value)) {
+      if (initialTime.value >= 0 && (event.target.currentTime >= initialTime.value || initialTime.reached)) {
+        initialTime.reached = true;
         initialTime.value = 0;
       }
 

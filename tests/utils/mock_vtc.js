@@ -32,6 +32,8 @@ mock_vtc = function() {
       DURATION_CHANGE: "durationChange",
       UNMUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed",
       UNMUTED_PLAYBACK_SUCCEEDED: "unmutedPlaybackSucceeded",
+      MUTED_PLAYBACK_FAILED: "mutedPlaybackFailed",
+      MUTED_PLAYBACK_SUCCEEDED: "mutedPlaybackSucceeded",
       MUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed",
       MULTI_AUDIO_AVAILABLE: "multiAudioAvailable",
       MULTI_AUDIO_CHANGED: "multiAudioChanged"
