@@ -515,11 +515,24 @@ describe('main_html5 wrapper tests', function () {
 
   it('should dequeue play command if seeking completed', function(){
     element.seeking = true;
-    spyOn(element, "play");
+    var originalPlay = element.play;
+    var playPromiseThen = null;
+    var playCalled = 0;
+    element.play = function() {
+      playCalled++;
+      return {
+        then: function(callback) {
+          playPromiseThen = callback;
+        }
+      };
+    };
     wrapper.play();
     element.seeking = false;
     $(element).triggerHandler("seeked");
-    expect(element.play.wasCalled).to.be(true);
+    expect(playCalled).to.be(1);
+    playPromiseThen();
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.PLAYING);
+    element.play = originalPlay;
   });
 
   it('should not dequeue play command if stream paused before seeking completed', function(){

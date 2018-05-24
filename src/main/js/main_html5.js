@@ -1521,7 +1521,7 @@ require("../../../html5-common/js/utils/environment.js");
     var dequeuePlay = _.bind(function() {
       if (playQueued) {
         playQueued = false;
-        executePlay(false);
+        this.play();
       }
     }, this);
 
