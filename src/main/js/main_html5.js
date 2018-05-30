@@ -214,6 +214,7 @@ require("../../../html5-common/js/utils/environment.js");
     var availableClosedCaptions = {};
     var textTrackModes = {};
     var originalPreloadValue = $(_video).attr("preload") || "none";
+    var currentPlaybackSpeed = 1.0;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -342,6 +343,7 @@ require("../../../html5-common/js/utils/environment.js");
           _video.src = _currentUrl;
         }
       }
+      _video.playbackRate = currentPlaybackSpeed;
 
       return urlChanged;
     };
@@ -944,8 +946,9 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     this.setPlaybackSpeed = function(speed) {
+      currentPlaybackSpeed = speed;
       if (_video) {
-        _video.playbackRate = speed;
+        _video.playbackRate = currentPlaybackSpeed;
       }
     };
 
