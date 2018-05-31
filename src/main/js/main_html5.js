@@ -945,7 +945,16 @@ require("../../../html5-common/js/utils/environment.js");
       raiseAudioChange(newTracks);
     };
 
+    /**
+     * Set the playback speed of the video element
+     * @public
+     * @method OoyalaVideoWrapper#setPlaybackSpeed
+     * @param  {number} speed The desired speed multiplier
+     */
     this.setPlaybackSpeed = function(speed) {
+      if (typeof speed !== 'number') {
+        return;
+      }
       //if we are playing a live asset, set the playback speed back to 1. This is
       //just in case we have somehow missed reseting the speed somewhere else.
       if (isLive) {
@@ -957,6 +966,16 @@ require("../../../html5-common/js/utils/environment.js");
       if (_video) {
         _video.playbackRate = currentPlaybackSpeed;
       }
+    };
+
+    /**
+     * Get the current speed multiplier for video elements.
+     * @public
+     * @method OoyalaVideoWrapper#getPlaybackSpeed
+     * @return {number} Current playback speed multiplier
+     */
+    this.getPlaybackSpeed = function() {
+      return currentPlaybackSpeed;
     };
 
     // **********************************************************************************/
