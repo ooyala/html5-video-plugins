@@ -280,6 +280,16 @@ require("../html5-common/js/utils/constants.js");
     };
 
     /**
+     * Checks to see if the video element is muted.
+     * @public
+     * @method TemplateVideoWrapper#isMuted
+     * @returns {boolean} True if the video element is muted, false otherwise
+     */
+    this.isMuted = function() {
+
+    };
+
+    /**
      * Triggers a volume change on the video element.
      * @public
      * @method TemplateVideoWrapper#setVolume
