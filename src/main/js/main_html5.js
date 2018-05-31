@@ -343,8 +343,8 @@ require("../../../html5-common/js/utils/environment.js");
           _video.src = _currentUrl;
         }
       }
-      _video.playbackRate = currentPlaybackSpeed;
-
+      //setup the playback speed for the next video.
+      this.setPlaybackSpeed(currentPlaybackSpeed);
       return urlChanged;
     };
 
@@ -946,7 +946,14 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     this.setPlaybackSpeed = function(speed) {
-      currentPlaybackSpeed = speed;
+      //if we are playing a live asset, set the playback speed back to 1. This is
+      //just in case we have somehow missed reseting the speed somewhere else.
+      if (isLive) {
+        currentPlaybackSpeed = 1.0;
+      } else {
+        currentPlaybackSpeed = speed;
+      }
+
       if (_video) {
         _video.playbackRate = currentPlaybackSpeed;
       }
@@ -988,6 +995,9 @@ require("../../../html5-common/js/utils/environment.js");
 
       dequeueSeek();
       isLive = isLive || _video.currentTime === Infinity; // Just in case backend and video metadata disagree about this
+      if (isLive) {
+        this.setPlaybackSpeed(1.0);
+      }
       loaded = true;
     }, this);
 
