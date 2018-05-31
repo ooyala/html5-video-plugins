@@ -791,6 +791,13 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParametersHistory[3]).to.eql([vtc.interface.EVENTS.MUTE_STATE_CHANGE, { muted: false }]);
   });
 
+  it('should return mute state when isMuted is called', function(){
+    element.muted = true;
+    expect(wrapper.isMuted()).to.eql(true);
+    element.muted = false;
+    expect(wrapper.isMuted()).to.eql(false);
+  });
+
   it('should notify VOLUME_CHANGE on volume change of video with empty string', function(){
     vtc.interface.EVENTS.VOLUME_CHANGE = "volumeChange";
     element.currentSrc = "";

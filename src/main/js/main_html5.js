@@ -625,6 +625,16 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
+     * Checks to see if the video element is muted.
+     * @public
+     * @method OoyalaVideoWrapper#isMuted
+     * @returns {boolean} True if the video element is muted, false otherwise
+     */
+    this.isMuted = function() {
+      return _video.muted;
+    };
+
+    /**
      * Triggers a volume change on the video element.
      * @public
      * @method OoyalaVideoWrapper#setVolume
