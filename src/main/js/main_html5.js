@@ -337,7 +337,13 @@ require("../../../html5-common/js/utils/environment.js");
         urlChanged = true;
         resetStreamData();
         if (_currentUrl === "") {
-          _video.src = null;
+          //Workaround of an issue where iOS attempts to set the src to <RELATIVE_PATH>/null
+          //when setting source to null
+          if (OO.isIos) {
+            delete _video.src;
+          } else {
+            _video.src = null;
+          }
         } else {
           _video.src = _currentUrl;
         }
@@ -508,6 +514,11 @@ require("../../../html5-common/js/utils/environment.js");
             playPromise.catch(_.bind(function(error) {
               if (error) {
                 OO.log("Play Promise Failure", error, error.name);
+                //PLAYER-3601: Workaround of an issue where play promises sometimes fail on iOS with Freewheel ads.
+                //We can ignore these as the Freewheel ad plugin will take care of these if they are indeed errors
+                if (OO.isIos && _video._fw_videoAdPlaying) {
+                  return;
+                }
                 //Changing the source while attempting to play will cause a play promise error to be thrown.
                 //We don't want to publish an UNMUTED/MUTED playback failed notification in these situations.
                 if (_video.src !== originalUrl) {

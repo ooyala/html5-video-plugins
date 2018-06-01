@@ -169,11 +169,19 @@ describe('main_html5 wrapper tests', function () {
     expect(returns).to.be(true);
   });
 
-  it('should remove src on empty string', function(){
+  it('should null out src on empty string', function(){
     wrapper.setVideoUrl("url");
     var returns = wrapper.setVideoUrl("", "");
     expect(returns).to.be(true);
     expect(element.getAttribute("src")).to.eql(null);
+  });
+
+  it('should remove src on empty string on iOS', function(){
+    OO.isIos = true;
+    wrapper.setVideoUrl("url");
+    var returns = wrapper.setVideoUrl("", "");
+    expect(returns).to.be(true);
+    expect(typeof element.src).to.eql("undefined");
   });
 
   it('should call stream load', function(){
