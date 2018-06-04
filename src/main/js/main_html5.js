@@ -214,6 +214,7 @@ require("../../../html5-common/js/utils/environment.js");
     var availableClosedCaptions = {};
     var textTrackModes = {};
     var originalPreloadValue = $(_video).attr("preload") || "none";
+    var currentPlaybackSpeed = 1.0;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -348,7 +349,8 @@ require("../../../html5-common/js/utils/environment.js");
           _video.src = _currentUrl;
         }
       }
-
+      //setup the playback speed for the next video.
+      this.setPlaybackSpeed(currentPlaybackSpeed);
       return urlChanged;
     };
 
@@ -957,11 +959,44 @@ require("../../../html5-common/js/utils/environment.js");
           }
         }
       }
-      
+
       // audioTracks right now is Array-like, not actually an array
       // so we need to make it so
       var newTracks = this.getAvailableAudio();
       raiseAudioChange(newTracks);
+    };
+
+    /**
+     * Set the playback speed of the video element
+     * @public
+     * @method OoyalaVideoWrapper#setPlaybackSpeed
+     * @param  {number} speed The desired speed multiplier
+     */
+    this.setPlaybackSpeed = function(speed) {
+      if (typeof speed !== 'number' || isNaN(speed)) {
+        return;
+      }
+      //if we are playing a live asset, set the playback speed back to 1. This is
+      //just in case we have somehow missed reseting the speed somewhere else.
+      if (isLive) {
+        currentPlaybackSpeed = 1.0;
+      } else {
+        currentPlaybackSpeed = speed;
+      }
+
+      if (_video) {
+        _video.playbackRate = currentPlaybackSpeed;
+      }
+    };
+
+    /**
+     * Get the current speed multiplier for video elements.
+     * @public
+     * @method OoyalaVideoWrapper#getPlaybackSpeed
+     * @return {number} Current playback speed multiplier
+     */
+    this.getPlaybackSpeed = function() {
+      return currentPlaybackSpeed;
     };
 
     // **********************************************************************************/
@@ -1000,6 +1035,9 @@ require("../../../html5-common/js/utils/environment.js");
 
       dequeueSeek();
       isLive = isLive || _video.currentTime === Infinity; // Just in case backend and video metadata disagree about this
+      if (isLive) {
+        this.setPlaybackSpeed(1.0);
+      }
       loaded = true;
     }, this);
 
@@ -1013,7 +1051,7 @@ require("../../../html5-common/js/utils/environment.js");
       var audioTracks = this.getAvailableAudio();
       raiseAudioChange(audioTracks);
     }, this);
-    
+
     /**
      * Raised notification to VideoController
      * @private
@@ -1027,7 +1065,7 @@ require("../../../html5-common/js/utils/environment.js");
       if (!_.isEqual(this.audioTracks, audioTracks)) {
         this.audioTracks = audioTracks;
         this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_CHANGED, audioTracks);
-      } 
+      }
     }, this);
 
     /**

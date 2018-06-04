@@ -1266,7 +1266,7 @@ describe('main_html5 wrapper tests', function () {
       {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
       {id: "1", kind: "main", label: "ger", language: "ger", enabled: true}
     ]);
-    
+
     //pass wrong id
     var resWithWrongId = wrapper.setAudio("6789");
 
@@ -1274,6 +1274,38 @@ describe('main_html5 wrapper tests', function () {
       {id: "0", kind: "main", label: "eng", language: "eng", enabled: false},
       {id: "1", kind: "main", label: "ger", language: "ger", enabled: true}
     ]);
+  });
+
+  it('test setPlaybackSpeed', function() {
+    expect(wrapper.getPlaybackSpeed()).to.be(1);
+    wrapper.setPlaybackSpeed(2);
+    expect(wrapper.getPlaybackSpeed()).to.be(2);
+    wrapper.setPlaybackSpeed(.5);
+    expect(wrapper.getPlaybackSpeed()).to.be(.5);
+
+    //speed should not be changed if you pass in bad values
+    wrapper.setPlaybackSpeed();
+    expect(wrapper.getPlaybackSpeed()).to.be(.5);
+    wrapper.setPlaybackSpeed(null);
+    expect(wrapper.getPlaybackSpeed()).to.be(.5);
+    wrapper.setPlaybackSpeed("1");
+    expect(wrapper.getPlaybackSpeed()).to.be(.5);
+    wrapper.setPlaybackSpeed({});
+    expect(wrapper.getPlaybackSpeed()).to.be(.5);
+    wrapper.setPlaybackSpeed(NaN);
+    expect(wrapper.getPlaybackSpeed()).to.be(.5);
+
+    //test that the speed carries over to a new video
+    wrapper.setVideoUrl("test");
+    expect(wrapper.getPlaybackSpeed()).to.be(.5);
+    //test that live video reset the value to 1
+    wrapper.setVideoUrl("url", "mp4", true);
+    element.duration = Infinity;
+    expect(wrapper.getPlaybackSpeed()).to.be(1);
+    //now that we are playing a live video, you shouldn't be able to set the speed
+    wrapper.setPlaybackSpeed(.5);
+    expect(wrapper.getPlaybackSpeed()).to.be(1);
+
   });
 
   /*

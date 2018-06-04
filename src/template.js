@@ -399,6 +399,24 @@ require("../html5-common/js/utils/constants.js");
     this.setBitrate = function(id) {
     };
 
+    /**
+     * Optional function. Set the playback speed of the video element
+     * @public
+     * @method TemplateVideoWrapper#setPlaybackSpeed
+     * @param  {number} speed The desired speed multiplier
+     */
+    this.setPlaybackSpeed = function(speed) {
+    };
+
+    /**
+     * Get the playback speed of the current video element.
+     * @public
+     * @method TemplateVideoWrapper#getPlaybackSpeed
+     * @returns {number} The speed multiplier
+     */
+    this.getPlaybackSpeed = function() {
+    };
+
     // **********************************************************************************/
     // Example callback methods
     // **********************************************************************************/
