@@ -398,6 +398,15 @@ require("../html5-common/js/utils/constants.js");
     this.setPlaybackSpeed = function(speed) {
     };
 
+    /**
+     * Get the playback speed of the current video element.
+     * @public
+     * @method TemplateVideoWrapper#getPlaybackSpeed
+     * @returns {number} The speed multiplier
+     */
+    this.getPlaybackSpeed = function() {
+    };
+
     // **********************************************************************************/
     // Example callback methods
     // **********************************************************************************/
