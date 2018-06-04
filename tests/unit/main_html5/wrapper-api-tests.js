@@ -1277,6 +1277,8 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.getPlaybackSpeed()).to.be(.5);
     wrapper.setPlaybackSpeed({});
     expect(wrapper.getPlaybackSpeed()).to.be(.5);
+    wrapper.setPlaybackSpeed(NaN);
+    expect(wrapper.getPlaybackSpeed()).to.be(.5);
 
     //test that the speed carries over to a new video
     wrapper.setVideoUrl("test");

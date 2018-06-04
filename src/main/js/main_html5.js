@@ -952,7 +952,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @param  {number} speed The desired speed multiplier
      */
     this.setPlaybackSpeed = function(speed) {
-      if (typeof speed !== 'number') {
+      if (typeof speed !== 'number' || isNaN(speed)) {
         return;
       }
       //if we are playing a live asset, set the playback speed back to 1. This is
