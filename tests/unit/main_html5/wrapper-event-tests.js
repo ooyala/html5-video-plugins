@@ -505,6 +505,8 @@ describe('main_html5 wrapper tests', function () {
     spyOn(element.seekable, "start").andReturn(0);
     spyOn(element.seekable, "end").andReturn(20);
     element.seekable.length = 1;
+    wrapper.play();
+    $(element).triggerHandler("playing");
     wrapper.setInitialTime(0);
     $(element).triggerHandler("seeking");
     expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.SEEKING);
@@ -567,11 +569,13 @@ describe('main_html5 wrapper tests', function () {
     spyOn(element.seekable, "start").andReturn(0);
     spyOn(element.seekable, "end").andReturn(20);
     element.seekable.length = 1;
+    wrapper.play();
+    $(element).triggerHandler("playing");
     wrapper.setInitialTime(0);
     $(element).triggerHandler("seeked");
-    expect(vtc.notified[1]).to.not.eql(vtc.interface.EVENTS.SEEKED);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.SEEKED)).to.eql(false);
     $(element).triggerHandler("seeked");
-    expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.SEEKED);
+    expect(_.contains(vtc.notified, vtc.interface.EVENTS.SEEKED)).to.eql(true);
   });
 
   it('should not undo seek if disableNativeSeek=false on video \'seeked\' event', function(){

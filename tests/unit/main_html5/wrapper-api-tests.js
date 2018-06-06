@@ -280,8 +280,16 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.seek.wasCalled).to.be(true);
   });
 
-  it('should act on initialTime if initial time is 0', function(){
+  it('should not act on initialTime if initial time is 0 if content has not started', function(){
     spyOn(wrapper, "seek");
+    wrapper.setInitialTime(0);
+    expect(wrapper.seek.wasCalled).to.be(false);
+  });
+
+  it('should act on initialTime if initial time is 0 if content has started', function(){
+    spyOn(wrapper, "seek");
+    wrapper.play();
+    $(element).triggerHandler("playing");
     wrapper.setInitialTime(0);
     expect(wrapper.seek.wasCalled).to.be(true);
   });

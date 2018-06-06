@@ -447,7 +447,9 @@ require("../../../html5-common/js/utils/environment.js");
      * @param {number} time The initial time of the video (seconds)
      */
     this.setInitialTime = function(time) {
-      if (typeof time !== "number") {
+      //Ignore any initial times set to 0 if the content has not started playing. The content will start at time 0
+      //by default
+      if (typeof time !== "number" || (!hasStartedPlaying && time === 0)) {
         return;
       }
       // [PBW-5539] On Safari (iOS and Desktop), when triggering replay after the current browser tab looses focus, the
