@@ -179,6 +179,75 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAYING]);
   });
 
+  it('should notify PLAYING on play promise then if play promises are supported with playing event first', function(){
+    var originalPlay = element.play;
+    var playPromiseThen = null;
+    var playCalled = 0;
+    element.play = function() {
+      playCalled++;
+      return {
+        then: function(callback) {
+          playPromiseThen = callback;
+        }
+      };
+    };
+    wrapper.play();
+    expect(playCalled).to.be(1);
+
+    //check that we ignore the playing event
+    $(element).triggerHandler("playing");
+    expect(_.contains(vtc.notifyParameters, vtc.interface.EVENTS.PLAYING)).to.eql(false);
+
+    playPromiseThen();
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAYING]);
+    element.play = originalPlay;
+  });
+
+  it('should notify PLAYING on play promise then if play promises are supported with play promise then first', function(){
+    var originalPlay = element.play;
+    var playPromiseThen = null;
+    var playCalled = 0;
+    element.play = function() {
+      playCalled++;
+      return {
+        then: function(callback) {
+          playPromiseThen = callback;
+        }
+      };
+    };
+    wrapper.play();
+    expect(playCalled).to.be(1);
+
+    playPromiseThen();
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAYING]);
+
+    vtc.notifyParameters = [];
+    //check that we ignore the playing event
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([]);
+
+    element.play = originalPlay;
+  });
+
+  it('should notify PLAYING on video \'playing\' event if play promises are supported but playback started from something other than the video play API', function(){
+    var originalPlay = element.play;
+    var playPromiseThen = null;
+    var playCalled = 0;
+    element.play = function() {
+      playCalled++;
+      return {
+        then: function(callback) {
+          playPromiseThen = callback;
+        }
+      };
+    };
+
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAYING]);
+
+    element.play = originalPlay;
+  });
+
   it('should notify ASSET_DIMENSION on first \'canPlay\' event', function(){
     var videoDimensions = {width: 640, height: 480};
     element.videoWidth = videoDimensions.width;
