@@ -194,7 +194,7 @@ require("../../../html5-common/js/utils/environment.js");
     var playQueued = false;
     var hasStartedPlaying = false;
     var pauseOnPlaying = false;
-    var playPromiseSupported = false;
+    var ignoreFirstPlayingEvent = false;
     var isSeeking = false;
     var isWrapperSeeking = false;
     var wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
@@ -385,6 +385,7 @@ require("../../../html5-common/js/utils/environment.js");
       // when a new video is set
       $(_video).find('.' + TRACK_CLASS).remove();
       availableClosedCaptions = {};
+      ignoreFirstPlayingEvent = false;
     }, this);
 
     /**
@@ -510,12 +511,13 @@ require("../../../html5-common/js/utils/environment.js");
         var playPromise = executePlay(false);
         var originalUrl = _video.src;
         if (playPromise) {
-          playPromiseSupported = true;
+          ignoreFirstPlayingEvent = true;
           //TODO: Handle MUTED/UNMUTED_PLAYBACK_SUCCEEDED/FAILED in environments that do not support play promises.
           //Right now this is not needed because environments that do not support play promises do not have
           //autoplay restrictions.
           if (typeof playPromise.catch === 'function') {
             playPromise.catch(_.bind(function(error) {
+              ignoreFirstPlayingEvent = false;
               if (error) {
                 OO.log("Play Promise Failure", error, error.name);
                 //PLAYER-3601: Workaround of an issue where play promises sometimes fail on iOS with Freewheel ads.
@@ -698,7 +700,7 @@ require("../../../html5-common/js/utils/environment.js");
       // Safar iOS seems to freeze when pausing right after playing when using preloading.
       // On this platform we wait for the play promise to be resolved before pausing.
       if (OO.isIos && playPromise && typeof playPromise.then === 'function') {
-        playPromiseSupported = true;
+        ignoreFirstPlayingEvent = true;
         playPromise.then(function() {
           // There is no point in pausing anymore if actual playback has already been requested
           // by the time the promise is resolved
@@ -706,6 +708,11 @@ require("../../../html5-common/js/utils/environment.js");
             _video.pause();
           }
         });
+        if (typeof playPromise.catch === 'function') {
+          playPromise.catch(function() {
+            ignoreFirstPlayingEvent = false;
+          });
+        }
       } else {
         _video.pause();
       }
@@ -1317,13 +1324,17 @@ require("../../../html5-common/js/utils/environment.js");
 
       hasStartedPlaying = true;
 
-      if (!playPromiseSupported) {
+      //We want the initial PLAYING event to be from the play promise if play promises
+      //are supported. This is to help with the muted autoplay workflow.
+      //We want to ignore any playing events thrown by plays started with play promises
+      if (!ignoreFirstPlayingEvent) {
         this.controller.notify(this.controller.EVENTS.PLAYING);
       }
 
       startUnderflowWatcher();
       checkForClosedCaptions();
 
+      ignoreFirstPlayingEvent = false;
       firstPlay = false;
       canSeek = true;
       isSeeking = false;
