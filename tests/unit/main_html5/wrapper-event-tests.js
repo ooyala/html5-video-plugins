@@ -62,6 +62,16 @@ describe('main_html5 wrapper tests', function () {
     expect(wrapper.seek.wasCalled).to.be(true);
   });
 
+  it('should clear queued seek on a successful dequeue seek', function(){
+    element.duration = 60;
+    wrapper.setInitialTime(10);
+    spyOn(wrapper, "seek");
+    $(element).triggerHandler("loadedmetadata");
+    expect(wrapper.seek.callCount).to.be(1);
+    $(element).triggerHandler("loadedmetadata");
+    expect(wrapper.seek.callCount).to.be(1);
+  });
+
   it('should notify PROGRESS on \'progress\' event', function(){
     element.currentTime = 3;
     element.duration = 10;

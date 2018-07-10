@@ -1750,7 +1750,9 @@ require("../../../html5-common/js/utils/environment.js");
      */
     var dequeueSeek = _.bind(function() {
       if (queuedSeekTime === null) { return; }
-      if (this.seek(queuedSeekTime)) { queuedSeekTime = null; }
+      var seekTime = queuedSeekTime;
+      queuedSeekTime = null;
+      this.seek(seekTime);
     }, this);
 
     /**
