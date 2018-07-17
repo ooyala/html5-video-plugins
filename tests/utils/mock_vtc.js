@@ -26,7 +26,7 @@ mock_vtc = function() {
       TIME_UPDATE:  "timeupdate",
       VOLUME_CHANGE:  "volumechange",
       MUTE_STATE_CHANGE:  "mutestatechange",
-      RATE_CHANGE:  "rateChange",
+      PLAYBACK_RATE_CHANGE:  "playbackRateChange",
       ON_DOWNLOAD_FINISHED:  "onDownloadFinished",
       ON_SEGMENT_LOADED:  "onSegmentLoaded",
       WAITING:  "waiting",

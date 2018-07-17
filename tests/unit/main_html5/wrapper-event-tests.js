@@ -1067,10 +1067,10 @@ describe('main_html5 wrapper tests', function () {
 
   // TODO: when platform testing supported, test for forceEndOnPausedIfRequired
 
-  it('should notify RATE_CHANGE on video \'ratechange\' event', function() {
+  it('should notify PLAYBACK_RATE_CHANGE on video \'ratechange\' event', function() {
     element.playbackRate = 2;
     $(element).triggerHandler("ratechange");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.RATE_CHANGE, {
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAYBACK_RATE_CHANGE, {
       playbackRate: 2
     }]);
   });
