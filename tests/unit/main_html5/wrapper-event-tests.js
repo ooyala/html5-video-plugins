@@ -295,7 +295,7 @@ describe('main_html5 wrapper tests', function () {
   it('should notify MULTI_AUDIO_CHANGED after setAudio', function() {
     element.audioTracks[0] = { id: 0, language: 'en', label: '', enabled: true };
     element.audioTracks[1] = { id: 1, language: 'en', label: '', enabled: false };
-    
+
     element.audioTracks.__proto__ = {
       getTrackById: vtc.getTrackById
     };
@@ -311,7 +311,7 @@ describe('main_html5 wrapper tests', function () {
     wrapper.setAudio(1);
 
     var callCount = vtc.notified.reduce(function (accumulator, event) {
-      return event === vtc.interface.EVENTS.MULTI_AUDIO_CHANGED ? 
+      return event === vtc.interface.EVENTS.MULTI_AUDIO_CHANGED ?
         accumulator = accumulator + 1 :
         accumulator;
     }, 0);
@@ -1067,9 +1067,12 @@ describe('main_html5 wrapper tests', function () {
 
   // TODO: when platform testing supported, test for forceEndOnPausedIfRequired
 
-  it('should notify RATE_CHANGE on video \'ratechange\' event', function(){
+  it('should notify PLAYBACK_RATE_CHANGE on video \'ratechange\' event', function() {
+    element.playbackRate = 2;
     $(element).triggerHandler("ratechange");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.RATE_CHANGE]);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAYBACK_RATE_CHANGE, {
+      playbackRate: 2
+    }]);
   });
 
   it('wrapper should fire MUTE_STATE_CHANGE events on player\'s \'onMuted\' and \'onUnmuted\' event callback when muted', function(){

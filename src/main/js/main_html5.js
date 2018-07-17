@@ -1514,7 +1514,11 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#raiseRatechangeEvent
      */
     var raiseRatechangeEvent = _.bind(function() {
-      this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
+      var playbackRate = _video ? _video.playbackRate : null;
+
+      this.controller.notify(this.controller.EVENTS.PLAYBACK_RATE_CHANGE, {
+        playbackRate: playbackRate
+      });
     }, this);
 
     /**
