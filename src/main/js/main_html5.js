@@ -115,17 +115,11 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
 
-      // Set initial container dimension
-      var dimension = {
-        width: parentContainer.width(),
-        height: parentContainer.height()
-      };
-
       if (!playerId) {
         playerId = getRandomString();
       }
 
-      var element = new OoyalaVideoWrapper(domId, video[0], dimension, playerId);
+      var element = new OoyalaVideoWrapper(domId, video[0], playerId);
       if (currentInstances[playerId] && currentInstances[playerId] >= 0) {
         currentInstances[playerId]++;
       } else {
@@ -171,13 +165,12 @@ require("../../../html5-common/js/utils/environment.js");
    * @classdesc Player object that wraps HTML5 video tags
    * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
-   * @param {object} dimension JSON object specifying player container's initial width and height
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    * @property {string} playerId An id representing the unique player instance
    */
-  var OoyalaVideoWrapper = function(domId, video, dimension, playerId) {
+  var OoyalaVideoWrapper = function(domId, video, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
     this.audioTracks = [];
@@ -204,7 +197,6 @@ require("../../../html5-common/js/utils/environment.js");
     var isM3u8 = false;
     var TRACK_CLASS = "track_cc";
     var firstPlay = true;
-    var playerDimension = dimension;
     var videoDimension = {height: 0, width: 0};
     var initialTime = { value: 0, reached: true };
     var canSeek = true;
@@ -220,16 +212,6 @@ require("../../../html5-common/js/utils/environment.js");
     var underflowWatcherTimer = null;
     var waitingEventRaised = false;
     var watcherTime = -1;
-
-    // iPad CSS constants
-    var IPAD_CSS_DEFAULT = {
-      "width":"",
-      "height":"",
-      "left":"50%",
-      "top":"50%",
-      "-webkit-transform":"translate(-50%,-50%)",
-      "visibility":"visible"
-    };
 
     // [PBW-4000] On Android, if the chrome browser loses focus, then the stream cannot be seeked before it
     // is played again.  Detect visibility changes and delay seeks when focus is lost.
@@ -726,7 +708,6 @@ require("../../../html5-common/js/utils/environment.js");
      */
     this.applyCss = function(css) {
       $(_video).css(css);
-      setVideoCentering();
     };
 
     /**
@@ -1339,7 +1320,6 @@ require("../../../html5-common/js/utils/environment.js");
       canSeek = true;
       isSeeking = false;
       wasPausedBeforePlaying = false;
-      setVideoCentering();
     }, this);
 
     /**
@@ -1465,9 +1445,6 @@ require("../../../html5-common/js/utils/environment.js");
       // iOS has issues seeking so if we queue a seek handle it here
       dequeueSeek();
 
-      // iPad safari has video centering issue. Unfortunately, HTML5 does not have bitrate change event.
-      setVideoCentering();
-
       //Workaround for Firefox because it doesn't support the oncuechange event on a text track
       if (OO.isFirefox) {
         checkForClosedCaptionsCueChange();
@@ -1558,36 +1535,6 @@ require("../../../html5-common/js/utils/environment.js");
     /************************************************************************************/
     // Helper methods
     /************************************************************************************/
-
-     /**
-     * Fix issue with iPad safari browser not properly centering the video
-     * @private
-     * @method OoyalaVideoWrapper#setVideoCentering
-     */
-     var setVideoCentering = function() {
-       if (OO.isIpad) {
-        var videoWidth = _video.videoWidth;
-        var videoHeight = _video.videoHeight;
-        var playerWidth = playerDimension.width;
-        var playerHeight = playerDimension.height;
-
-        // check if video stream dimension was changed, then re-apply video css
-        if (videoWidth != videoDimension.width || videoHeight != videoDimension.height) {
-          var css = IPAD_CSS_DEFAULT;
-          if (videoHeight/videoWidth > playerHeight/playerWidth) {
-            css.width = "";
-            css.height = "100%";
-          } else {
-            css.width = "100%";
-            css.height = "";
-          }
-          $(_video).css(css);
-
-          videoDimension.width = videoWidth;
-          videoDimension.height = videoHeight;
-        }
-      }
-     };
 
     /**
      * If any plays are queued up, execute them.
