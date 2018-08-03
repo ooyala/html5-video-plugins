@@ -62,6 +62,7 @@ describe('main_html5 wrapper tests', function () {
     OO.isEdge = false;
     OO.isAndroid = false;
     OO.isIos = false;
+    OO.isIpad = false;
     OO.isIE = false;
     OO.isIE11Plus = false;
     OO.isSafari = false;
@@ -1082,6 +1083,17 @@ describe('main_html5 wrapper tests', function () {
     expect(element.getAttribute("style")).to.contain("visible");
     expect(element.getAttribute("style")).to.contain("height");
     expect(element.getAttribute("style")).to.contain("100%");
+  });
+
+  it('should not apply custom translate css on iPad when applying css', function(){
+    OO.isIpad = true;
+    element.videoWidth = 640;
+    element.videoHeight = 480;
+    var css = { "visibility" : "visible", "height" : "100%" };
+    wrapper.applyCss(css);
+    expect(element.style.left).to.not.be("50%");
+    expect(element.style.top).to.not.be("50%");
+    expect(element.style['WebkitTransform']).to.not.be.ok();
   });
 
   it('should pause the video element on destroy', function(){
