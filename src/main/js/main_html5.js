@@ -1506,7 +1506,20 @@ require("../../../html5-common/js/utils/environment.js");
         this.controller.notify(this.controller.EVENTS.PAUSED);
       }
       forceEndOnPausedIfRequired();
+      removeControlsAttr();
     }, this);
+
+    /**
+     * IOS native player adds attribute "controls" to video tag.
+     * This function removes the attribute on IOS if it is necessary
+     * @private
+     * @method OoyalaVideoWrapper#removeControlsAttr
+     */
+    var removeControlsAttr = _.bind(function(){
+      if (OO.isIos && _video.hasAttribute('controls')) {
+        _video.removeAttribute('controls');
+      }
+    });
 
     /**
      * Notifies the controller that the ratechange event was raised.
