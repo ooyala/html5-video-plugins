@@ -1483,7 +1483,6 @@ require("../../../html5-common/js/utils/environment.js");
         this.controller.notify(this.controller.EVENTS.PAUSED);
       }
       forceEndOnPausedIfRequired();
-      removeControlsAttr();
     }, this);
 
     /**
@@ -1542,6 +1541,7 @@ require("../../../html5-common/js/utils/environment.js");
     var raiseFullScreenEnd = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { "isFullScreen": false, "paused": event.target.paused });
+      removeControlsAttr();
     }, this);
 
 
