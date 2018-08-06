@@ -141,6 +141,24 @@ describe('main_html5 chrome underflow tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
   });
 
+  it('Should remove attr "controls" on IOS when webkitendfullscreen event was fired', function(){
+    OO.isIos = true;
+    element.setAttribute("controls", "controls");
+    expect(element.getAttribute("controls")).to.eql("controls");
+    $(element).triggerHandler({ type: "webkitendfullscreen",
+      target: { paused : true }
+    });
+    expect(element.getAttribute("controls")).to.eql(null);
+
+    OO.isIos = false;
+    element.setAttribute("controls", "controls");
+    expect(element.getAttribute("controls")).to.eql("controls");
+    $(element).triggerHandler({ type: "webkitendfullscreen",
+      target: { paused : true }
+    });
+    expect(element.getAttribute("controls")).to.eql("controls");
+  });
+
   it('should not raise waiting event once the stream has ended', function(){
     vtc.interface.EVENTS.WAITING = "waiting";
     vtc.interface.EVENTS.PLAYING = "playing";

@@ -1486,6 +1486,18 @@ require("../../../html5-common/js/utils/environment.js");
     }, this);
 
     /**
+     * IOS native player adds attribute "controls" to video tag.
+     * This function removes the attribute on IOS if it is necessary
+     * @private
+     * @method OoyalaVideoWrapper#removeControlsAttr
+     */
+    var removeControlsAttr = _.bind(function(){
+      if (OO.isIos && _video.hasAttribute('controls')) {
+        _video.removeAttribute('controls');
+      }
+    });
+
+    /**
      * Notifies the controller that the ratechange event was raised.
      * @private
      * @method OoyalaVideoWrapper#raiseRatechangeEvent
@@ -1529,6 +1541,7 @@ require("../../../html5-common/js/utils/environment.js");
     var raiseFullScreenEnd = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
                              { "isFullScreen": false, "paused": event.target.paused });
+      removeControlsAttr();
     }, this);
 
 
