@@ -2,11 +2,7 @@
  * Jest Test Cases for Youtube Factory.
  */
 
-describe('Youtube factory tests', function () {
-  // Load test helpers
-  require('../../utils/test_lib.js');
-
-  // Setup
+describe('Youtube factory tests', function () {// Setup
   var pluginFactory;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 

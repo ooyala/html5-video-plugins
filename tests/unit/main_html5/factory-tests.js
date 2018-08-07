@@ -3,9 +3,6 @@
  */
 
 describe('main_html5 factory tests', function () {
-  // Load test helpers
-  require('../../utils/test_lib.js');
-
   // Setup
   var pluginFactory;
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };

@@ -27,6 +27,7 @@ describe('main_html5 wrapper tests', function () {
   var stubSeekable = function(element, start, end) {
     var startSpy = sinon.stub(element.seekable, "start").callsFake(() => {return start});
     var endSpy = sinon.stub(element.seekable, "end").callsFake(() => {return end});
+    element.seekable.length = 1;
     return {startSpy, endSpy};
   };
 
@@ -35,7 +36,6 @@ describe('main_html5 wrapper tests', function () {
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
-    element.seekable.length = 1;
   });
 
   afterEach(function() {
@@ -297,6 +297,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should notify MULTI_AUDIO_CHANGED after setAudio', function() {
+    element.audioTracks = [];
     element.audioTracks[0] = { id: 0, language: 'en', label: '', enabled: true };
     element.audioTracks[1] = { id: 1, language: 'en', label: '', enabled: false };
 
@@ -1032,9 +1033,9 @@ describe('main_html5 wrapper tests', function () {
   // TODO: when async testing working, test for force end on timeupdate on m3u8
 
   it('should notify PLAY on video \'play\' event', function(){
-    element.src = "http://url/";
+    element.src = "url";
     $(element).triggerHandler("play");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAY, { "url" : "http://url/" }]);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAY, { "url" : "url" }]);
   });
 
   it('should notify PAUSED on video \'pause\' event', function(){

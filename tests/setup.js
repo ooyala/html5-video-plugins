@@ -38,11 +38,12 @@ window.HTMLMediaElement.prototype.load = () => { /* do nothing */ };
 window.HTMLMediaElement.prototype.play = () => { /* do nothing */ };
 window.HTMLMediaElement.prototype.pause = () => { /* do nothing */ };
 window.HTMLMediaElement.prototype.addTextTrack = () => { /* do nothing */ };
-var readOnlyMediaProperties = ["duration", "currentSrc", "textTracks", "seeking"];
+var readOnlyMediaProperties = ["duration", "currentSrc", "textTracks", "seeking", "paused", "ended", "audioTracks", "src"];
 
 _.each(readOnlyMediaProperties, (prop) => {
   Object.defineProperty(HTMLMediaElement.prototype, prop, {
-    writable: true
+    writable: true,
+    configurable: true
   });
 });
 
@@ -50,6 +51,7 @@ var readOnlyVideoProperties = ["videoWidth", "videoHeight"];
 
 _.each(readOnlyVideoProperties, (prop) => {
   Object.defineProperty(HTMLVideoElement.prototype, prop, {
-    writable: true
+    writable: true,
+    configurable: true
   });
 });

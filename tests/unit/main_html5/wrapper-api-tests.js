@@ -2,12 +2,9 @@
  * https://github.com/Automattic/expect.js
  */
 
-describe('main_html5 wrapper tests', function () {
-  // Load test helpers
-  require('../../utils/test_lib.js');
-  jest.dontMock('../../utils/mock_vtc.js');
-  require('../../utils/mock_vtc.js');
+const sinon = require('sinon');
 
+describe('main_html5 wrapper tests', function () {
   var pluginFactory, parentElement, wrapper, element, vtc, originalTimeout;
 
   // Setup
@@ -75,10 +72,17 @@ describe('main_html5 wrapper tests', function () {
   });
 
   // helper functions
+  var stubSeekable = function(element, start, end) {
+    var startSpy = sinon.stub(element.seekable, "start").callsFake(() => {return start});
+    var endSpy = sinon.stub(element.seekable, "end").callsFake(() => {return end});
+    element.seekable.length = 1;
+    return {startSpy, endSpy};
+  };
+
   var setFullSeekRange = function(duration) {
     element.duration = duration;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(duration);
+    sinon.stub(element.seekable, "start").callsFake(() => {return 0});
+    sinon.stub(element.seekable, "end").callsFake(() => {return duration});
     element.seekable.length = 1;
   };
 
@@ -88,27 +92,28 @@ describe('main_html5 wrapper tests', function () {
 
     // This can be called multiple times in order to update the DVR window,
     // we need to remove the spies before setting new values.
-    if (element.__dvrSpy) {
-      element.__dvrSpy.restore();
-    }
+    //if (element.__dvrSpy) {
+    //  element.__dvrSpy.restore();
+    //}
 
-    var startSpy = spyOn(element.seekable, "start").andReturn(start);
-    var endSpy = spyOn(element.seekable, "end").andReturn(end);
+    var startSpy = sinon.stub(element.seekable, "start").callsFake(() => {return start});
+    var endSpy = sinon.stub(element.seekable, "end").callsFake(() => {return end});
     element.seekable.length = 1;
     element.duration = Infinity;
 
     // If we've set up DVR before we don't set video url again in order to
     // avoid resetting stream
-    if (!element.__dvrSpy) {
-      wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
-    }
+    //if (!element.__dvrSpy) {
+    //  wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    //}
 
-    element.__dvrSpy = {
-      restore: function() {
-        element.seekable.start = startSpy.originalValue;
-        element.seekable.end = endSpy.originalValue;
-      }
-    };
+    //element.__dvrSpy = {
+    //  restore: function() {
+    //    element.seekable.start = startSpy.originalValue;
+    //    element.seekable.end = endSpy.originalValue;
+    //  }
+    //};
+    return {startSpy, endSpy};
   };
 
   // tests
@@ -160,13 +165,13 @@ describe('main_html5 wrapper tests', function () {
     var returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(false);
     wrapper.setVideoUrl("url?extra=2&_=1");
-    var returns = wrapper.setVideoUrl("url?extra=2");
+    returns = wrapper.setVideoUrl("url?extra=2");
     expect(returns).to.be(false);
     wrapper.setVideoUrl("url?_=1&extra=2");
-    var returns = wrapper.setVideoUrl("url?extra=2");
+    returns = wrapper.setVideoUrl("url?extra=2");
     expect(returns).to.be(true); // this is a bug
     wrapper.setVideoUrl("url?_=1&extra=2");
-    var returns = wrapper.setVideoUrl("url");
+    returns = wrapper.setVideoUrl("url");
     expect(returns).to.be(true);
   });
 
@@ -186,44 +191,44 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should call stream load', function(){
-    spyOn(element, "load");
-    spyOn(element, "pause");
-    expect(element.load.wasCalled).to.be(false);
+    var loadSpy = sinon.spy(element, "load");
+    var pauseSpy = sinon.spy(element, "pause");
+    expect(loadSpy.callCount).to.be(0);
     wrapper.load(false);
-    expect(element.load.wasCalled).to.be(true);
-    expect(element.pause.wasCalled).to.be(false);
+    expect(loadSpy.callCount).to.be(1);
+    expect(pauseSpy.callCount).to.be(0);
   });
 
   it('should not call load on loaded stream when not rewinding', function(){
-    spyOn(element, "load");
-    expect(element.load.callCount).to.eql(0);
+    var spy = sinon.spy(element, "load");
+    expect(spy.callCount).to.eql(0);
     wrapper.load(false);
-    expect(element.load.callCount).to.eql(1);
+    expect(spy.callCount).to.eql(1);
     wrapper.load(false);
-    expect(element.load.callCount).to.eql(1);
+    expect(spy.callCount).to.eql(1);
   });
 
   it('should not call load when already loaded and not rewinding', function(){
-    spyOn(element, "load");
+    var spy = sinon.spy(element, "load");
     $(element).triggerHandler("loadedmetadata");
-    expect(element.load.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
     wrapper.load(false);
-    expect(element.load.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should call load when already loaded if rewinding', function(){
-    spyOn(element, "load");
+    var spy = sinon.spy(element, "load");
     $(element).triggerHandler("loadedmetadata");
-    expect(element.load.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
     wrapper.load(true);
-    expect(element.load.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should call pause stream when rewinding', function(){
-    spyOn(element, "pause");
-    expect(element.pause.callCount).to.eql(0);
+    var spy = sinon.spy(element, "pause");
+    expect(spy.callCount).to.eql(0);
     wrapper.load(true);
-    expect(element.pause.callCount).to.eql(1);
+    expect(spy.callCount).to.eql(1);
   });
 
   /*
@@ -248,24 +253,24 @@ describe('main_html5 wrapper tests', function () {
 
   it('should call load on loaded stream when rewinding', function(){
     element.src = "url";
-    spyOn(element, "load");
-    expect(element.load.callCount).to.eql(0);
+    var spy = sinon.spy(element, "load");
+    expect(spy.callCount).to.eql(0);
     wrapper.load(false);
-    expect(element.load.callCount).to.eql(1);
+    expect(spy.callCount).to.eql(1);
     wrapper.load(true);
-    expect(element.load.callCount).to.eql(2);
+    expect(spy.callCount).to.eql(2);
   });
 
   it('should not set currentTime or pause on Edge when loading with rewinding', function(){
     OO.isEdge = true;
-    spyOn(element, "pause");
-    spyOn(element, "load");
+    var pauseSpy = sinon.spy(element, "pause");
+    var loadSpy = sinon.spy(element, "load");
     element.currentTime = 10;
-    expect(element.pause.callCount).to.eql(0);
-    expect(element.load.callCount).to.eql(0);
+    expect(pauseSpy.callCount).to.eql(0);
+    expect(loadSpy.callCount).to.eql(0);
     wrapper.load(true);
-    expect(element.pause.callCount).to.eql(0);
-    expect(element.load.callCount).to.eql(1);
+    expect(pauseSpy.callCount).to.eql(0);
+    expect(loadSpy.callCount).to.eql(1);
     expect(element.currentTime).to.eql(10);
   });
 
@@ -276,130 +281,129 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should act on initialTime if has not played', function(){
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.setInitialTime(10);
-    expect(wrapper.seek.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should not act on initialTime if initial time is 0 if content has not started', function(){
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.setInitialTime(0);
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should act on initialTime if initial time is 0 if content has started', function(){
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.play();
     $(element).triggerHandler("playing");
     wrapper.setInitialTime(0);
-    expect(wrapper.seek.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should not act on initialTime if initial time is null', function(){
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.setInitialTime(null);
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should not act on initialTime if initial time is undefined', function(){
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.setInitialTime();
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should not act on initialTime if initial time is a string', function(){
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.setInitialTime("string");
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should delay initialTime on Android until timeupdate is called', function(){
     OO.isAndroid = true;
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.setInitialTime(10);
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
     $(element).triggerHandler("timeupdate");
-    expect(wrapper.seek.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should play if not seeking', function(){
-    spyOn(element, "play");
+    var spy = sinon.spy(element, "play");
     wrapper.play();
-    expect(element.play.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should not load on play if loaded', function(){
     wrapper.load();
-    spyOn(element, "load");
+    var spy = sinon.spy(element, "load");
     wrapper.play();
-    expect(element.load.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should load on play if not loaded', function(){
-    spyOn(element, "load");
+    var spy = sinon.spy(element, "load");
     wrapper.play();
-    expect(element.load.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should not play if seeking', function(){
     element.seeking = true;
-    spyOn(element, "play");
+    var spy = sinon.spy(element, "play");
     wrapper.play();
-    expect(element.play.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should act on initialTime if has played', function(){
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.play();
     wrapper.setInitialTime(10);
-    expect(wrapper.seek.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should act on initialTime if has played and video ended', function(){
-    spyOn(wrapper, "seek");
+    var spy = sinon.spy(wrapper, "seek");
     wrapper.play();
     $(element).triggerHandler("ended");
     wrapper.setInitialTime(10);
-    expect(wrapper.seek.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should call pause on element when wrapper paused', function(){
     wrapper.load();
     //wrapper.load calls element.pause, so spy on the pause after loading
-    spyOn(element, "pause");
+    var spy = sinon.spy(element, "pause");
     wrapper.play();
     $(element).triggerHandler("playing");
-    expect(element.pause.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
     wrapper.pause();
-    expect(element.pause.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should pause with no VTC notifications on the playing event if calling pause after calling play but before receiving the playing event', function(){
     wrapper.load();
     //wrapper.load calls element.pause, so spy on the pause after loading
-    spyOn(element, "pause");
+    var spy = sinon.spy(element, "pause");
     wrapper.play();
     wrapper.pause();
-    expect(element.pause.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
     $(element).triggerHandler("playing");
-    expect(element.pause.wasCalled).to.be(true);
-    expect(element.pause.callCount).to.be(1);
+    expect(spy.callCount).to.be(1);
+    expect(spy.callCount).to.be(1);
 
     //check that another playing event does not pause the player again
     wrapper.play();
     $(element).triggerHandler("playing");
-    expect(element.pause.callCount).to.be(1);
+    expect(spy.callCount).to.be(1);
 
     //check that another pause is immediately honoroed rather than waiting on the playing event
     wrapper.pause();
-    expect(element.pause.callCount).to.be(2);
+    expect(spy.callCount).to.be(2);
   });
 
   it('should ignore seek if current time is equal to seek time', function(){
     element.duration = 10;
     element.currentTime = 0;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(0);
+    stubSeekable(element, 0, 0);
     element.seekable.length = 0;
     var returns = wrapper.seek(0);
     expect(returns).to.be(false);
@@ -407,8 +411,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should ignore seek if seekrange is 0', function(){
     element.duration = 10;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(0);
+    stubSeekable(element, 0, 0);
     element.seekable.length = 0;
     var returns = wrapper.seek(0);
     expect(returns).to.be(false);
@@ -417,8 +420,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should ignore seek for live streams with no DVR', function(){
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(0);
+    stubSeekable(element, 0, 0);
     wrapper.setVideoUrl("url", "mp4", true);
     element.duration = Infinity;
     var returns = wrapper.seek(1);
@@ -456,7 +458,7 @@ describe('main_html5 wrapper tests', function () {
     setFullSeekRange(duration);
     var returns = wrapper.seek(element.seekable.start(0) - 1);
     expect(returns).to.be(true);
-    expect(element.currentTime).to.eql(null);
+    expect(element.currentTime).to.eql(0);
     var returns = wrapper.seek(element.seekable.end(0) + 1);
     expect(returns).to.be(true);
     expect(element.currentTime).to.eql(duration - 0.01);
@@ -481,18 +483,17 @@ describe('main_html5 wrapper tests', function () {
     vtc.interface.EVENTS.DURATION_CHANGE = "durationchange";
     element.currentTime = 3;
     element.duration = 10;
-    spyOn(element.seekable, "start").andReturn(2);
-    spyOn(element.seekable, "end").andReturn(10);
+    var spies = stubSeekable(element, 2, 10);
     element.seekable.length = 1;
 
     wrapper.seek(8);
-    expect(element.seekable.start.wasCalled).to.be(false);
-    expect(element.seekable.end.wasCalled).to.be(false);
+    expect(spies.startSpy.callCount).to.be(0);
+    expect(spies.endSpy.callCount).to.be(0);
 
     $(element).triggerHandler("canplay");
     wrapper.seek(8);
-    expect(element.seekable.start.wasCalled).to.be(true);
-    expect(element.seekable.end.wasCalled).to.be(true);
+    expect(spies.startSpy.callCount).to.be(1);
+    expect(spies.endSpy.callCount).to.be(1);
   });
 
   it('should reblock seekable from seeks upon load until video initialization in safari', function(){
@@ -502,27 +503,28 @@ describe('main_html5 wrapper tests', function () {
     element.duration = 10;
     element.seekable.length = 1;
 
-    spyOn(element.seekable, "start").andReturn(2);
-    spyOn(element.seekable, "end").andReturn(10);
+    var spies = stubSeekable(element, 2, 10);
     $(element).triggerHandler("canplay");
     wrapper.seek(8);
-    expect(element.seekable.start.wasCalled).to.be(true);
-    expect(element.seekable.end.wasCalled).to.be(true);
+    expect(spies.startSpy.callCount).to.be(1);
+    expect(spies.endSpy.callCount).to.be(1);
 
-    element.seekable.start.reset();
-    element.seekable.end.reset();
+    spies.startSpy.reset();
+    spies.endSpy.reset();
     wrapper.load();
     wrapper.seek(8);
-    expect(element.seekable.start.wasCalled).to.be(false);
-    expect(element.seekable.end.wasCalled).to.be(false);
+    expect(spies.startSpy.callCount).to.be(0);
+    expect(spies.endSpy.callCount).to.be(0);
   });
 
   it('DVR: should NOT ignore seek for live streams with DVR enabled', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     setDvr();
     expect(wrapper.seek(1)).to.be(true);
   });
 
   it('DVR: should NOT update currentTime when seek() is called with invalid value', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     setDvr();
     element.currentTime = 1000;
     wrapper.seek(-1);
@@ -543,6 +545,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should constrain seek time to DVR window', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var dvrWindowStart = 500;
     var dvrWindowSize = 1750;
     var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
@@ -558,6 +561,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should calculate DVR seek time relative to DVR start and end values', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var dvrWindowStart = 2000;
     var dvrWindowSize = 2000;
     var dvrWindowEnd = dvrWindowStart + dvrWindowSize;
@@ -571,6 +575,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should update time shift when seeking', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var params;
     var dvrWindowStart = 100;
     var dvrWindowSize = 1600;
@@ -591,6 +596,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should update time shift after natively triggered SEEKED events', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var params;
     var dvrWindowSize = 1750;
     setDvr(0, dvrWindowSize);
@@ -607,9 +613,10 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should NOT update time shift after SEEKED events when seeking with wrapper.seek()', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var params;
     var dvrWindowSize = 1750;
-    setDvr(0, dvrWindowSize);
+    var spies = setDvr(0, dvrWindowSize);
     element.currentTime = dvrWindowSize;
     $(element).triggerHandler("timeupdate");
     params = vtc.notifyParameters[1];
@@ -617,6 +624,8 @@ describe('main_html5 wrapper tests', function () {
     // Time shift is updated when calling seek, but shouldn't be updated again when seeked is fired
     wrapper.seek(dvrWindowSize / 2);
     // Simulating that DVR window changes while we were seeking, which would result in a different shift value
+    spies.startSpy.restore();
+    spies.endSpy.restore();
     setDvr(100, dvrWindowSize + 100);
     $(element).triggerHandler("seeked");
     // Current time should reflect shift calculated on wrapper.seeked() and shouldn't be updated after seeked event
@@ -626,10 +635,11 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should adapt to changes in the DVR window', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var params;
     var dvrWindowSize = 1750;
     var midpoint = dvrWindowSize / 2;
-    setDvr(0, dvrWindowSize);
+    var spies = setDvr(0, dvrWindowSize);
     element.currentTime = dvrWindowSize;
     // Test seek with initial DVR window
     wrapper.seek(midpoint);
@@ -638,6 +648,8 @@ describe('main_html5 wrapper tests', function () {
     params = vtc.notifyParameters[1];
     expect(params.currentTime).to.be(midpoint);
     expect(Number(params.currentLiveTime)).to.be(midpoint);
+    spies.startSpy.restore();
+    spies.endSpy.restore();
     // Move DVR window forward
     setDvr(100, dvrWindowSize + 100);
     // Test seek with updated DVR window
@@ -651,9 +663,10 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should update time shift when resuming after a pause', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var params;
     var dvrWindowSize = 1800;
-    setDvr(0, dvrWindowSize);
+    var spies = setDvr(0, dvrWindowSize);
     element.currentTime = dvrWindowSize;
     // Initial play
     wrapper.play();
@@ -665,6 +678,8 @@ describe('main_html5 wrapper tests', function () {
     // Pause
     wrapper.pause();
     $(element).triggerHandler("pause");
+    spies.startSpy.restore();
+    spies.endSpy.restore();
     // Move DVR window forward during pause
     setDvr(100, dvrWindowSize + 100);
     element.currentTime = dvrWindowSize;
@@ -678,10 +693,13 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should NOT update time shift on initial play', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var params;
     var dvrWindowSize = 1800;
-    setDvr(0, dvrWindowSize);
+    var spies = setDvr(0, dvrWindowSize);
     element.currentTime = dvrWindowSize;
+    spies.startSpy.restore();
+    spies.endSpy.restore();
     // Move DVR window forward before playing
     setDvr(100, dvrWindowSize + 100);
     element.currentTime = dvrWindowSize;
@@ -695,10 +713,11 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: should NOT update time shift after PLAYING event if video was not paused', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var params;
     var dvrWindowSize = 1800;
     var midpoint = dvrWindowSize / 2;
-    setDvr(0, dvrWindowSize);
+    var spies = setDvr(0, dvrWindowSize);
     element.currentTime = dvrWindowSize;
     // Play and seek to midpoint
     wrapper.play();
@@ -709,6 +728,8 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("timeupdate");
     params = vtc.notifyParameters[1];
     expect(params.currentTime).to.be(midpoint);
+    spies.startSpy.restore();
+    spies.endSpy.restore();
     // Update DVR window before firing playing
     setDvr(100, dvrWindowSize + 100);
     element.currentTime = dvrWindowSize;
@@ -721,9 +742,10 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('DVR: time shift should not exceed max time shift value', function() {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
     var params;
     var dvrWindowSize = 1750;
-    setDvr(0, dvrWindowSize);
+    var spies = setDvr(0, dvrWindowSize);
     element.currentTime = dvrWindowSize;
     // Initial play
     wrapper.play();
@@ -731,6 +753,8 @@ describe('main_html5 wrapper tests', function () {
     // Pause
     wrapper.pause();
     $(element).triggerHandler("pause");
+    spies.startSpy.restore();
+    spies.endSpy.restore();
     // Move DVR window way past window size, but keep current time the same
     setDvr(5000, dvrWindowSize + 5000);
     element.currentTime = dvrWindowSize;
@@ -1009,11 +1033,11 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should prime a video element with play and pause', function(){
-    spyOn(element, "play");
-    spyOn(element, "pause");
+    var playSpy = sinon.spy(element, "play");
+    var pauseSpy = sinon.spy(element, "pause");
     wrapper.primeVideoElement();
-    expect(element.play.wasCalled).to.be(true);
-    expect(element.pause.wasCalled).to.be(true);
+    expect(playSpy.callCount >= 1).to.be(true);
+    expect(pauseSpy.callCount >= 1).to.be(true);
   });
 
   it('should wait for play promise to be resolved before pausing when priming on iOS', function(){
@@ -1028,13 +1052,13 @@ describe('main_html5 wrapper tests', function () {
         }
       };
     };
-    spyOn(element, "pause");
+    var spy = sinon.spy(element, "pause");
     wrapper.load(false);
     wrapper.primeVideoElement();
     // Pause should not be called until promise is resolved
-    expect(element.pause.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
     thenCallback();
-    expect(element.pause.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
     // Restore original play function
     element.play = originalPlayFunction;
   });
@@ -1051,14 +1075,14 @@ describe('main_html5 wrapper tests', function () {
         }
       };
     };
-    spyOn(element, "pause");
+    var spy = sinon.spy(element, "pause");
     wrapper.load(false);
     wrapper.primeVideoElement();
     // Simulating that play() gets called before the original video.play promise from
     // the priming call is resolved
     wrapper.play();
     thenCallback();
-    expect(element.pause.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
     // Restore original play function
     element.play = originalPlayFunction;
   });
@@ -1097,10 +1121,10 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should pause the video element on destroy', function(){
-    spyOn(element, "pause");
-    expect(element.pause.wasCalled).to.be(false);
+    var spy = sinon.spy(element, "pause");
+    expect(spy.callCount).to.be(0);
     wrapper.destroy();
-    expect(element.pause.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should unset the src on destroy', function(){
@@ -1250,7 +1274,7 @@ describe('main_html5 wrapper tests', function () {
     element.currentTime = 10;
     expect(wrapper.getCurrentTime()).to.eql(10);
     element.currentTime = 0;
-    expect(wrapper.getCurrentTime()).to.eql(null);
+    expect(wrapper.getCurrentTime()).to.eql(0);
     element.currentTime = 1000000;
     expect(wrapper.getCurrentTime()).to.eql(1000000);
   });
