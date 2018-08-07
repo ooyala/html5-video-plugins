@@ -26,6 +26,8 @@ OO._.extend(window.DOMParser.prototype, {
   }
 });
 
+global._ = OO._;
+
 // In a browser environment, all of the properties of "window" (like navigator) are in the global scope:
 OO._.extend(global, window);
 
