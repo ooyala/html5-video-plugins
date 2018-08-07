@@ -2,12 +2,9 @@
  * https://github.com/Automattic/expect.js
  */
 
-describe('main_html5 wrapper tests', function () {
-  // Load test helpers
-  require('../../utils/test_lib.js');
-  jest.dontMock('../../utils/mock_vtc.js');
-  require('../../utils/mock_vtc.js');
+const sinon = require('sinon');
 
+describe('main_html5 wrapper tests', function () {
   var pluginFactory, parentElement, wrapper, element, vtc;
 
   // Setup
@@ -27,11 +24,18 @@ describe('main_html5 wrapper tests', function () {
     }
   };
 
+  var stubSeekable = function(element, start, end) {
+    var startSpy = sinon.stub(element.seekable, "start").callsFake(() => {return start});
+    var endSpy = sinon.stub(element.seekable, "end").callsFake(() => {return end});
+    return {startSpy, endSpy};
+  };
+
   beforeEach(function() {
     vtc = new mock_vtc();
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
+    element.seekable.length = 1;
   });
 
   afterEach(function() {
@@ -49,27 +53,29 @@ describe('main_html5 wrapper tests', function () {
   // tests
 
   it('should not dequeue seek on \'loadedmetadata\' event if no seek enqueued', function(){
-    spyOn(wrapper, "seek");
+    const spy = sinon.spy(wrapper, "seek");
     $(element).triggerHandler("loadedmetadata");
-    expect(wrapper.seek.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should dequeue seek on \'loadedmetadata\' event', function(){
     element.duration = 10;
     wrapper.setInitialTime(10);
-    spyOn(wrapper, "seek");
+    const spy = sinon.spy(wrapper, "seek");
+    stubSeekable(element, 0, 10);
     $(element).triggerHandler("loadedmetadata");
-    expect(wrapper.seek.wasCalled).to.be(true);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should clear queued seek on a successful dequeue seek', function(){
     element.duration = 60;
     wrapper.setInitialTime(10);
-    spyOn(wrapper, "seek");
+    const spy = sinon.spy(wrapper, "seek");
+    stubSeekable(element, 0, 60);
     $(element).triggerHandler("loadedmetadata");
-    expect(wrapper.seek.callCount).to.be(1);
+    expect(spy.callCount).to.be(1);
     $(element).triggerHandler("loadedmetadata");
-    expect(wrapper.seek.callCount).to.be(1);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should notify PROGRESS on \'progress\' event', function(){
@@ -88,11 +94,9 @@ describe('main_html5 wrapper tests', function () {
   it('should notify PROGRESS on \'progress\' event with buffer range and seek range', function(){
     element.currentTime = 3;
     element.duration = 10;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(10);
-    element.seekable.length = 1;
-    spyOn(element.buffered, "end").andReturn(10);
+    stubSeekable(element, 0, 10);
     element.buffered.length = 1;
+    sinon.stub(element.buffered, "end").callsFake(() => {return 10});
     $(element).triggerHandler("progress");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PROGRESS,
       {
@@ -129,7 +133,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("error");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ERROR, {errorcode: -1}]);
     $(element).triggerHandler({ type:"error",  target: { error: { code: 2 }}});
-    element.error = { code: 2}
+    element.error = { code: 2};
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ERROR, {errorcode: 2}]);
     $(element).triggerHandler({ type:"error",  target: { error: null} });
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ERROR, {errorcode: -1}]);
@@ -139,7 +143,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not notify ERROR on video \'error\' event with code 4 and empty src', function(){
     $(element).attr("src", "");
-    target = element;
+    var target = element;
     target.error = { code: 4 };
     $(element).triggerHandler({ type:"error",  target: target });
     expect(vtc.notifyParameters).to.eql([undefined]);
@@ -155,7 +159,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not notify ERROR on video \'error\' event with code 4 and "null" src', function(){
     $(element).attr("src", "null");
-    target = element;
+    var target = element;
     target.error = { code: 4 };
     $(element).triggerHandler({ type:"error",  target: target });
     expect(vtc.notifyParameters).to.eql([undefined]);
@@ -568,9 +572,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not raise seeking before initial time has seeked', function(){
     element.duration = 20;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
-    element.seekable.length = 1;
+    stubSeekable(element, 0, 20);
     wrapper.setInitialTime(10);
     $(element).triggerHandler("seeking");
     expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.SEEKING);
@@ -581,9 +583,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not raise seeking before initial time has seeked if initialtime is 0', function(){
     element.duration = 20;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
-    element.seekable.length = 1;
+    stubSeekable(element, 0, 20);
     wrapper.play();
     $(element).triggerHandler("playing");
     wrapper.setInitialTime(0);
@@ -618,12 +618,12 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not dequeue play command if stream paused before seeking completed', function(){
     element.seeking = true;
-    spyOn(element, "play");
+    const spy = sinon.spy(element, "play");
     wrapper.play();
     wrapper.pause();
     element.seeking = false;
     $(element).triggerHandler("seeked");
-    expect(element.play.wasCalled).to.be(false);
+    expect(spy.callCount).to.be(0);
   });
 
   it('should notify SEEKED on video \'seeked\' event', function(){
@@ -633,9 +633,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not raise seeked when initial time is set to non-zero', function(){
     element.duration = 20;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
-    element.seekable.length = 1;
+    stubSeekable(element, 0, 20);
     wrapper.setInitialTime(10);
     $(element).triggerHandler("seeked");
     expect(vtc.notified[0]).to.not.eql(vtc.interface.EVENTS.SEEKED);
@@ -645,9 +643,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should not raise seeked before initial time has seeked if initialtime is 0', function(){
     element.duration = 20;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
-    element.seekable.length = 1;
+    stubSeekable(element, 0, 20);
     wrapper.play();
     $(element).triggerHandler("playing");
     wrapper.setInitialTime(0);
@@ -725,9 +721,7 @@ describe('main_html5 wrapper tests', function () {
     OO.isSafari = true;
     element.currentTime = 3;
     element.duration = 10;
-    spyOn(element.seekable, "start").andReturn(2);
-    spyOn(element.seekable, "end").andReturn(10);
-    element.seekable.length = 1;
+    var spies = stubSeekable(element, 2, 10);
     $(element).triggerHandler("durationchange");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
       {
@@ -737,8 +731,8 @@ describe('main_html5 wrapper tests', function () {
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
       }]);
-    expect(element.seekable.start.wasCalled).to.be(false);
-    expect(element.seekable.end.wasCalled).to.be(false);
+    expect(spies.startSpy.callCount).to.be(0);
+    expect(spies.endSpy.callCount).to.be(0);
 
     $(element).triggerHandler("canplay");
     $(element).triggerHandler("durationchange");
@@ -750,17 +744,15 @@ describe('main_html5 wrapper tests', function () {
         "buffer" : 0,
         "seekRange" : {"start": 2, "end" : 10}
       }]);
-    expect(element.seekable.start.wasCalled).to.be(true);
-    expect(element.seekable.end.wasCalled).to.be(true);
+    expect(spies.startSpy.callCount).to.be(1);
+    expect(spies.endSpy.callCount).to.be(1);
   });
 
   it('should reblock seekable from playheads upon load until video initialization in safari', function(){
     OO.isSafari = true;
     element.currentTime = 3;
     element.duration = 10;
-    spyOn(element.seekable, "start").andReturn(2);
-    spyOn(element.seekable, "end").andReturn(10);
-    element.seekable.length = 1;
+    var spies = stubSeekable(element, 2, 10);
 
     $(element).triggerHandler("canplay");
     $(element).triggerHandler("durationchange");
@@ -772,11 +764,11 @@ describe('main_html5 wrapper tests', function () {
         "buffer" : 0,
         "seekRange" : {"start": 2, "end" : 10}
       }]);
-    expect(element.seekable.start.wasCalled).to.be(true);
-    expect(element.seekable.end.wasCalled).to.be(true);
+    expect(spies.startSpy.callCount).to.be(1);
+    expect(spies.endSpy.callCount).to.be(1);
 
-    element.seekable.start.reset();
-    element.seekable.end.reset();
+    spies.startSpy.reset();
+    spies.endSpy.reset();
     wrapper.load();
     $(element).triggerHandler("durationchange");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
@@ -787,8 +779,8 @@ describe('main_html5 wrapper tests', function () {
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
       }]);
-    expect(element.seekable.start.wasCalled).to.be(false);
-    expect(element.seekable.end.wasCalled).to.be(false);
+    expect(spies.startSpy.callCount).to.be(0);
+    expect(spies.endSpy.callCount).to.be(0);
   });
 
   it('should notify DURATION_CHANGE on video \'durationchange\' event', function(){
@@ -808,10 +800,8 @@ describe('main_html5 wrapper tests', function () {
   it('should notify DURATION_CHANGE on video \'durationchange\' event with buffer range and seek range', function(){
     element.currentTime = 3;
     element.duration = 10;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(10);
-    element.seekable.length = 1;
-    spyOn(element.buffered, "end").andReturn(10);
+    stubSeekable(element, 0, 10);
+    sinon.stub(element.buffered, "end").callsFake(() => {return 10});
     element.buffered.length = 1;
     $(element).triggerHandler("durationchange");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.DURATION_CHANGE,
@@ -827,9 +817,7 @@ describe('main_html5 wrapper tests', function () {
   it('should not raise durationChange before initial time is used', function(){
     OO.isAndroid = true;
     element.duration = 20;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
-    element.seekable.length = 1;
+    stubSeekable(element, 0, 20);
     wrapper.setInitialTime(10);
     element.currentTime = 9;
     $(element).triggerHandler("durationchange");
@@ -846,10 +834,8 @@ describe('main_html5 wrapper tests', function () {
 
   it('should raise durationchange before initial time is used if the initial time position is passed', function(){
     OO.isAndroid = true;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
+    stubSeekable(element, 0, 20);
     element.duration = 20;
-    element.seekable.length = 1;
     element.currentTime = 11;
     wrapper.setInitialTime(10);
     $(element).triggerHandler("timeupdate");
@@ -875,10 +861,8 @@ describe('main_html5 wrapper tests', function () {
   it('should notify TIME_UPDATE on video \'timeupdate\' event with buffer range and seek range', function(){
     element.currentTime = 3;
     element.duration = 10;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(10);
-    element.seekable.length = 1;
-    spyOn(element.buffered, "end").andReturn(10);
+    stubSeekable(element, 0, 10);
+    sinon.stub(element.buffered, "end").callsFake(() => {return 10});
     element.buffered.length = 1;
     $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE,
@@ -902,34 +886,32 @@ describe('main_html5 wrapper tests', function () {
   it('should dequeue seek and fail on video \'timeupdate\' event if not seekable', function(){
     element.duration = 10;
     wrapper.setInitialTime(10);
-    spyOn(wrapper, "seek").andCallThrough();
+    const spy = sinon.spy(wrapper, "seek");
     $(element).triggerHandler("timeupdate");
-    expect(wrapper.seek.callCount).to.be(1);
+    expect(spy.callCount).to.be(1);
     $(element).triggerHandler("timeupdate");
-    expect(wrapper.seek.callCount).to.be(2);
-    expect(element.currentTime).to.eql(null);
+    expect(spy.callCount).to.be(2);
+    expect(element.currentTime).to.eql(0);
   });
 
   it('should dequeue seek and succeed on video \'timeupdate\' event if seekable', function(){
     element.duration = 20;
     wrapper.setInitialTime(10);
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
+    stubSeekable(element, 0, 20);
     element.seekable.length = 1;
-    spyOn(wrapper, "seek").andCallThrough();
-    expect(element.currentTime).to.eql(null);
+    const spy = sinon.spy(wrapper, "seek");
+    expect(element.currentTime).to.eql(0);
     $(element).triggerHandler("timeupdate");
     expect(element.currentTime).to.eql(10);
-    expect(wrapper.seek.callCount).to.be(1);
+    expect(spy.callCount).to.be(1);
     $(element).triggerHandler("timeupdate");
-    expect(wrapper.seek.callCount).to.be(1);
+    expect(spy.callCount).to.be(1);
   });
 
   it('should not raise timeUpdate before initial time is used', function(){
     OO.isAndroid = true;
     element.duration = 20;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
+    stubSeekable(element, 0, 20);
     element.seekable.length = 1;
     wrapper.setInitialTime(10);
     $(element).triggerHandler("timeupdate");
@@ -942,8 +924,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should raise timeUpdate before initial time is used if the initial time position is passed', function(){
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
+    stubSeekable(element, 0, 20);
     element.duration = 20;
     element.seekable.length = 1;
     wrapper.setInitialTime(10);
@@ -956,8 +937,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should raise timeUpdate on times before initial time if initial time has been reached previously', function(){
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(20);
+    stubSeekable(element, 0, 20);
     element.duration = 20;
     element.seekable.length = 1;
     wrapper.setInitialTime(10);
@@ -994,9 +974,8 @@ describe('main_html5 wrapper tests', function () {
     element.duration = Infinity;
     element.seekable.length = 1;
     element.buffered.length = 1;
-    spyOn(element.seekable, "start").andReturn(0);
-    spyOn(element.seekable, "end").andReturn(dvrWindowSize);
-    spyOn(element.buffered, "end").andReturn(10);
+    stubSeekable(element, 0, dvrWindowSize);
+    sinon.stub(element.buffered, "end").callsFake(() => {return 10});
     $(element).triggerHandler("timeupdate");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.TIME_UPDATE, {
       currentTime: dvrWindowSize,
@@ -1016,9 +995,8 @@ describe('main_html5 wrapper tests', function () {
     element.duration = Infinity;
     element.seekable.length = 1;
     element.buffered.length = 1;
-    spyOn(element.seekable, "start").andReturn(dvrWindowStart);
-    spyOn(element.seekable, "end").andReturn(dvrWindowEnd);
-    spyOn(element.buffered, "end").andReturn(10);
+    stubSeekable(element, dvrWindowStart, dvrWindowEnd);
+    sinon.stub(element.buffered, "end").callsFake(() => {return 10});
     wrapper.seek(700);
     $(element).triggerHandler("seeked");
     $(element).triggerHandler("timeupdate");
@@ -1033,7 +1011,7 @@ describe('main_html5 wrapper tests', function () {
       }
     }]);
   });
-
+  //
   it('DVR: should set duration and buffer to the size of the DVR window when notifying TIME_UPDATE', function() {
     var dvrWindowStart = 1000;
     var dvrWindowSize = 1750;
@@ -1043,9 +1021,8 @@ describe('main_html5 wrapper tests', function () {
     element.duration = Infinity;
     element.seekable.length = 1;
     element.buffered.length = 1;
-    spyOn(element.seekable, "start").andReturn(dvrWindowStart);
-    spyOn(element.seekable, "end").andReturn(dvrWindowEnd);
-    spyOn(element.buffered, "end").andReturn(100);
+    stubSeekable(element, dvrWindowStart, dvrWindowEnd);
+    sinon.stub(element.buffered, "end").callsFake(() => {return 100});
     $(element).triggerHandler("timeupdate");
     var params = vtc.notifyParameters[1];
     expect(params.duration).to.be(dvrWindowSize);
@@ -1055,9 +1032,9 @@ describe('main_html5 wrapper tests', function () {
   // TODO: when async testing working, test for force end on timeupdate on m3u8
 
   it('should notify PLAY on video \'play\' event', function(){
-    element.src = "url";
+    element.src = "http://url/";
     $(element).triggerHandler("play");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAY, { "url" : "url" }]);
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.PLAY, { "url" : "http://url/" }]);
   });
 
   it('should notify PAUSED on video \'pause\' event', function(){
@@ -1093,10 +1070,11 @@ describe('main_html5 wrapper tests', function () {
     vtc.notified = [];
 
     element.muted = false;
-    $(element).triggerHandler({
-      type: "volumechange",
-      target: {volume: 0.3}
-    });
+    element.volume = 0.3;
+    var event = document.createEvent('HTMLEvents');
+    event.initEvent('volumechange');
+    element.dispatchEvent(event);
+
     expect(vtc.notified[1]).to.eql(vtc.interface.EVENTS.MUTE_STATE_CHANGE);
     expect(vtc.notifyParametersHistory[1][1]).to.eql({muted: false});
   });

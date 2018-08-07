@@ -1,3 +1,4 @@
+// Load test helpers
 jest.dontMock('underscore');
 jest.dontMock('jquery');
 
@@ -17,7 +18,7 @@ global.expect = require('expect.js');
 // a wrapper domparser simulating Mozilla DOMParser in the browser:
 window.DOMParser = function() {};
 
-require.requireActual("../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
+require.requireActual("../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 
 OO._.extend(window.DOMParser.prototype, {
   parseFromString: function(data, type) {
@@ -28,4 +29,27 @@ OO._.extend(window.DOMParser.prototype, {
 // In a browser environment, all of the properties of "window" (like navigator) are in the global scope:
 OO._.extend(global, window);
 
-require.requireActual("../../html5-common/js/utils/InitModules/InitOOHazmat.js");
+require.requireActual("../html5-common/js/utils/InitModules/InitOOHazmat.js");
+
+jest.dontMock('./utils/mock_vtc.js');
+require('./utils/mock_vtc.js');
+
+window.HTMLMediaElement.prototype.load = () => { /* do nothing */ };
+window.HTMLMediaElement.prototype.play = () => { /* do nothing */ };
+window.HTMLMediaElement.prototype.pause = () => { /* do nothing */ };
+window.HTMLMediaElement.prototype.addTextTrack = () => { /* do nothing */ };
+var readOnlyMediaProperties = ["duration", "currentSrc", "textTracks", "seeking"];
+
+_.each(readOnlyMediaProperties, (prop) => {
+  Object.defineProperty(HTMLMediaElement.prototype, prop, {
+    writable: true
+  });
+});
+
+var readOnlyVideoProperties = ["videoWidth", "videoHeight"];
+
+_.each(readOnlyVideoProperties, (prop) => {
+  Object.defineProperty(HTMLVideoElement.prototype, prop, {
+    writable: true
+  });
+});
