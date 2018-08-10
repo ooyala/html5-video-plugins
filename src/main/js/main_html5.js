@@ -207,6 +207,7 @@ require("../../../html5-common/js/utils/environment.js");
     var textTrackModes = {};
     var originalPreloadValue = $(_video).attr("preload") || "none";
     var currentPlaybackSpeed = 1.0;
+    var streamTextTrackCount = 0;
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -368,6 +369,7 @@ require("../../../html5-common/js/utils/environment.js");
       $(_video).find('.' + TRACK_CLASS).remove();
       availableClosedCaptions = {};
       ignoreFirstPlayingEvent = false;
+      streamTextTrackCount = 0;
     }, this);
 
     /**
@@ -791,7 +793,13 @@ require("../../../html5-common/js/utils/environment.js");
         //If the captions are in-stream, we just need to enable them; Otherwise we must add them to the video ourselves.
         if (captions.inStream == true && _video.textTracks) {
           for (var i = 0; i < _video.textTracks.length; i++) {
-            if (((OO.isSafari || OO.isEdge) && isLive) || _video.textTracks[i].kind === "captions") {
+            if (
+              (((OO.isSafari || OO.isEdge) && isLive) || _video.textTracks[i].kind === "captions") &&
+              // Enable only the track that matches the active language. For
+              // in-manifest/in-stream tracks the language will actually be the
+              // track id (something like CC1, CC2, etc.)
+              _video.textTracks[i].trackId === language
+            ) {
               _video.textTracks[i].mode = captionMode;
               _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
             } else {
@@ -801,8 +809,7 @@ require("../../../html5-common/js/utils/environment.js");
             // We keep track of all text track modes in order to prevent Safari from randomly
             // changing them. We can't set the id of inStream tracks, so we use a custom
             // trackId property instead
-            trackId = _video.textTracks[i].id || _video.textTracks[i].trackId || OO.getRandomString();
-            _video.textTracks[i].trackId = trackId;
+            trackId = trySetStreamTextTrackId(_video.textTracks[i]);
             textTrackModes[trackId] = _video.textTracks[i].mode;
           }
         } else if (!captions.inStream) {
@@ -1131,23 +1138,59 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#checkForClosedCaptions
      */
     var checkForClosedCaptions = _.bind(function() {
-      if (_video.textTracks && _video.textTracks.length > 0) {
-        var languages = [];
-        for (var i = 0; i < _video.textTracks.length; i++) {
-          if (((OO.isSafari || OO.isEdge) && isLive) || _video.textTracks[i].kind === "captions") {
-            var captionInfo = {
-              language: "CC",
-              inStream: true,
-              label: "In-Stream"
-            };
-            //Don't overwrite other closed captions of this language. They have priority.
-            if (availableClosedCaptions[captionInfo.language] == null) {
-              addClosedCaptions(captionInfo);
-            }
+      if (!_video.textTracks || !_video.textTracks.length) {
+        return;
+      }
+      var expectingStreamTextTracks = (OO.isSafari || OO.isEdge) && isLive;
+
+      Array.prototype.forEach.call(_video.textTracks, function(currentTrack) {
+        if (
+          expectingStreamTextTracks ||
+          currentTrack.kind === 'captions'
+        ) {
+          // For in-manifest/in-stream captions we use the id of the track (e.g.
+          // CC1, CC2, etc.) as a language in order to avoid conflicts with
+          // external captions.
+          var language = trySetStreamTextTrackId(currentTrack);
+          var captionInfo = {
+            language: language,
+            inStream: true,
+            label: currentTrack.label || language
+          };
+          // Don't overwrite other closed captions of this language. They have priority.
+          if (!availableClosedCaptions[captionInfo.language]) {
+            addClosedCaptions(captionInfo);
           }
         }
-      }
+      });
     }, this);
+
+    /**
+     * Tries to set a custom id on a in-manifest/in-stream TextTrack object which
+     * allows us to identify it for selection and workaround purposes. Id's set are
+     * stored on a custom trackId property and are of the type 'CCn', where n is the
+     * index of the track relative to the order in which it was found. Existing track
+     * ids will not be overriten.
+     * @private
+     * @method OoyalaVideoWrapper#trySetStreamTextTrackId
+     * @param {TextTrack} textTrack The TextTrack object whose id we want to set.
+     * @return {String} The new or pre-existing id of the track
+     */
+    var trySetStreamTextTrackId = _.bind(function(textTrack) {
+      if (!textTrack) {
+        return null;
+      }
+      // Avoid having two separate ids in the rare case that the in-manifest/in-stream
+      // has a predefined id
+      if (textTrack.id) {
+        textTrack.trackId = textTrack.id;
+      }
+      if (!textTrack.trackId) {
+        streamTextTrackCount++;
+        textTrack.trackId = 'CC' + streamTextTrackCount;
+      }
+      return textTrack.trackId;
+    });
 
     /**
      * Add new closed captions and relay them to the controller.
