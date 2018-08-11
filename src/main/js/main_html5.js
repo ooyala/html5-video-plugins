@@ -1151,11 +1151,11 @@ require("../../../html5-common/js/utils/environment.js");
           // For in-manifest/in-stream captions we use the id of the track (e.g.
           // CC1, CC2, etc.) as a language in order to avoid conflicts with
           // external captions.
-          var language = trySetStreamTextTrackId(currentTrack);
+          var trackId = trySetStreamTextTrackId(currentTrack);
           var captionInfo = {
-            language: language,
+            language: trackId,
             inStream: true,
-            label: currentTrack.label || language
+            label: currentTrack.label || currentTrack.language || trackId
           };
           // Don't overwrite other closed captions of this language. They have priority.
           if (!availableClosedCaptions[captionInfo.language]) {

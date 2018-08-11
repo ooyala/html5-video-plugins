@@ -430,7 +430,7 @@ describe('main_html5 wrapper tests', function () {
 
   it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event for both live and external CCs on Safari (or Edge)', function(){
     OO.isSafari = true;
-    element.textTracks = [{ language: "en", label: "", kind: "subtitles" }]; // this is external CC
+    element.textTracks = [{ language: "", label: "", kind: "subtitles" }]; // this is external CC
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true); // sets isLive flag to true
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"}); // creates text tracks for external CCs
     $(element).triggerHandler("playing"); // adds in-stream captions
@@ -451,6 +451,82 @@ describe('main_html5 wrapper tests', function () {
 
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC1'], locale: { CC1: 'CC1' }}]);
+  });
+
+  it('should notify CAPTIONS_FOUND_ON_PLAYING with multiple in-manifest/in-stream captions', function() {
+    var isLive = true;
+    OO.isSafari = true;
+    element.textTracks = [
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" }
+    ];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['en', 'CC1', 'CC2', 'CC3'],
+      locale: {
+        en: 'English',
+        CC1: 'CC1',
+        CC2: 'CC2',
+        CC3: 'CC3'
+      }
+    }]);
+  });
+
+  it('should notify CAPTIONS_FOUND_ON_PLAYING with multiple in-manifest/in-stream captions using label and language metadata when available', function() {
+    var isLive = true;
+    OO.isSafari = true;
+    element.textTracks = [
+      { language: "", label: "", kind: "subtitles" },
+      { language: "es", label: "", kind: "subtitles" },
+      { language: "de", label: "German", kind: "subtitles" }
+    ];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['en', 'CC1', 'CC2', 'CC3'],
+      locale: {
+        en: 'English',
+        CC1: 'CC1',
+        CC2: 'es',
+        CC3: 'German'
+      }
+    }]);
+  });
+
+  it('should reset in-manifest/in-stream track ids when a new source is set', function() {
+    var isLive = true;
+    OO.isSafari = true;
+    element.textTracks = [
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" },
+    ];
+    wrapper.setVideoUrl("url1", OO.VIDEO.ENCODING.HLS, isLive);
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['CC1', 'CC2'],
+      locale: {
+        CC1: 'CC1',
+        CC2: 'CC2',
+      }
+    }]);
+    // Tracks should start from 1 once more instead of CC3, CC4...
+    element.textTracks = [
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" },
+    ];
+    wrapper.setVideoUrl("url2", OO.VIDEO.ENCODING.HLS, isLive);
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['CC1', 'CC2'],
+      locale: {
+        CC1: 'CC1',
+        CC2: 'CC2',
+      }
+    }]);
   });
 
   it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack', function(){

@@ -1211,6 +1211,60 @@ describe('main_html5 wrapper tests', function () {
     expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
   });
 
+  it('should only enable the in-manifest/in-stream track that matches language parameter', function() {
+    var isLive = true;
+    OO.isSafari = true;
+    element.textTracks = [
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" }
+    ];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    $(element).triggerHandler("playing");
+    wrapper.setClosedCaptions("CC3", null, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING });
+    expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+    expect(element.textTracks[1].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+    expect(element.textTracks[2].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+  });
+
+  it('should set custom ids on in-manifest/in-stream tracks when stream tracks are checked', function() {
+    var isLive = true;
+    OO.isSafari = true;
+    element.textTracks = [
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" }
+    ];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    $(element).triggerHandler("playing");
+    expect(element.textTracks[0].trackId).to.eql('CC1');
+    expect(element.textTracks[1].trackId).to.eql('CC2');
+    expect(element.textTracks[2].trackId).to.eql('CC3');
+    expect(element.textTracks[3].trackId).to.eql('CC4');
+  });
+
+  it('should set custom ids on in-manifest/in-stream tracks when closed captions are set if ids haven\'t been added yet', function() {
+    var isLive = true;
+    OO.isSafari = true;
+    element.textTracks = [
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" }
+    ];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    $(element).triggerHandler("playing");
+    expect(element.textTracks[0].trackId).to.eql('CC1');
+    expect(element.textTracks[1].trackId).to.eql('CC2');
+    // Add some new tracks
+    element.textTracks.push({ language: "", label: "", kind: "subtitles" });
+    element.textTracks.push({ language: "", label: "", kind: "subtitles" });
+    wrapper.setClosedCaptions("CC2", null, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING });
+    expect(element.textTracks[0].trackId).to.eql('CC1');
+    expect(element.textTracks[1].trackId).to.eql('CC2');
+    expect(element.textTracks[2].trackId).to.eql('CC3');
+    expect(element.textTracks[3].trackId).to.eql('CC4');
+  });
+
   it('should remove closed captions if language is null', function(){
     wrapper.setClosedCaptions(language, closedCaptions, params);
     expect(element.children.length > 0).to.be(true);
