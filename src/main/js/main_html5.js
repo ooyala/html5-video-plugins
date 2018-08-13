@@ -804,6 +804,7 @@ require("../../../html5-common/js/utils/environment.js");
               _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
             } else {
               _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+              _video.textTracks[i].oncuechange = null;
             }
             // [PLAYER-327], [PLAYER-73]
             // We keep track of all text track modes in order to prevent Safari from randomly
