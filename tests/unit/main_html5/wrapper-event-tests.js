@@ -423,7 +423,7 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC1'],
       locale: {
-        CC1: 'CC1'
+        CC1: 'Captions (CC1)'
       }
     }]);
   });
@@ -438,7 +438,7 @@ describe('main_html5 wrapper tests', function () {
       languages: ['en', 'CC1'],
       locale: {
         en: 'English',
-        CC1: 'CC1'
+        CC1: 'Captions (CC1)'
       }
     }]);
   });
@@ -450,7 +450,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("playing"); // this adds in-stream captions
 
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
-      languages: ['CC1'], locale: { CC1: 'CC1' }}]);
+      languages: ['CC1'], locale: { CC1: 'Captions (CC1)' }}]);
   });
 
   it('should notify CAPTIONS_FOUND_ON_PLAYING with multiple in-manifest/in-stream captions', function() {
@@ -468,9 +468,9 @@ describe('main_html5 wrapper tests', function () {
       languages: ['en', 'CC1', 'CC2', 'CC3'],
       locale: {
         en: 'English',
-        CC1: 'CC1',
-        CC2: 'CC2',
-        CC3: 'CC3'
+        CC1: 'Captions (CC1)',
+        CC2: 'Captions (CC2)',
+        CC3: 'Captions (CC3)'
       }
     }]);
   });
@@ -490,7 +490,7 @@ describe('main_html5 wrapper tests', function () {
       languages: ['en', 'CC1', 'CC2', 'CC3'],
       locale: {
         en: 'English',
-        CC1: 'CC1',
+        CC1: 'Captions (CC1)',
         CC2: 'es',
         CC3: 'German'
       }
@@ -509,8 +509,8 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC1', 'CC2'],
       locale: {
-        CC1: 'CC1',
-        CC2: 'CC2',
+        CC1: 'Captions (CC1)',
+        CC2: 'Captions (CC2)',
       }
     }]);
     // Tracks should start from 1 once more instead of CC3, CC4...
@@ -523,8 +523,8 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC1', 'CC2'],
       locale: {
-        CC1: 'CC1',
-        CC2: 'CC2',
+        CC1: 'Captions (CC1)',
+        CC2: 'Captions (CC2)',
       }
     }]);
   });

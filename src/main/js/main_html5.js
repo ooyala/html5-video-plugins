@@ -1156,7 +1156,7 @@ require("../../../html5-common/js/utils/environment.js");
           var captionInfo = {
             language: trackId,
             inStream: true,
-            label: currentTrack.label || currentTrack.language || trackId
+            label: currentTrack.label || currentTrack.language || 'Captions (' + trackId + ')'
           };
           // Don't overwrite other closed captions of this language. They have priority.
           if (!availableClosedCaptions[captionInfo.language]) {
