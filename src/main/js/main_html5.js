@@ -207,6 +207,17 @@ require("../../../html5-common/js/utils/environment.js");
     var textTrackModes = {};
     var originalPreloadValue = $(_video).attr("preload") || "none";
     var currentPlaybackSpeed = 1.0;
+    /**
+     * Keeps track of the ids of all of the text tracks that were added by
+     * the plugin (as opposed to in-manifest/in-stream tracks) for the current stream.
+     * @type {Array}
+     */
+    var externalTextTrackIds = [];
+    /**
+     * Keeps track of the number of in-manifest/in-stream tracks that have been
+     * detected for the current stream.
+     * @type {Number}
+     */
     var streamTextTrackCount = 0;
 
     // Watch for underflow on Chrome
@@ -369,6 +380,7 @@ require("../../../html5-common/js/utils/environment.js");
       $(_video).find('.' + TRACK_CLASS).remove();
       availableClosedCaptions = {};
       ignoreFirstPlayingEvent = false;
+      externalTextTrackIds = [];
       streamTextTrackCount = 0;
     }, this);
 
@@ -841,6 +853,9 @@ require("../../../html5-common/js/utils/environment.js");
           // [PLAYER-327], [PLAYER-73]
           // Store mode of newly added tracks for future use in workaround
           textTrackModes[trackId] = captionMode;
+          // Keep track of the fact that this track was added manually and is
+          // not an in-manifest/in-stream track
+          externalTextTrackIds.push(trackId);
           //Sometimes there is a delay before the textTracks are accessible. This is a workaround.
           _.delay(function(captionMode) {
             if (_video.textTracks && _video.textTracks[0]) {
@@ -1146,8 +1161,10 @@ require("../../../html5-common/js/utils/environment.js");
 
       Array.prototype.forEach.call(_video.textTracks, function(currentTrack) {
         if (
-          expectingStreamTextTracks ||
-          currentTrack.kind === 'captions'
+          (expectingStreamTextTracks || currentTrack.kind === 'captions') &&
+          // Manually added tracks have already been (or will be) added and notified
+          // when setClosedCaptions() is called, avoid mixing them up with in-manifest/in-stream tracks
+          !isExternalTextTrackId(currentTrack.id || currentTrack.trackId)
         ) {
           // For in-manifest/in-stream captions we use the id of the track (e.g.
           // CC1, CC2, etc.) as a language in order to avoid conflicts with
@@ -1167,6 +1184,20 @@ require("../../../html5-common/js/utils/environment.js");
     }, this);
 
     /**
+     * Determines whether or not the given track id belongs to an "external" text
+     * track that was added manually by the plugin (as opposed to an in-manifest
+     * or in-stream text track).
+     * @private
+     * @method OoyalaVideoWrapper#isExternalTextTrackId
+     * @param {String} trackId The id of the text track we want to check
+     * @return {Boolean} True if the track id belongs to an external track, false otherwise
+     */
+    var isExternalTextTrackId = _.bind(function(trackId) {
+      var isExternalId = externalTextTrackIds.indexOf(trackId) >= 0;
+      return isExternalId;
+    });
+
+    /**
      * Tries to set a custom id on a in-manifest/in-stream TextTrack object which
      * allows us to identify it for selection and workaround purposes. Id's set are
      * stored on a custom trackId property and are of the type 'CCn', where n is the
@@ -1180,11 +1211,6 @@ require("../../../html5-common/js/utils/environment.js");
     var trySetStreamTextTrackId = _.bind(function(textTrack) {
       if (!textTrack) {
         return null;
-      }
-      // Avoid having two separate ids in the rare case that the in-manifest/in-stream
-      // has a predefined id
-      if (textTrack.id) {
-        textTrack.trackId = textTrack.id;
       }
       if (!textTrack.trackId) {
         streamTextTrackCount++;

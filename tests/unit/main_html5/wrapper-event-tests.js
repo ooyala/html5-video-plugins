@@ -529,6 +529,37 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
+  it('should NOT readd manually added tracks to available captions when in-manifest/in-stream tracks are checked', function() {
+    var isLive = true;
+    OO.isSafari = true;
+    element.textTracks = [
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" }
+    ];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
+    // Simulate manually added track showing up on video element's textTracks property
+    var newTrackId = $(element).find('track').get(0).id;
+    element.textTracks.push({
+      id: newTrackId,
+      language: "en",
+      label: "English",
+      kind: "subtitles"
+    });
+    // Check for stream captions
+    $(element).triggerHandler("playing");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['en', 'CC1', 'CC2', 'CC3'],
+      locale: {
+        en: 'English',
+        CC1: 'Captions (CC1)',
+        CC2: 'Captions (CC2)',
+        CC3: 'Captions (CC3)'
+      }
+    }]);
+  });
+
   it('should notify CLOSED_CAPTION_CUE_CHANGED from onClosedCaptionCueChange event on textTrack', function(){
     var event = {
       currentTarget: {
