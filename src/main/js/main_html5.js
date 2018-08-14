@@ -1199,7 +1199,7 @@ require("../../../html5-common/js/utils/environment.js");
 
     /**
      * Tries to set a custom id on a in-manifest/in-stream TextTrack object which
-     * allows us to identify it for selection and workaround purposes. Id's set are
+     * allows us to identify it for selection and workaround purposes. IDs set are
      * stored on a custom trackId property and are of the type 'CCn', where n is the
      * index of the track relative to the order in which it was found. Existing track
      * ids will not be overriten.

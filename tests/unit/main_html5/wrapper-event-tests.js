@@ -529,7 +529,7 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
-  it('should NOT readd manually added tracks to available captions when in-manifest/in-stream tracks are checked', function() {
+  it('should NOT re-add manually added tracks to available captions when in-manifest/in-stream tracks are checked', function() {
     var isLive = true;
     OO.isSafari = true;
     element.textTracks = [
