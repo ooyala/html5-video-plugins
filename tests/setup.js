@@ -42,7 +42,7 @@ window.HTMLMediaElement.prototype.pause = () => { /* do nothing */ };
 window.HTMLMediaElement.prototype.addTextTrack = () => { /* do nothing */ };
 var readOnlyMediaProperties = ["duration", "currentSrc", "textTracks", "seeking", "paused", "ended", "audioTracks", "src"];
 
-_.each(readOnlyMediaProperties, (prop) => {
+readOnlyMediaProperties.forEach((prop) => {
   Object.defineProperty(HTMLMediaElement.prototype, prop, {
     writable: true,
     configurable: true
@@ -51,7 +51,7 @@ _.each(readOnlyMediaProperties, (prop) => {
 
 var readOnlyVideoProperties = ["videoWidth", "videoHeight"];
 
-_.each(readOnlyVideoProperties, (prop) => {
+readOnlyVideoProperties.forEach((prop) => {
   Object.defineProperty(HTMLVideoElement.prototype, prop, {
     writable: true,
     configurable: true
