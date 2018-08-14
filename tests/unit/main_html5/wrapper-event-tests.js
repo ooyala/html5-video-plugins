@@ -1012,7 +1012,7 @@ describe('main_html5 wrapper tests', function () {
       }
     }]);
   });
-  //
+
   it('DVR: should set duration and buffer to the size of the DVR window when notifying TIME_UPDATE', function() {
     var dvrWindowStart = 1000;
     var dvrWindowSize = 1750;

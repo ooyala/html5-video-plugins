@@ -90,29 +90,11 @@ describe('main_html5 wrapper tests', function () {
     start = start || 0;
     end = end || 1750;
 
-    // This can be called multiple times in order to update the DVR window,
-    // we need to remove the spies before setting new values.
-    //if (element.__dvrSpy) {
-    //  element.__dvrSpy.restore();
-    //}
-
     var startSpy = sinon.stub(element.seekable, "start").callsFake(() => {return start});
     var endSpy = sinon.stub(element.seekable, "end").callsFake(() => {return end});
     element.seekable.length = 1;
     element.duration = Infinity;
 
-    // If we've set up DVR before we don't set video url again in order to
-    // avoid resetting stream
-    //if (!element.__dvrSpy) {
-    //  wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
-    //}
-
-    //element.__dvrSpy = {
-    //  restore: function() {
-    //    element.seekable.start = startSpy.originalValue;
-    //    element.seekable.end = endSpy.originalValue;
-    //  }
-    //};
     return {startSpy, endSpy};
   };
 

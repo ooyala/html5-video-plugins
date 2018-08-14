@@ -20,7 +20,7 @@ window.DOMParser = function() {};
 
 require.requireActual("../html5-common/js/utils/InitModules/InitOOUnderscore.js");
 
-OO._.extend(window.DOMParser.prototype, {
+Object.assign(window.DOMParser.prototype, {
   parseFromString: function(data, type) {
     return jsdom.jsdom(data, jsdom.level(3, 'core'));
   }
