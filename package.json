@@ -2,6 +2,9 @@
   "name": "html5-video-plugins",
   "version": "1.0.0",
   "description": "Video Tech Plugins for the Ooyala HTML5 player",
+  "engines": {
+    "node": ">=8.11.3"
+  },
   "dependencies": {
     "aws-sdk": "^2.1.49"
   },
