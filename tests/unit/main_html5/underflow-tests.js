@@ -3,11 +3,6 @@
  */
 
 describe('main_html5 chrome underflow tests', function () {
-  // Load test helpers
-  require('../../utils/test_lib.js');
-  jest.dontMock('../../utils/mock_vtc.js');
-  require('../../utils/mock_vtc.js');
-
   var parentElement, wrapper, element, vtc, pluginFactory;
   var interval = 300;
   var oldTimeout, oldInterval, oldClear;
@@ -24,10 +19,7 @@ describe('main_html5 chrome underflow tests', function () {
     oldTimeout = window.setTimeout;
     oldInterval = window.setInterval;
     oldClear = window.clearInterval;
-    jasmine.Clock.useMock();
-    setTimeout = jasmine.Clock.installed.setTimeout;
-    setInterval = jasmine.Clock.installed.setInterval;
-    clearInterval = jasmine.Clock.installed.clearInterval;
+    jest.useFakeTimers();
 
     // Setup the video element
     OO.isChrome = true;
@@ -43,11 +35,6 @@ describe('main_html5 chrome underflow tests', function () {
 
   afterEach(function() {
     if (wrapper) { wrapper.destroy(); }
-
-    // Restore jest time mocking
-    window.setTimeout = oldTimeout;
-    window.setInterval = oldInterval;
-    window.clearInterval = oldClear;
   });
 
   // tests
@@ -63,9 +50,9 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
   });
 
@@ -78,15 +65,15 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
     vtc.reset();
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notified).to.have.length(0);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notified).to.have.length(0);
   });
 
@@ -99,10 +86,10 @@ describe('main_html5 chrome underflow tests', function () {
     element.paused = false;
 
     element.currentTime = 10;
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     element.currentTime = 11;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -115,10 +102,10 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     element.paused = true;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -131,13 +118,13 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     element.paused = true;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     element.paused = false;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
   });
 
@@ -168,10 +155,10 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     element.ended = true;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -183,9 +170,9 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -198,12 +185,12 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     $(element).triggerHandler("waiting");
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
     vtc.reset();
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -219,10 +206,10 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
     element.currentTime = 12;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notifyParameters).to.not.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
   });
 
@@ -236,13 +223,13 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
     element.currentTime = 12;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
   });
@@ -257,18 +244,18 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
     element.currentTime = 12;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
     vtc.reset();
     element.currentTime = 14;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
   });
 
@@ -282,14 +269,14 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
     element.paused = true;
     element.currentTime = 12;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
   });
 
@@ -304,23 +291,23 @@ describe('main_html5 chrome underflow tests', function () {
     element.paused = false;
 
     // first time
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.WAITING, { url : "url" }]);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
     element.currentTime = 12;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
 
     // secondtime
     vtc.reset();
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
     element.currentTime = 14;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.BUFFERED, { url : "url" }]);
   });
@@ -335,14 +322,14 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval + 1);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
     $(element).triggerHandler("canplaythrough");
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
     vtc.reset();
     element.currentTime = 12;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(false);
   });
 
@@ -357,13 +344,13 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     element.ended = true;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     element.ended = false;
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -377,12 +364,12 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     $(element).triggerHandler("ended");
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -396,12 +383,12 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     $(element).triggerHandler("error");
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -414,12 +401,12 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     $(element).triggerHandler("loadstart");
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -432,12 +419,12 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
     wrapper.setVideoUrl("newUrl");
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 
@@ -454,9 +441,9 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
   });
 
@@ -470,9 +457,9 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(true);
   });
 
@@ -486,7 +473,7 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("waiting");
     element.currentTime = 10;
     $(element).triggerHandler("timeupdate");
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.BUFFERED)).to.be(true);
   });
 
@@ -502,9 +489,9 @@ describe('main_html5 chrome underflow tests', function () {
     $(element).triggerHandler("playing");
     element.paused = false;
 
-    jasmine.Clock.tick(interval + 1);
+    jest.advanceTimersByTime(interval + 1);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
-    jasmine.Clock.tick(interval);
+    jest.advanceTimersByTime(interval);
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.WAITING)).to.be(false);
   });
 

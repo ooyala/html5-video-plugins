@@ -1,4 +1,4 @@
-mock_vtc = function() {
+global.mock_vtc = function() {
   // Test properties that indicate which events were raised by the video wrapper
   this.notifyParameters = null;
   this.notified = [];

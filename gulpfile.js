@@ -10,6 +10,7 @@ var gulp = require('gulp'),
     shell = require('gulp-shell'),
     rename = require('gulp-rename'),
     exec = require('child_process').exec;
+var babelify = require('babelify');
 
 var path = {
   mainJs: './src/main/js/main_html5.js',
@@ -20,24 +21,25 @@ var path = {
 
 var main_html5_fn = function() {
   uglify_fn(path.mainJs);
-}
+};
 
 var osmf_fn = function() {
   uglify_fn(path.flashOSMFJs);
-}
+};
 
 var akamai_fn = function() {
   uglify_fn(path.flashAkamaiJs);
-}
+};
 
 var youtube_fn = function() {
   uglify_fn(path.youtubeJs);
-}
+};
 
 var uglify_fn = function(srcFile) {
   var b = browserify({
     entries: srcFile,
     debug: false,
+    transform: [babelify]
   });
 
   b.bundle()
@@ -49,12 +51,12 @@ var uglify_fn = function(srcFile) {
       extname: '.min.js'
     }))
     .pipe(gulp.dest('./build/'));
-}
+};
 
 var getFileNameFromPath = function(path) {
   var start = path.lastIndexOf('/') + 1;
   return path.substring(start);
-}
+};
 
 // Dependency task
 gulp.task('init_module', function(callback) {

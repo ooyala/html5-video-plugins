@@ -3,11 +3,6 @@
  */
 
 describe('youtube wrapper tests', function () {
-  // Load test helpers
-  require('../../utils/test_lib.js');
-  jest.dontMock('../../utils/mock_vtc.js');
-  require('../../utils/mock_vtc.js');
-
   var pluginFactory, parentElement, wrapper, element, vtc;
 
   // Setup
