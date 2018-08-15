@@ -1170,10 +1170,11 @@ require("../../../html5-common/js/utils/environment.js");
           // CC1, CC2, etc.) as a language in order to avoid conflicts with
           // external captions.
           var trackId = trySetStreamTextTrackId(currentTrack);
+          var label = currentTrack.label || currentTrack.language || 'Captions (' + trackId + ')';
           var captionInfo = {
             language: trackId,
             inStream: true,
-            label: currentTrack.label || currentTrack.language || 'Captions (' + trackId + ')'
+            label: label
           };
           // Don't overwrite other closed captions of this language. They have priority.
           if (!availableClosedCaptions[captionInfo.language]) {
@@ -1206,7 +1207,7 @@ require("../../../html5-common/js/utils/environment.js");
      * @private
      * @method OoyalaVideoWrapper#trySetStreamTextTrackId
      * @param {TextTrack} textTrack The TextTrack object whose id we want to set.
-     * @return {String} The new or pre-existing id of the track
+     * @return {String} The new or pre-existing id of the track, null if textTrack is invalid
      */
     var trySetStreamTextTrackId = _.bind(function(textTrack) {
       if (!textTrack) {
