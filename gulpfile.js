@@ -36,10 +36,17 @@ var youtube_fn = function() {
 };
 
 var uglify_fn = function(srcFile) {
+  var transform = [babelify];
+
+  //excluding OSMF from babelify since it has a lot of code
+  //that conflicts with strict mode
+  if (srcFile.indexOf(path.flashOSMFJs) >= 0) {
+    transform = [];
+  }
   var b = browserify({
     entries: srcFile,
     debug: false,
-    transform: [babelify]
+    transform: transform
   });
 
   b.bundle()
