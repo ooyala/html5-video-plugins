@@ -741,32 +741,32 @@ import TextTrackHelper from "./text_track/text_track_helper";
     };
 
     /**
-     * Sets the closed captions on the video element.
+     *
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
-     * @param {string} language The language of the closed captions. If null, the current closed captions will be removed.
-     * @param {object} closedCaptions The closedCaptions object
-     * @param {object} params The params to set with closed captions
+     * @param {string} language
+     * @param {object} closedCaptions
+     * @param {object} params
      */
     this.setClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
-      const trackMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
+      const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
       // Disable all tracks first
       this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
       // Create tracks for all VTT captions from content tree that we haven't
       // added before. If the track with the specified language is added, it
       // will be created with the desired mode automatically
-      const wasSelectedTrackAdded = addExternalCaptions(
+      const wasTargetTrackAdded = addExternalVttCaptions(
         vttClosedCaptions,
         language,
-        trackMode
+        targetMode
       );
       // If the desired track is not one of the newly added tracks then we look
       // for it among the previously added tracks
-      if (!wasSelectedTrackAdded) {
-        const textTrackToUpdate = textTrackHelper.findTrackByLanguage(language);
-        setTextTrackMode(textTrackToUpdate, trackMode);
-        console.log(">>>>updated track", textTrackToUpdate);
+      if (!wasTargetTrackAdded) {
+        const targetTrack = textTrackHelper.findTrackByLanguage(language);
+        setTextTrackMode(targetTrack, targetMode);
+        console.log(">>>>updated track", targetTrack);
       }
     }, this);
 
@@ -1471,56 +1471,76 @@ import TextTrackHelper from "./text_track/text_track_helper";
     // Helper methods
     /************************************************************************************/
 
-    const addExternalCaptions =_.bind(function(vttClosedCaptions = {}, selectedLanguage, selectedMode) {
-      let wasSelectedTrackAdded = false;
+    /**
+     *
+     * @private
+     * @method OoyalaVideoWrapper#addExternalVttCaptions
+     * @param {object} vttClosedCaptions
+     * @param {string} targetLanguage
+     * @param {string} targetMode
+     * @return {boolean}
+     */
+    const addExternalVttCaptions =_.bind(function(vttClosedCaptions = {}, targetLanguage, targetMode) {
+      let wasTargetTrackAdded = false;
 
       for (let language in vttClosedCaptions) {
-        const captionsData = vttClosedCaptions[language] || {};
+        const trackData = Object.assign(
+          { language: language },
+          vttClosedCaptions[language]
+        );
         const existsTrack = !!externalTextTrackMap.findEntry({
-          sourceUrl: captionsData.url
+          sourceUrl: trackData.url
         });
 
         if (!existsTrack) {
-          addExternalCaptionsTrack({
-            language: language,
-            metadata: captionsData,
-            selectedLanguage: selectedLanguage,
-            selectedMode: selectedMode
-          });
+          addExternalCaptionsTrack(trackData, targetLanguage, targetMode);
 
-          if (language === selectedLanguage) {
-            wasSelectedTrackAdded = true;
-            console.log(">>>>added track to be set");
+          if (language === targetLanguage) {
+            wasTargetTrackAdded = true;
           }
         }
       }
-      return wasSelectedTrackAdded;
+      return wasTargetTrackAdded;
     }, this);
 
-    const addExternalCaptionsTrack = _.bind(function(params = {}) {
+    /**
+     *
+     * @private
+     * @method OoyalaVideoWrapper#addExternalCaptionsTrack
+     * @param {object} trackData
+     * @param {string} targetLanguage
+     * @param {string} targetMode
+     */
+    const addExternalCaptionsTrack = _.bind(function(trackData = {}, targetLanguage, targetMode) {
       this.setCrossorigin('anonymous');
 
-      const metadata = params.metadata || {};
       const newTrackId = externalTextTrackMap.addEntry({
-        sourceUrl: metadata.url
+        sourceUrl: trackData.url
       });
       textTrackHelper.addTrack({
         id: newTrackId,
-        label: metadata.name,
-        language: params.language,
-        sourceUrl: metadata.url
+        label: trackData.name,
+        language: trackData.language,
+        sourceUrl: trackData.url
       })
       .then((newTextTrack) => {
         console.log(">>>>AddedTrack", newTextTrack);
 
-        if (newTextTrack.language === params.selectedLanguage) {
-          setTextTrackMode(newTextTrack, params.selectedMode);
+        if (newTextTrack.language === targetLanguage) {
+          setTextTrackMode(newTextTrack, targetMode);
         } else {
           setTextTrackMode(newTextTrack, OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
         }
       });
     }, this);
 
+    /**
+     *
+     * @private
+     * @method OoyalaVideoWrapper#setTextTrackMode
+     * @param {TextTrack} textTrack
+     * @param {string} mode
+     */
     const setTextTrackMode = _.bind(function(textTrack, mode) {
       if (textTrack) {
         textTrack.mode = mode;
