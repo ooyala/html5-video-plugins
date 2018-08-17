@@ -309,6 +309,15 @@ describe('main_html5 wrapper tests', function () {
     expect(spy.callCount).to.be(1);
   });
 
+  it('should delay initialTime on IE11 until timeupdate is called', function(){
+    OO.isIE11Plus = true;
+    var spy = sinon.spy(wrapper, "seek");
+    wrapper.setInitialTime(10);
+    expect(spy.callCount).to.be(0);
+    $(element).triggerHandler("timeupdate");
+    expect(spy.callCount).to.be(1);
+  });
+
   it('should play if not seeking', function(){
     var spy = sinon.spy(element, "play");
     wrapper.play();
@@ -348,23 +357,6 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("ended");
     wrapper.setInitialTime(10);
     expect(spy.callCount).to.be(1);
-  });
-
-  it('IE11 test should act on initialTime if has played and video ended with initial time > 0', function(){
-    OO.isIE11Plus = true;
-    var spy = sinon.spy(wrapper, "seek");
-    wrapper.play();
-    $(element).triggerHandler("ended");
-    wrapper.setInitialTime(10);
-    expect(spy.callCount).to.be(1);
-  });
-
-  it('IE11 test should NOT act on initialTime if has played and video ended with initial time == 0', function(){
-    OO.isIE11Plus = true;
-    var spy = sinon.spy(wrapper, "seek");
-    wrapper.play();
-    $(element).triggerHandler("ended");
-    expect(spy.callCount).to.be(0);
   });
 
   it('should call pause on element when wrapper paused', function(){

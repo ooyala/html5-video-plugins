@@ -454,25 +454,18 @@ require("../../../html5-common/js/utils/environment.js");
       // makes the video play for a fraction of a second and then stop again at the end.
       // In this case we allow setting the initial time back to 0 as a workaround for this
       var queuedSeekRequired = OO.isSafari && videoEnded && time === 0;
-
-      // [PBW-7473] On replay, there is a bug on IE11 where the player won't
-      // send out some messages from the video element causing the UI to keep
-      // the replay screen up.
-      var doNotSeek = OO.isIE11Plus && hasPlayed && time === 0;
-
-      if (!doNotSeek) {
-        initialTime.value = time;
-        initialTime.reached = false;
-
-        // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
-        // never raised, even if the seekable property returns an endtime greater than the seek time.
-        // To avoid this, save seeking information for use later.
-        // [PBW-5539] Same issue with desktop Safari when setting initialTime after video ends
-        if (OO.isAndroid || (queuedSeekRequired && !OO.isIos)) {
-          queueSeek(initialTime.value);
-        } else {
-          this.seek(initialTime.value);
-        }
+      initialTime.value = time;
+      initialTime.reached = false;
+      
+      // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
+      // never raised, even if the seekable property returns an endtime greater than the seek time.
+      // To avoid this, save seeking information for use later.
+      // [PBW-5539] Same issue with desktop Safari when setting initialTime after video ends
+      // [PBW-7473] Same issue with IE11.
+      if (OO.isAndroid || OO.isIE11Plus || (queuedSeekRequired && !OO.isIos)) {
+        queueSeek(initialTime.value);
+      } else {
+        this.seek(initialTime.value);
       }
     };
 
