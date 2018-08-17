@@ -309,6 +309,15 @@ describe('main_html5 wrapper tests', function () {
     expect(spy.callCount).to.be(1);
   });
 
+  it('should delay initialTime on IE11 until timeupdate is called', function(){
+    OO.isIE11Plus = true;
+    var spy = sinon.spy(wrapper, "seek");
+    wrapper.setInitialTime(10);
+    expect(spy.callCount).to.be(0);
+    $(element).triggerHandler("timeupdate");
+    expect(spy.callCount).to.be(1);
+  });
+
   it('should play if not seeking', function(){
     var spy = sinon.spy(element, "play");
     wrapper.play();
