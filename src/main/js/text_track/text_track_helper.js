@@ -6,21 +6,13 @@ export default class TextTrackHelper {
   }
 
   addTrack(trackData) {
-    return new Promise(resolve => {
-      const track = document.createElement('track');
-      track.id = trackData.id;
-      track.kind = 'subtitles';
-      track.label = trackData.label;
-      track.srclang = trackData.language;
-      track.src = trackData.sourceUrl;
-
-      track.addEventListener('load', () => {
-        const newlyAddedTextTrack = this.findTrackById(track.id);
-        resolve(newlyAddedTextTrack);
-      });
-
-      this.video.appendChild(track);
-    });
+    const track = document.createElement('track');
+    track.id = trackData.id;
+    track.kind = 'subtitles';
+    track.label = trackData.label;
+    track.srclang = trackData.srclang;
+    track.src = trackData.src;
+    this.video.appendChild(track);
   }
 
   findTrack(callback) {

@@ -15,7 +15,7 @@ export default class TextTrackMap {
     return newTextTrack.id;
   }
 
-  findEntry(searchOptions) {
+  findEntry(searchOptions = {}) {
     const textTrack = this.textTracks.find(currentTrack => {
       let isFound = true;
 
@@ -29,6 +29,14 @@ export default class TextTrackMap {
     });
     return textTrack;
   };
+
+  tryUpdateEntry(searchOptions, metadata = {}) {
+    const entry = this.findEntry(searchOptions);
+
+    if (entry) {
+      Object.assign(entry, metadata);
+    }
+  }
 
   clear() {
     this.textTracks = [];
