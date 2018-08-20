@@ -15,6 +15,13 @@ export default class TextTrackHelper {
     this.video.appendChild(track);
   }
 
+  forEach(callback) {
+    if (!this.video || !this.video.textTracks) {
+      return;
+    }
+    Array.prototype.forEach.call(this.video.textTracks, callback);
+  }
+
   findTrack(callback) {
     if (!this.video || !this.video.textTracks) {
       return;
