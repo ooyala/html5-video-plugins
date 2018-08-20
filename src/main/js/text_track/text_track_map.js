@@ -30,6 +30,11 @@ export default class TextTrackMap {
     return textTrack;
   };
 
+  existsEntry(searchOptions) {
+    const exists = !!this.findEntry(searchOptions);
+    return exists;
+  }
+
   tryUpdateEntry(searchOptions, metadata = {}) {
     const entry = this.findEntry(searchOptions);
 
