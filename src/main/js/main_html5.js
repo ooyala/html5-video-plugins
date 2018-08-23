@@ -199,7 +199,6 @@ import TextTrackHelper from "./text_track/text_track_helper";
     var currentTimeShift = 0;
     var currentVolumeSet = 0;
     var isM3u8 = false;
-    var TRACK_CLASS = "track_cc";
     var firstPlay = true;
     var videoDimension = {height: 0, width: 0};
     var initialTime = { value: 0, reached: true };
@@ -368,14 +367,11 @@ import TextTrackHelper from "./text_track/text_track_helper";
       lastCueText = null;
       setClosedCaptionsQueue = [];
       internalTextTrackMap.clear();
+      textTrackHelper.removeExternalTracks(externalTextTrackMap);
       externalTextTrackMap.clear();
       // Restore the preload attribute to the value it had when the video
       // element was created
       $(_video).attr("preload", originalPreloadValue);
-      // [PLAYER-212]
-      // Closed captions persist across discovery videos unless they are cleared
-      // when a new video is set
-      $(_video).find('.' + TRACK_CLASS).remove();
       ignoreFirstPlayingEvent = false;
     }, this);
 
@@ -753,6 +749,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
     this.setClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
       console.log(">>>>setClosedCaptions", language);
       this.setCrossorigin('anonymous');
+      // Disable all tracks first
       this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
 
       if (metadataLoaded) {
@@ -775,7 +772,6 @@ import TextTrackHelper from "./text_track/text_track_helper";
     const executeSetClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
       const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
-      // Disable all tracks first
       // Create tracks for all VTT captions from content tree that we haven't
       // added before. If the track with the specified language is added, it
       // will be created with the desired mode automatically
@@ -1003,7 +999,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @private
      */
     const onTextTracksAddTrack = _.bind(function() {
-      for (let trackMetadata of internalTextTrackMap.textTracks) {
+      for (let trackMetadata of externalTextTrackMap.textTracks) {
         const textTrack = textTrackHelper.findTrackById(trackMetadata.id);
 
         if (
@@ -1038,33 +1034,29 @@ import TextTrackHelper from "./text_track/text_track_helper";
         locale: {}
       };
 
-      Array.prototype.forEach.call(_video.textTracks, function(currentTrack) {
-        let key, label;
+      const externalTracks = textTrackHelper.filterExternal(externalTextTrackMap);
+      const internalTracks = textTrackHelper.filterInternal(externalTextTrackMap);
 
-        const isExternalTextTrack = externalTextTrackMap.existsEntry({
-          id: currentTrack.id
-        });
+      for (let externalTrack of externalTracks) {
+        closedCaptionInfo.languages.push(externalTrack.language);
+        closedCaptionInfo.locale[externalTrack.language] = externalTrack.label;
+      }
 
-        if (isExternalTextTrack) {
-          key = currentTrack.language;
-          label = currentTrack.label;
-        } else if (
-          currentTrack.kind === 'captions' ||
-          currentTrack.kind === 'subtitles'
-        ) {
-          tryMapInternalTrack(currentTrack);
+      for (let internalTrack of internalTracks) {
+        tryMapInternalTrack(internalTrack);
+        const isLanguageDefined = !!closedCaptionInfo.locale[internalTrack.language];
 
-          key = currentTrack.trackId;
-          label = (
-            currentTrack.label ||
-            currentTrack.language ||
-            `Captions (${currentTrack.trackId})`
+        if (!isLanguageDefined) {
+          const key = internalTrack.trackId;
+          const label = (
+            internalTrack.label ||
+            internalTrack.language ||
+            `Captions (${key})`
           );
+          closedCaptionInfo.languages.push(key);
+          closedCaptionInfo.locale[key] = label;
         }
-
-        closedCaptionInfo.languages.push(key);
-        closedCaptionInfo.locale[key] = label;
-      });
+      }
 
       this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
     }, this);
