@@ -1,3 +1,4 @@
+import TextTrackMap from "./text_track_map";
 
 export default class TextTrackHelper {
 
@@ -29,28 +30,6 @@ export default class TextTrackHelper {
     return Array.prototype.filter.call(this.video.textTracks, callback);
   }
 
-  filterExternal(externalTextTrackMap) {
-    const externalTracks = this.filter(currentTrack =>
-      externalTextTrackMap.existsEntry({
-        id: currentTrack.id
-      })
-    );
-    return externalTracks;
-  }
-
-  filterInternal(externalTextTrackMap) {
-    const internalTracks = this.filter(currentTrack => {
-      const isInternal = !externalTextTrackMap.existsEntry({
-        id: currentTrack.id
-      });
-      const isText = (
-        currentTrack.kind === 'captions' || currentTrack.kind === 'subtitles'
-      );
-      return isInternal && isText;
-    });
-    return internalTracks;
-  }
-
   findTrack(callback) {
     if (!this.video || !this.video.textTracks) {
       return;
@@ -76,14 +55,37 @@ export default class TextTrackHelper {
     return track;
   }
 
-  removeExternalTracks(externalTextTrackMap) {
-    for (let trackMetadata of externalTextTrackMap.textTracks) {
+  getInternalTracks(textTrackMap = new TextTrackMap()) {
+    const internalTracks = this.filter(currentTrack => {
+      const isInternal = !textTrackMap.existsEntry({
+        id: currentTrack.id,
+        isExternal: true
+      });
+      const isText = (
+        currentTrack.kind === 'captions' || currentTrack.kind === 'subtitles'
+      );
+      return isInternal && isText;
+    });
+    return internalTracks;
+  }
+
+  getExternalTracks(textTrackMap = new TextTrackMap()) {
+    const externalTracks = this.filter(currentTrack =>
+      textTrackMap.existsEntry({
+        id: currentTrack.id,
+        isExternal: true
+      })
+    );
+    return externalTracks;
+  }
+
+  removeExternalTracks(textTrackMap = TextTrackMap()) {
+    for (let trackMetadata of textTrackMap.getExternalEntries()) {
       const trackElement = document.getElementById(trackMetadata.id);
 
       if (trackElement) {
         trackElement.remove();
       }
     }
-    externalTextTrackMap.clear();
   }
 }

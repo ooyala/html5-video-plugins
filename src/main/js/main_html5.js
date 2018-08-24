@@ -210,8 +210,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
     var currentPlaybackSpeed = 1.0;
 
     let setClosedCaptionsQueue = [];
-    const externalTextTrackMap = new TextTrackMap('VTT');
-    const internalTextTrackMap = new TextTrackMap('CC');
+    const textTrackMap = new TextTrackMap();
     const textTrackHelper = new TextTrackHelper(_video);
 
     // Watch for underflow on Chrome
@@ -366,9 +365,8 @@ import TextTrackHelper from "./text_track/text_track_helper";
       stopUnderflowWatcher();
       lastCueText = null;
       setClosedCaptionsQueue = [];
-      internalTextTrackMap.clear();
-      textTrackHelper.removeExternalTracks(externalTextTrackMap);
-      externalTextTrackMap.clear();
+      textTrackHelper.removeExternalTracks(textTrackMap);
+      textTrackMap.clear();
       // Restore the preload attribute to the value it had when the video
       // element was created
       $(_video).attr("preload", originalPreloadValue);
@@ -999,7 +997,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @private
      */
     const onTextTracksAddTrack = _.bind(function() {
-      for (let trackMetadata of externalTextTrackMap.textTracks) {
+      for (let trackMetadata of textTrackMap.getExternalEntries()) {
         const textTrack = textTrackHelper.findTrackById(trackMetadata.id);
 
         if (
@@ -1034,8 +1032,8 @@ import TextTrackHelper from "./text_track/text_track_helper";
         locale: {}
       };
 
-      const externalTracks = textTrackHelper.filterExternal(externalTextTrackMap);
-      const internalTracks = textTrackHelper.filterInternal(externalTextTrackMap);
+      const externalTracks = textTrackHelper.getExternalTracks(textTrackMap);
+      const internalTracks = textTrackHelper.getInternalTracks(textTrackMap);
 
       for (let externalTrack of externalTracks) {
         closedCaptionInfo.languages.push(externalTrack.language);
@@ -1069,13 +1067,8 @@ import TextTrackHelper from "./text_track/text_track_helper";
      */
     const onTextTracksChange = _.bind(function(event) {
       textTrackHelper.forEach(textTrack => {
-        let trackMetadata;
-
-        if (textTrack.trackId) {
-          trackMetadata = internalTextTrackMap.findEntry({ id: textTrack.trackId });
-        } else {
-          trackMetadata = externalTextTrackMap.findEntry({ id: textTrack.id });
-        }
+        const trackId = textTrack.trackId || textTrack.id;
+        const trackMetadata = textTrackMap.findEntry({ id: trackId });
 
         if (
           trackMetadata &&
@@ -1536,7 +1529,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
           { language: language },
           vttClosedCaptions[language]
         );
-        const existsTrack = externalTextTrackMap.existsEntry({
+        const existsTrack = textTrackMap.existsEntry({
           src: trackData.url
         });
 
@@ -1568,10 +1561,10 @@ import TextTrackHelper from "./text_track/text_track_helper";
         trackMode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
       }
 
-      const trackId = externalTextTrackMap.addEntry({
+      const trackId = textTrackMap.addEntry({
         src: trackData.url,
         mode: trackMode
-      });
+      }, true);
 
       textTrackHelper.addTrack({
         id: trackId,
@@ -1587,12 +1580,12 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @method OoyalaVideoWrapper#tryMapInternalTrack
      */
     const tryMapInternalTrack = _.bind(function(track) {
-      const isKnownTrack = internalTextTrackMap.existsEntry({
+      const isKnownTrack = textTrackMap.existsEntry({
         id: track.trackId
       });
 
       if (!isKnownTrack) {
-        track.trackId = internalTextTrackMap.addEntry({
+        track.trackId = textTrackMap.addEntry({
           mode: track.mode || OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED
         });
       }
@@ -1610,8 +1603,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
         textTrack.mode = mode;
 
         const trackId = textTrack.trackId || textTrack.id;
-        internalTextTrackMap.tryUpdateEntry({ id: trackId }, { mode: mode });
-        externalTextTrackMap.tryUpdateEntry({ id: trackId }, { mode: mode });
+        textTrackMap.tryUpdateEntry({ id: trackId }, { mode: mode });
 
         if (mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
           textTrack.oncuechange = null;
