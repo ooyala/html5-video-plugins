@@ -767,7 +767,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @param {object} closedCaptions
      * @param {object} params
      */
-    const executeSetClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
+    const executeSetClosedCaptions = (language, closedCaptions = {}, params = {}) => {
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
       const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
       // Create tracks for all VTT captions from content tree that we haven't
@@ -784,7 +784,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
         const targetTrack = textTrackHelper.findTrackByLanguage(language);
         setTextTrackMode(targetTrack, targetMode);
       }
-    }, this);
+    };
 
     /**
      * Sets the closed captions mode on the video element.
@@ -793,7 +793,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @param {string} mode The mode to set the text tracks element.
      * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
-    this.setClosedCaptionsMode = _.bind(function(mode) {
+    this.setClosedCaptionsMode = (mode) => {
       textTrackHelper.forEach(textTrack =>
         setTextTrackMode(textTrack, mode)
       );
@@ -801,7 +801,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       if (mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
         raiseClosedCaptionCueChanged('');
       }
-    }, this);
+    };
 
     /**
      * Sets the crossorigin attribute on the video element.
@@ -996,7 +996,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @method OoyalaVideoWrapper#onTextTracksAddTrack
      * @private
      */
-    const onTextTracksAddTrack = _.bind(function() {
+    const onTextTracksAddTrack = () => {
       for (let trackMetadata of textTrackMap.getExternalEntries()) {
         const textTrack = textTrackHelper.findTrackById(trackMetadata.id);
 
@@ -1010,23 +1010,23 @@ import TextTrackHelper from "./text_track/text_track_helper";
       }
 
       checkForAvailableTextTracks();
-    }, this)
+    };
 
     /**
      *
      * @method OoyalaVideoWrapper#onTextTracksRemoveTrack
      * @private
      */
-    const onTextTracksRemoveTrack = _.bind(function() {
+    const onTextTracksRemoveTrack = () => {
       checkForAvailableTextTracks();
-    }, this);
+    };
 
     /**
      *
      * @method OoyalaVideoWrapper#checkForAvailableTextTracks
      * @private
      */
-    const checkForAvailableTextTracks = _.bind(function() {
+    const checkForAvailableTextTracks = () => {
       const closedCaptionInfo = {
         languages: [],
         locale: {}
@@ -1057,7 +1057,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       }
 
       this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
-    }, this);
+    };
 
     /**
      * Fired when there is a change on a text track.
@@ -1065,27 +1065,41 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @method OoyalaVideoWrapper#onTextTracksChange
      * @param {object} event The event from the track change
      */
-    const onTextTracksChange = _.bind(function(event) {
+    const onTextTracksChange = () => {
+      let nativeChangesDetected = false;
+      let allChangedTracksDisabled = true;
+
       textTrackHelper.forEach(textTrack => {
         const trackId = textTrack.trackId || textTrack.id;
         const trackMetadata = textTrackMap.findEntry({ id: trackId });
 
         if (
           trackMetadata &&
-          textTrack.mode !== trackMetadata.mode &&
-          textTrack.mode !== OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED
+          textTrack.mode !== trackMetadata.mode
         ) {
           if (hasStartedPlaying) {
-            const newLanguage = textTrack.trackId || textTrack.language;
-            this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, { language: newLanguage });
-            OO.log(`>>>>MainHtml5: CC language has been changed to "${newLanguage}" by the native UI`);
+            nativeChangesDetected = true;
+            textTrackMap.tryUpdateEntry({ id: trackMetadata.id }, { mode: textTrack.mode });
+
+            if (textTrack.mode !== OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
+              allChangedTracksDisabled = false;
+
+              const newLanguage = textTrack.trackId || textTrack.language;
+              this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, { language: newLanguage });
+              OO.log(`>>>>MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
+            }
           } else {
             textTrack.mode = trackMetadata.mode;
             OO.log('>>>>MainHtml5: Default browser CC language detected, ignoring in favor of user-specified language');
           }
         }
       });
-    }, this);
+
+      if (nativeChangesDetected && allChangedTracksDisabled) {
+        this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, { language: 'none' });
+        OO.log(`>>>>MainHtml5: CC's have been disabled by the native UI`);
+      }
+    };
 
     /**
      * Callback for when a closed caption track cue has changed.
@@ -1510,7 +1524,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       while (queuedArguments = setClosedCaptionsQueue.shift()) {
         executeSetClosedCaptions.apply(this, queuedArguments);
       }
-    });
+    }, this);
 
     /**
      *
@@ -1521,7 +1535,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @param {string} targetMode
      * @return {boolean}
      */
-    const addExternalVttCaptions = _.bind(function(vttClosedCaptions = {}, targetLanguage, targetMode) {
+    const addExternalVttCaptions = (vttClosedCaptions = {}, targetLanguage, targetMode) => {
       let wasTargetTrackAdded = false;
 
       for (let language in vttClosedCaptions) {
@@ -1542,7 +1556,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
         }
       }
       return wasTargetTrackAdded;
-    }, this);
+    };
 
     /**
      *
@@ -1552,7 +1566,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @param {string} targetLanguage
      * @param {string} targetMode
      */
-    const addExternalCaptionsTrack = _.bind(function(trackData = {}, targetLanguage, targetMode) {
+    const addExternalCaptionsTrack = (trackData = {}, targetLanguage, targetMode) => {
       let trackMode;
 
       if (trackData.language === targetLanguage) {
@@ -1572,14 +1586,14 @@ import TextTrackHelper from "./text_track/text_track_helper";
         srclang: trackData.language,
         src: trackData.url
       });
-    }, this);
+    };
 
     /**
      *
      * @private
      * @method OoyalaVideoWrapper#tryMapInternalTrack
      */
-    const tryMapInternalTrack = _.bind(function(track) {
+    const tryMapInternalTrack = (track) => {
       const isKnownTrack = textTrackMap.existsEntry({
         id: track.trackId
       });
@@ -1589,7 +1603,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
           mode: track.mode || OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED
         });
       }
-    }, true);
+    };
 
     /**
      *
@@ -1598,7 +1612,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @param {TextTrack} textTrack
      * @param {string} mode
      */
-    const setTextTrackMode = _.bind(function(textTrack, mode) {
+    const setTextTrackMode = (textTrack, mode) => {
       if (textTrack && textTrack.mode !== mode) {
         textTrack.mode = mode;
 
@@ -1612,7 +1626,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
         }
         OO.log('>>>>MainHtml5: Text track mode set:', trackId, textTrack.language, mode);
       }
-    }, this);
+    };
 
     /**
      * If any plays are queued up, execute them.
