@@ -781,7 +781,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       // If the desired track is not one of the newly added tracks then we look
       // for it among the previously added tracks
       if (!wasTargetTrackAdded) {
-        const targetTrack = textTrackHelper.findTrackByLanguage(language);
+        const targetTrack = textTrackHelper.findTrackByKey(language, textTrackMap);
         setTextTrackMode(targetTrack, targetMode);
       }
     };
@@ -997,17 +997,21 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @private
      */
     const onTextTracksAddTrack = () => {
-      for (let trackMetadata of textTrackMap.getExternalEntries()) {
-        const textTrack = textTrackHelper.findTrackById(trackMetadata.id);
+      textTrackHelper.forEach(textTrack => {
+        tryMapInternalTrack(textTrack);
 
-        if (
-          textTrack &&
-          textTrack.mode !== trackMetadata.mode
-        ) {
-          OO.log(">>>>MainHtml5: Setting new text track mode:", trackMetadata.id, trackMetadata.mode);
+        const trackMetadata = textTrackMap.findEntry({
+          id: textTrack.label
+        });
+
+        if (trackMetadata) {
+          textTrackMap.tryUpdateEntry({ id: trackMetadata.id }, { textTrack: textTrack });
+          textTrackHelper.updateLabel(trackMetadata.id, trackMetadata.label);
+
+          OO.log(">>>>MainHtml: Registering newly added text track:", trackMetadata.id);
           setTextTrackMode(textTrack, trackMetadata.mode);
         }
-      }
+      });
 
       checkForAvailableTextTracks();
     };
@@ -1041,11 +1045,11 @@ import TextTrackHelper from "./text_track/text_track_helper";
       }
 
       for (let internalTrack of internalTracks) {
-        tryMapInternalTrack(internalTrack);
+        const trackMetadata = textTrackMap.findEntry({ textTrack: internalTrack });
         const isLanguageDefined = !!closedCaptionInfo.locale[internalTrack.language];
 
         if (!isLanguageDefined) {
-          const key = internalTrack.trackId;
+          const key = (trackMetadata || {}).id;
           const label = (
             internalTrack.label ||
             internalTrack.language ||
@@ -1070,8 +1074,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       let allChangedTracksDisabled = true;
 
       textTrackHelper.forEach(textTrack => {
-        const trackId = textTrack.trackId || textTrack.id;
-        const trackMetadata = textTrackMap.findEntry({ id: trackId });
+        const trackMetadata = textTrackMap.findEntry({ textTrack: textTrack });
 
         if (
           trackMetadata &&
@@ -1084,7 +1087,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
             if (textTrack.mode !== OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
               allChangedTracksDisabled = false;
 
-              const newLanguage = textTrack.trackId || textTrack.language;
+              const newLanguage = trackMetadata.isInternal ? textTrack.language : trackMetadata.id;
               this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, { language: newLanguage });
               OO.log(`>>>>MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
             }
@@ -1577,12 +1580,13 @@ import TextTrackHelper from "./text_track/text_track_helper";
 
       const trackId = textTrackMap.addEntry({
         src: trackData.url,
+        label: trackData.name,
         mode: trackMode
       }, true);
 
       textTrackHelper.addTrack({
         id: trackId,
-        label: trackData.name,
+        label: trackId,
         srclang: trackData.language,
         src: trackData.url
       });
@@ -1593,14 +1597,15 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @private
      * @method OoyalaVideoWrapper#tryMapInternalTrack
      */
-    const tryMapInternalTrack = (track) => {
+    const tryMapInternalTrack = (textTrack) => {
       const isKnownTrack = textTrackMap.existsEntry({
-        id: track.trackId
+        textTrack: textTrack
       });
 
       if (!isKnownTrack) {
-        track.trackId = textTrackMap.addEntry({
-          mode: track.mode || OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED
+        textTrackMap.addEntry({
+          textTrack: textTrack,
+          mode: textTrack.mode || OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED
         });
       }
     };
@@ -1616,15 +1621,14 @@ import TextTrackHelper from "./text_track/text_track_helper";
       if (textTrack && textTrack.mode !== mode) {
         textTrack.mode = mode;
 
-        const trackId = textTrack.trackId || textTrack.id;
-        textTrackMap.tryUpdateEntry({ id: trackId }, { mode: mode });
+        textTrackMap.tryUpdateEntry({ textTrack: textTrack }, { mode: mode });
 
         if (mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
           textTrack.oncuechange = null;
         } else {
           textTrack.oncuechange = onClosedCaptionCueChange;
         }
-        OO.log('>>>>MainHtml5: Text track mode set:', trackId, textTrack.language, mode);
+        OO.log('>>>>MainHtml5: Text track mode set:', textTrack.language, mode);
       }
     };
 

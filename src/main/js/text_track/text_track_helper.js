@@ -16,6 +16,16 @@ export default class TextTrackHelper {
     this.video.appendChild(track);
   }
 
+  updateLabel(trackId, label = '') {
+    if (this.video && trackId) {
+      const trackElement = this.video.querySelector(`#${trackId}`);
+
+      if (trackElement) {
+        trackElement.setAttribute('label', label);
+      }
+    }
+  }
+
   forEach(callback) {
     if (!this.video || !this.video.textTracks) {
       return;
@@ -38,19 +48,16 @@ export default class TextTrackHelper {
     return track;
   }
 
-  findTrackById(id) {
-    let track = this.findTrack(currentTrack =>
-      currentTrack.id === id || currentTrack.trackId === id
-    );
-    return track;
-  }
-
-  findTrackByLanguage(language) {
+  findTrackByKey(languageOrId, textTrackMap = new TextTrackMap()) {
     let track = this.findTrack(currentTrack => {
-      const matchesLanguage = currentTrack.language === language && !currentTrack.trackId;
-      const matchesTrackIdLanguage = currentTrack.trackId === language;
+      const trackMetadata = textTrackMap.findEntry({
+        textTrack: currentTrack
+      });
+      const matchesTrackId = !!trackMetadata && trackMetadata.id === languageOrId;
+      const matchesLanguage = currentTrack.language === languageOrId;
+      const keyMatchesTrack = matchesTrackId || matchesLanguage;
 
-      return matchesLanguage || matchesTrackIdLanguage;
+      return keyMatchesTrack;
     });
     return track;
   }
@@ -58,7 +65,7 @@ export default class TextTrackHelper {
   getInternalTracks(textTrackMap = new TextTrackMap()) {
     const internalTracks = this.filter(currentTrack => {
       const isInternal = !textTrackMap.existsEntry({
-        id: currentTrack.id,
+        textTrack: currentTrack,
         isExternal: true
       });
       const isText = (
@@ -72,7 +79,7 @@ export default class TextTrackHelper {
   getExternalTracks(textTrackMap = new TextTrackMap()) {
     const externalTracks = this.filter(currentTrack =>
       textTrackMap.existsEntry({
-        id: currentTrack.id,
+        textTrack: currentTrack,
         isExternal: true
       })
     );
