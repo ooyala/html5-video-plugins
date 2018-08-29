@@ -10,7 +10,6 @@ require("../../../html5-common/js/utils/constants.js");
 require("../../../html5-common/js/utils/utils.js");
 require("../../../html5-common/js/utils/environment.js");
 
-import TextTrackMap from "./text_track/text_track_map";
 import TextTrackHelper from "./text_track/text_track_helper";
 
 (function(_, $) {
@@ -210,7 +209,6 @@ import TextTrackHelper from "./text_track/text_track_helper";
     var currentPlaybackSpeed = 1.0;
 
     let setClosedCaptionsQueue = [];
-    const textTrackMap = new TextTrackMap();
     const textTrackHelper = new TextTrackHelper(_video);
 
     // Watch for underflow on Chrome
@@ -365,8 +363,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       stopUnderflowWatcher();
       lastCueText = null;
       setClosedCaptionsQueue = [];
-      textTrackHelper.removeExternalTracks(textTrackMap);
-      textTrackMap.clear();
+      textTrackHelper.reset();
       // Restore the preload attribute to the value it had when the video
       // element was created
       $(_video).attr("preload", originalPreloadValue);
@@ -770,10 +767,11 @@ import TextTrackHelper from "./text_track/text_track_helper";
     const executeSetClosedCaptions = (language, closedCaptions = {}, params = {}) => {
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
       const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
+      textTrackHelper.onClosedCaptionCueChange = onClosedCaptionCueChange;
       // Create tracks for all VTT captions from content tree that we haven't
       // added before. If the track with the specified language is added, it
       // will be created with the desired mode automatically
-      const wasTargetTrackAdded = addExternalVttCaptions(
+      const wasTargetTrackAdded = textTrackHelper.addExternalVttCaptions(
         vttClosedCaptions,
         language,
         targetMode
@@ -781,8 +779,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       // If the desired track is not one of the newly added tracks then we look
       // for it among the previously added tracks
       if (!wasTargetTrackAdded) {
-        const targetTrack = textTrackHelper.findTrackByKey(language, textTrackMap);
-        setTextTrackMode(targetTrack, targetMode);
+        textTrackHelper.findAndSetTrackMode(language, targetMode);
       }
     };
 
@@ -794,8 +791,8 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
     this.setClosedCaptionsMode = (mode) => {
-      textTrackHelper.forEach(textTrack =>
-        setTextTrackMode(textTrack, mode)
+      textTrackHelper.textTracks.forEach(textTrack =>
+        textTrackHelper.setTextTrackMode(textTrack, mode)
       );
 
       if (mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
@@ -997,23 +994,10 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @private
      */
     const onTextTracksAddTrack = () => {
-      textTrackHelper.forEach(textTrack => {
-        tryMapInternalTrack(textTrack);
+      textTrackHelper.tryMapTracks();
 
-        const trackMetadata = textTrackMap.findEntry({
-          id: textTrack.label
-        });
-
-        if (trackMetadata) {
-          textTrackMap.tryUpdateEntry({ id: trackMetadata.id }, { textTrack: textTrack });
-          textTrackHelper.updateLabel(trackMetadata.id, trackMetadata.label);
-
-          OO.log(">>>>MainHtml: Registering newly added text track:", trackMetadata.id);
-          setTextTrackMode(textTrack, trackMetadata.mode);
-        }
-      });
-
-      checkForAvailableTextTracks();
+      const closedCaptionInfo = textTrackHelper.checkForAvailableClosedCaptions();
+      this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
     };
 
     /**
@@ -1022,44 +1006,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @private
      */
     const onTextTracksRemoveTrack = () => {
-      checkForAvailableTextTracks();
-    };
-
-    /**
-     *
-     * @method OoyalaVideoWrapper#checkForAvailableTextTracks
-     * @private
-     */
-    const checkForAvailableTextTracks = () => {
-      const closedCaptionInfo = {
-        languages: [],
-        locale: {}
-      };
-
-      const externalTracks = textTrackHelper.getExternalTracks(textTrackMap);
-      const internalTracks = textTrackHelper.getInternalTracks(textTrackMap);
-
-      for (let externalTrack of externalTracks) {
-        closedCaptionInfo.languages.push(externalTrack.language);
-        closedCaptionInfo.locale[externalTrack.language] = externalTrack.label;
-      }
-
-      for (let internalTrack of internalTracks) {
-        const trackMetadata = textTrackMap.findEntry({ textTrack: internalTrack });
-        const isLanguageDefined = !!closedCaptionInfo.locale[internalTrack.language];
-
-        if (!isLanguageDefined) {
-          const key = (trackMetadata || {}).id;
-          const label = (
-            internalTrack.label ||
-            internalTrack.language ||
-            `Captions (${key})`
-          );
-          closedCaptionInfo.languages.push(key);
-          closedCaptionInfo.locale[key] = label;
-        }
-      }
-
+      const closedCaptionInfo = textTrackHelper.checkForAvailableClosedCaptions();
       this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
     };
 
@@ -1070,37 +1017,13 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @param {object} event The event from the track change
      */
     const onTextTracksChange = () => {
-      let nativeChangesDetected = false;
-      let allChangedTracksDisabled = true;
+      const newLanguage = textTrackHelper.detectTextTrackChange();
 
-      textTrackHelper.forEach(textTrack => {
-        const trackMetadata = textTrackMap.findEntry({ textTrack: textTrack });
-
-        if (
-          trackMetadata &&
-          textTrack.mode !== trackMetadata.mode
-        ) {
-          if (hasStartedPlaying) {
-            nativeChangesDetected = true;
-            textTrackMap.tryUpdateEntry({ id: trackMetadata.id }, { mode: textTrack.mode });
-
-            if (textTrack.mode !== OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
-              allChangedTracksDisabled = false;
-
-              const newLanguage = trackMetadata.isInternal ? textTrack.language : trackMetadata.id;
-              this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, { language: newLanguage });
-              OO.log(`>>>>MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
-            }
-          } else {
-            textTrack.mode = trackMetadata.mode;
-            OO.log('>>>>MainHtml5: Default browser CC language detected, ignoring in favor of user-specified language');
-          }
-        }
-      });
-
-      if (nativeChangesDetected && allChangedTracksDisabled) {
-        this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, { language: 'none' });
-        OO.log(`>>>>MainHtml5: CC's have been disabled by the native UI`);
+      if (newLanguage) {
+        OO.log(`>>>>MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
+        this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, {
+          language: newLanguage
+        });
       }
     };
 
@@ -1270,6 +1193,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       }
 
       hasStartedPlaying = true;
+      textTrackHelper.hasStartedPlaying = true;
 
       //We want the initial PLAYING event to be from the play promise if play promises
       //are supported. This is to help with the muted autoplay workflow.
@@ -1412,7 +1336,8 @@ import TextTrackHelper from "./text_track/text_track_helper";
 
       //Workaround for Firefox because it doesn't support the oncuechange event on a text track
       if (OO.isFirefox) {
-        checkForClosedCaptionsCueChange();
+        console.log(">>>>whatdaactual");
+        //checkForClosedCaptionsCueChange();
       }
 
       forceEndOnTimeupdateIfRequired(event);
@@ -1528,109 +1453,6 @@ import TextTrackHelper from "./text_track/text_track_helper";
         executeSetClosedCaptions.apply(this, queuedArguments);
       }
     }, this);
-
-    /**
-     *
-     * @private
-     * @method OoyalaVideoWrapper#addExternalVttCaptions
-     * @param {object} vttClosedCaptions
-     * @param {string} targetLanguage
-     * @param {string} targetMode
-     * @return {boolean}
-     */
-    const addExternalVttCaptions = (vttClosedCaptions = {}, targetLanguage, targetMode) => {
-      let wasTargetTrackAdded = false;
-
-      for (let language in vttClosedCaptions) {
-        const trackData = Object.assign(
-          { language: language },
-          vttClosedCaptions[language]
-        );
-        const existsTrack = textTrackMap.existsEntry({
-          src: trackData.url
-        });
-
-        if (!existsTrack) {
-          addExternalCaptionsTrack(trackData, targetLanguage, targetMode);
-
-          if (language === targetLanguage) {
-            wasTargetTrackAdded = true;
-          }
-        }
-      }
-      return wasTargetTrackAdded;
-    };
-
-    /**
-     *
-     * @private
-     * @method OoyalaVideoWrapper#addExternalCaptionsTrack
-     * @param {object} trackData
-     * @param {string} targetLanguage
-     * @param {string} targetMode
-     */
-    const addExternalCaptionsTrack = (trackData = {}, targetLanguage, targetMode) => {
-      let trackMode;
-
-      if (trackData.language === targetLanguage) {
-        trackMode = targetMode;
-      } else {
-        trackMode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
-      }
-
-      const trackId = textTrackMap.addEntry({
-        src: trackData.url,
-        label: trackData.name,
-        mode: trackMode
-      }, true);
-
-      textTrackHelper.addTrack({
-        id: trackId,
-        label: trackId,
-        srclang: trackData.language,
-        src: trackData.url
-      });
-    };
-
-    /**
-     *
-     * @private
-     * @method OoyalaVideoWrapper#tryMapInternalTrack
-     */
-    const tryMapInternalTrack = (textTrack) => {
-      const isKnownTrack = textTrackMap.existsEntry({
-        textTrack: textTrack
-      });
-
-      if (!isKnownTrack) {
-        textTrackMap.addEntry({
-          textTrack: textTrack,
-          mode: textTrack.mode || OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED
-        });
-      }
-    };
-
-    /**
-     *
-     * @private
-     * @method OoyalaVideoWrapper#setTextTrackMode
-     * @param {TextTrack} textTrack
-     * @param {string} mode
-     */
-    const setTextTrackMode = (textTrack, mode) => {
-      if (textTrack && textTrack.mode !== mode) {
-        textTrack.mode = mode;
-
-        textTrackMap.tryUpdateEntry({ textTrack: textTrack }, { mode: mode });
-
-        if (mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
-          textTrack.oncuechange = null;
-        } else {
-          textTrack.oncuechange = onClosedCaptionCueChange;
-        }
-        OO.log('>>>>MainHtml5: Text track mode set:', textTrack.language, mode);
-      }
-    };
 
     /**
      * If any plays are queued up, execute them.
