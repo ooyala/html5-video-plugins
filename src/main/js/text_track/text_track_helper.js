@@ -1,11 +1,19 @@
 import TextTrackMap from "./text_track_map";
 
+/**
+ *
+ */
 export default class TextTrackHelper {
 
   constructor(video) {
     this.video = video;
   }
 
+  /**
+   *
+   * @public
+   * @param {Object} trackData
+   */
   addTrack(trackData) {
     const track = document.createElement('track');
     track.id = trackData.id;
@@ -16,6 +24,12 @@ export default class TextTrackHelper {
     this.video.appendChild(track);
   }
 
+  /**
+   *
+   * @private
+   * @param {String} trackId
+   * @param {String} label
+   */
   updateLabel(trackId, label = '') {
     if (this.video && trackId) {
       const trackElement = this.video.querySelector(`#${trackId}`);
@@ -26,6 +40,11 @@ export default class TextTrackHelper {
     }
   }
 
+  /**
+   *
+   * @public
+   * @param  {type} callback
+   */
   forEach(callback) {
     if (!this.video || !this.video.textTracks) {
       return;
@@ -33,6 +52,12 @@ export default class TextTrackHelper {
     Array.prototype.forEach.call(this.video.textTracks, callback);
   }
 
+  /**
+   *
+   * @public
+   * @param {Function} callback
+   * @return {Array}
+   */
   filter(callback) {
     if (!this.video || !this.video.textTracks) {
       return [];
@@ -40,6 +65,12 @@ export default class TextTrackHelper {
     return Array.prototype.filter.call(this.video.textTracks, callback);
   }
 
+  /**
+   *
+   * @public
+   * @param {Function} callback
+   * @return {TextTrack}
+   */
   findTrack(callback) {
     if (!this.video || !this.video.textTracks) {
       return;
@@ -48,6 +79,13 @@ export default class TextTrackHelper {
     return track;
   }
 
+  /**
+   *
+   * @public
+   * @param {String} languageOrId
+   * @param {TextTrackMap} textTrackMap
+   * @return {TextTrack}
+   */
   findTrackByKey(languageOrId, textTrackMap = new TextTrackMap()) {
     let track = this.findTrack(currentTrack => {
       const trackMetadata = textTrackMap.findEntry({
@@ -62,30 +100,11 @@ export default class TextTrackHelper {
     return track;
   }
 
-  getInternalTracks(textTrackMap = new TextTrackMap()) {
-    const internalTracks = this.filter(currentTrack => {
-      const isInternal = !textTrackMap.existsEntry({
-        textTrack: currentTrack,
-        isExternal: true
-      });
-      const isText = (
-        currentTrack.kind === 'captions' || currentTrack.kind === 'subtitles'
-      );
-      return isInternal && isText;
-    });
-    return internalTracks;
-  }
-
-  getExternalTracks(textTrackMap = new TextTrackMap()) {
-    const externalTracks = this.filter(currentTrack =>
-      textTrackMap.existsEntry({
-        textTrack: currentTrack,
-        isExternal: true
-      })
-    );
-    return externalTracks;
-  }
-
+  /**
+   *
+   * @public
+   * @param {TextTrackMap} textTrackMap
+   */
   removeExternalTracks(textTrackMap = TextTrackMap()) {
     for (let trackMetadata of textTrackMap.getExternalEntries()) {
       const trackElement = document.getElementById(trackMetadata.id);

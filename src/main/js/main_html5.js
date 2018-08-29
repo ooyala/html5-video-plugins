@@ -950,6 +950,9 @@ import TextTrackHelper from "./text_track/text_track_helper";
         _video.textTracks.onremovetrack = onTextTracksRemoveTrack;
         _video.textTracks.onchange = onTextTracksChange;
       }
+      // Execute any setClosedCaptions calls that occurred while
+      // metadata was being loaded
+      dequeueSetClosedCaptions();
 
       if (_video.audioTracks) {
         _video.audioTracks.onchange = _onAudioChange;
@@ -997,23 +1000,8 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @private
      */
     const onTextTracksAddTrack = () => {
-      textTrackHelper.forEach(textTrack => {
-        tryMapInternalTrack(textTrack);
-
-        const trackMetadata = textTrackMap.findEntry({
-          id: textTrack.label
-        });
-
-        if (trackMetadata) {
-          textTrackMap.tryUpdateEntry({ id: trackMetadata.id }, { textTrack: textTrack });
-          textTrackHelper.updateLabel(trackMetadata.id, trackMetadata.label);
-
-          OO.log(">>>>MainHtml: Registering newly added text track:", trackMetadata.id);
-          setTextTrackMode(textTrack, trackMetadata.mode);
-        }
-      });
-
-      checkForAvailableTextTracks();
+      tryMapTextTracks();
+      checkForAvailableClosedCaptions();
     };
 
     /**
@@ -1022,39 +1010,44 @@ import TextTrackHelper from "./text_track/text_track_helper";
      * @private
      */
     const onTextTracksRemoveTrack = () => {
-      checkForAvailableTextTracks();
+      tryMapTextTracks();
+      checkForAvailableClosedCaptions();
     };
 
     /**
      *
-     * @method OoyalaVideoWrapper#checkForAvailableTextTracks
+     * @method OoyalaVideoWrapper#checkForAvailableClosedCaptions
      * @private
      */
-    const checkForAvailableTextTracks = () => {
+    const checkForAvailableClosedCaptions = () => {
       const closedCaptionInfo = {
         languages: [],
         locale: {}
       };
-
-      const externalTracks = textTrackHelper.getExternalTracks(textTrackMap);
-      const internalTracks = textTrackHelper.getInternalTracks(textTrackMap);
-
-      for (let externalTrack of externalTracks) {
-        closedCaptionInfo.languages.push(externalTrack.language);
-        closedCaptionInfo.locale[externalTrack.language] = externalTrack.label;
+      const externalEntries = textTrackMap.getExternalEntries();
+      const internalEntries = textTrackMap.getInternalEntries();
+      // External tracks will override in-manifest/in-stream captions when languages
+      // collide, so we add their info first
+      for (let externalEntry of externalEntries) {
+        closedCaptionInfo.languages.push(externalEntry.language);
+        closedCaptionInfo.locale[externalEntry.language] = externalEntry.label;
       }
-
-      for (let internalTrack of internalTracks) {
-        const trackMetadata = textTrackMap.findEntry({ textTrack: internalTrack });
-        const isLanguageDefined = !!closedCaptionInfo.locale[internalTrack.language];
-
+      // In-manifest/in-stream captions are reported with an id such as CC1 instead
+      // of language in order to avoid conflicts with external VTTs
+      for (let internalEntry of internalEntries) {
+        const isLanguageDefined = !!closedCaptionInfo.locale[internalEntry.language];
+        // We do not report an in-manifest/in-stream track when its language is
+        // already in use by external VTT captions
         if (!isLanguageDefined) {
-          const key = (trackMetadata || {}).id;
+          const key = internalEntry.id;
           const label = (
-            internalTrack.label ||
-            internalTrack.language ||
+            internalEntry.label ||
+            internalEntry.language ||
             `Captions (${key})`
           );
+          // For in-manifest/in-stream we use id instead of language in order to
+          // account for cases in which lanugage metadata is unavailable and also
+          // to avoid conflicts with external VTT captions
           closedCaptionInfo.languages.push(key);
           closedCaptionInfo.locale[key] = label;
         }
@@ -1116,29 +1109,6 @@ import TextTrackHelper from "./text_track/text_track_helper";
         for (var i = 0; i < event.currentTarget.activeCues.length; i++) {
           if (event.currentTarget.activeCues[i].text) {
             cueText += event.currentTarget.activeCues[i].text + "\n";
-          }
-        }
-      }
-      raiseClosedCaptionCueChanged(cueText);
-    }, this);
-
-    /**
-     * Workaround for Firefox only.
-     * Check for active closed caption cues and relay them to the controller.
-     * @private
-     * @method OoyalaVideoWrapper#checkForClosedCaptionsCueChange
-     */
-    var checkForClosedCaptionsCueChange = _.bind(function() {
-      var cueText = "";
-      if (_video.textTracks) {
-        for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].activeCues) {
-            for (var j = 0; j < _video.textTracks[i].activeCues.length; j++) {
-              if (_video.textTracks[i].activeCues[j].text) {
-                cueText += _video.textTracks[i].activeCues[j].text + "\n";
-              }
-            }
-            break;
           }
         }
       }
@@ -1410,11 +1380,6 @@ import TextTrackHelper from "./text_track/text_track_helper";
       // iOS has issues seeking so if we queue a seek handle it here
       dequeueSeek();
 
-      //Workaround for Firefox because it doesn't support the oncuechange event on a text track
-      if (OO.isFirefox) {
-        checkForClosedCaptionsCueChange();
-      }
-
       forceEndOnTimeupdateIfRequired(event);
     }, this);
 
@@ -1549,7 +1514,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
         const existsTrack = textTrackMap.existsEntry({
           src: trackData.url
         });
-
+        // Only add tracks whose source url hasn't been added before
         if (!existsTrack) {
           addExternalCaptionsTrack(trackData, targetLanguage, targetMode);
 
@@ -1571,21 +1536,26 @@ import TextTrackHelper from "./text_track/text_track_helper";
      */
     const addExternalCaptionsTrack = (trackData = {}, targetLanguage, targetMode) => {
       let trackMode;
-
+      // Disable new tracks by default unless their language matches the language
+      // that is meant to be active
       if (trackData.language === targetLanguage) {
         trackMode = targetMode;
       } else {
         trackMode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
       }
-
+      // Keep a record of all the tracks that we add
       const trackId = textTrackMap.addEntry({
         src: trackData.url,
         label: trackData.name,
+        language: trackData.language,
         mode: trackMode
       }, true);
-
+      // Create the actual TextTrack object
       textTrackHelper.addTrack({
         id: trackId,
+        // IMPORTANT:
+        // We initially set the label to trackId since it's the only
+        // cross-browser way to indentify the track after it's created
         label: trackId,
         srclang: trackData.language,
         src: trackData.url
@@ -1595,18 +1565,64 @@ import TextTrackHelper from "./text_track/text_track_helper";
     /**
      *
      * @private
-     * @method OoyalaVideoWrapper#tryMapInternalTrack
+     * @method OoyalaVideoWrapper#tryMapTextTracks
      */
-    const tryMapInternalTrack = (textTrack) => {
+    const tryMapTextTracks = () => {
+      textTrackHelper.forEach(textTrack => {
+        // Any tracks that have a track id as a label are known to be external
+        // VTT tracks that we recently added. We rely on the label as the only
+        // cross-browser way to identify a TextTrack object after its creation
+        const trackMetadata = textTrackMap.findEntry({
+          id: textTrack.label
+        });
+
+        if (trackMetadata) {
+          OO.log(">>>>MainHtml5: Registering newly added text track:", trackMetadata.id);
+          // Store a reference to the track on our track map in order to link
+          // related metadata
+          textTrackMap.tryUpdateEntry(
+            { id: trackMetadata.id },
+            { textTrack: textTrack }
+          );
+          // Now that we've linked the TextTrack object to our map, we no longer
+          // need the label in order to identify the track. We can set the actual
+          // label on the track at this point
+          textTrackHelper.updateLabel(trackMetadata.id, trackMetadata.label);
+          // Tracks are added as 'disabled' by default so we make sure to set
+          // the mode that we had previously stored for the newly added track
+          setTextTrackMode(textTrack, trackMetadata.mode);
+        }
+        // Add in-manifest/in-stream tracks to our text track map
+        mapTextTrackIfUnknown(textTrack);
+      });
+    };
+
+    /**
+     *
+     * @private
+     * @method OoyalaVideoWrapper#mapTextTrackIfUnknown
+     */
+    const mapTextTrackIfUnknown = (textTrack) => {
+      // Any unkown track is assumed to be an in-manifest/in-stream track since
+      // we map external tracks when they are added
       const isKnownTrack = textTrackMap.existsEntry({
         textTrack: textTrack
       });
+      const isTextTrack = (
+        textTrack.kind === 'captions' ||
+        textTrack.kind === 'subtitles'
+      );
+      // Add an entry to our text track map in order to be able to keep track of
+      // the in-manifest/in-stream track's mode
+      if (!isKnownTrack && isTextTrack) {
+        OO.log(">>>>MainHtml5: Registering internal text track:", textTrack);
 
-      if (!isKnownTrack) {
         textTrackMap.addEntry({
-          textTrack: textTrack,
-          mode: textTrack.mode || OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED
-        });
+          label: textTrack.label,
+          language: textTrack.language,
+          mode: textTrack.mode,
+          textTrack: textTrack
+        }, false);
       }
     };
 
@@ -1620,9 +1636,13 @@ import TextTrackHelper from "./text_track/text_track_helper";
     const setTextTrackMode = (textTrack, mode) => {
       if (textTrack && textTrack.mode !== mode) {
         textTrack.mode = mode;
-
-        textTrackMap.tryUpdateEntry({ textTrack: textTrack }, { mode: mode });
-
+        // Keep track of the latest mode that was set in order to be able to
+        // detect any changes triggered by the native UI
+        textTrackMap.tryUpdateEntry(
+          { textTrack: textTrack },
+          { mode: mode }
+        );
+        // Make sure to listen to cue changes on active tracks
         if (mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
           textTrack.oncuechange = null;
         } else {
