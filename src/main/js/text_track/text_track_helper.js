@@ -71,7 +71,7 @@ export default class TextTrackHelper {
    * @param {Function} callback
    * @return {TextTrack}
    */
-  findTrack(callback) {
+  find(callback) {
     if (!this.video || !this.video.textTracks) {
       return;
     }
@@ -87,7 +87,7 @@ export default class TextTrackHelper {
    * @return {TextTrack}
    */
   findTrackByKey(languageOrId, textTrackMap = new TextTrackMap()) {
-    let track = this.findTrack(currentTrack => {
+    let track = this.find(currentTrack => {
       const trackMetadata = textTrackMap.findEntry({
         textTrack: currentTrack
       });
@@ -98,6 +98,27 @@ export default class TextTrackHelper {
       return keyMatchesTrack;
     });
     return track;
+  }
+
+  /**
+   *
+   * @public
+   * @param {TextTrackMap} textTrackMap
+   * @return {Array}
+   */
+  filterChangedTracks(textTrackMap = new TextTrackMap()) {
+    const changedTracks = this.filter(currentTrack => {
+      const trackMetadata = textTrackMap.findEntry({
+        textTrack: currentTrack
+      });
+      const hasTrackChanged = (
+        trackMetadata &&
+        currentTrack.mode !== trackMetadata.mode
+      );
+
+      return hasTrackChanged;
+    });
+    return changedTracks;
   }
 
   /**

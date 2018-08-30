@@ -1015,85 +1015,47 @@ import TextTrackHelper from "./text_track/text_track_helper";
     };
 
     /**
-     *
-     * @method OoyalaVideoWrapper#checkForAvailableClosedCaptions
-     * @private
-     */
-    const checkForAvailableClosedCaptions = () => {
-      const closedCaptionInfo = {
-        languages: [],
-        locale: {}
-      };
-      const externalEntries = textTrackMap.getExternalEntries();
-      const internalEntries = textTrackMap.getInternalEntries();
-      // External tracks will override in-manifest/in-stream captions when languages
-      // collide, so we add their info first
-      for (let externalEntry of externalEntries) {
-        closedCaptionInfo.languages.push(externalEntry.language);
-        closedCaptionInfo.locale[externalEntry.language] = externalEntry.label;
-      }
-      // In-manifest/in-stream captions are reported with an id such as CC1 instead
-      // of language in order to avoid conflicts with external VTTs
-      for (let internalEntry of internalEntries) {
-        const isLanguageDefined = !!closedCaptionInfo.locale[internalEntry.language];
-        // We do not report an in-manifest/in-stream track when its language is
-        // already in use by external VTT captions
-        if (!isLanguageDefined) {
-          const key = internalEntry.id;
-          const label = (
-            internalEntry.label ||
-            internalEntry.language ||
-            `Captions (${key})`
-          );
-          // For in-manifest/in-stream we use id instead of language in order to
-          // account for cases in which lanugage metadata is unavailable and also
-          // to avoid conflicts with external VTT captions
-          closedCaptionInfo.languages.push(key);
-          closedCaptionInfo.locale[key] = label;
-        }
-      }
-
-      this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
-    };
-
-    /**
      * Fired when there is a change on a text track.
      * @private
      * @method OoyalaVideoWrapper#onTextTracksChange
      * @param {object} event The event from the track change
      */
     const onTextTracksChange = () => {
-      let nativeChangesDetected = false;
-      let allChangedTracksDisabled = true;
-
-      textTrackHelper.forEach(textTrack => {
-        const trackMetadata = textTrackMap.findEntry({ textTrack: textTrack });
-
-        if (
-          trackMetadata &&
-          textTrack.mode !== trackMetadata.mode
-        ) {
-          if (hasStartedPlaying) {
-            nativeChangesDetected = true;
-            textTrackMap.tryUpdateEntry({ id: trackMetadata.id }, { mode: textTrack.mode });
-
-            if (textTrack.mode !== OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
-              allChangedTracksDisabled = false;
-
-              const newLanguage = trackMetadata.isInternal ? textTrack.language : trackMetadata.id;
-              this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, { language: newLanguage });
-              OO.log(`>>>>MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
-            }
+      let newLanguage;
+      const changedTracks = textTrackHelper.filterChangedTracks(textTrackMap);
+      // Changed tracks are any whose mode is different from the one we last
+      // recorded on our text track map (i.e. the ones changed by the native UI)
+      for (let changedTrack of changedTracks) {
+        const trackMetadata = textTrackMap.findEntry({
+          textTrack: changedTrack
+        });
+        // Any changes that happen before playback indicate that the browser is
+        // setting its default language. We ignore it in favor of our own defaults
+        if (hasStartedPlaying) {
+          // Changed tracks will come in pairs: one disabled, one enabled.
+          // When captions are turned off there should be a single disabled track
+          if (changedTrack.mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
+            newLanguage = newLanguage || 'none'; // This will be none when all changed tracks are disabled
           } else {
-            textTrack.mode = trackMetadata.mode;
-            OO.log('>>>>MainHtml5: Default browser CC language detected, ignoring in favor of user-specified language');
+            newLanguage = trackMetadata.isInternal ? trackMetadata.language : trackMetadata.id;
           }
+          // Make sure to remember the new mode that was set by the native UI
+          textTrackMap.tryUpdateEntry(
+            { id: trackMetadata.id },
+            { mode: changedTrack.mode }
+          );
+        } else {
+          OO.log('>>>>MainHtml5: Default browser CC language detected, ignoring in favor of user-specified language');
+          changedTrack.mode = trackMetadata.mode;
         }
-      });
-
-      if (nativeChangesDetected && allChangedTracksDisabled) {
-        this.controller.notify(this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE, { language: 'none' });
-        OO.log(`>>>>MainHtml5: CC's have been disabled by the native UI`);
+      }
+      // Native text track change detected, update our own UI
+      if (newLanguage) {
+        this.controller.notify(
+          this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE,
+          { language: newLanguage }
+        );
+        OO.log(`>>>>MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
       }
     };
 
@@ -1624,6 +1586,47 @@ import TextTrackHelper from "./text_track/text_track_helper";
           textTrack: textTrack
         }, false);
       }
+    };
+
+    /**
+     *
+     * @method OoyalaVideoWrapper#checkForAvailableClosedCaptions
+     * @private
+     */
+    const checkForAvailableClosedCaptions = () => {
+      const closedCaptionInfo = {
+        languages: [],
+        locale: {}
+      };
+      const externalEntries = textTrackMap.getExternalEntries();
+      const internalEntries = textTrackMap.getInternalEntries();
+      // External tracks will override in-manifest/in-stream captions when languages
+      // collide, so we add their info first
+      for (let externalEntry of externalEntries) {
+        closedCaptionInfo.languages.push(externalEntry.language);
+        closedCaptionInfo.locale[externalEntry.language] = externalEntry.label;
+      }
+      // In-manifest/in-stream captions are reported with an id such as CC1 instead
+      // of language in order to avoid conflicts with external VTTs
+      for (let internalEntry of internalEntries) {
+        const isLanguageDefined = !!closedCaptionInfo.locale[internalEntry.language];
+        // We do not report an in-manifest/in-stream track when its language is
+        // already in use by external VTT captions
+        if (!isLanguageDefined) {
+          const key = internalEntry.id;
+          const label = (
+            internalEntry.label ||
+            internalEntry.language ||
+            `Captions (${key})`
+          );
+          // For in-manifest/in-stream we use id instead of language in order to
+          // account for cases in which lanugage metadata is unavailable and also
+          // to avoid conflicts with external VTT captions
+          closedCaptionInfo.languages.push(key);
+          closedCaptionInfo.locale[key] = label;
+        }
+      }
+      this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
     };
 
     /**
