@@ -12,6 +12,7 @@ require("../../../html5-common/js/utils/environment.js");
 
 import TextTrackMap from "./text_track/text_track_map";
 import TextTrackHelper from "./text_track/text_track_helper";
+import CONSTANTS from "./constants/constants";
 
 (function(_, $) {
   var pluginName = "ooyalaHtml5VideoTech";
@@ -737,15 +738,25 @@ import TextTrackHelper from "./text_track/text_track_helper";
     };
 
     /**
-     *
+     * Creates text tracks for any external VTT sources provided and sets the
+     * mode of the track that matches the specified language to the specified mode.
+     * In a general sense this method is used for enabling the captions of a
+     * particular language.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
-     * @param {string} language
-     * @param {object} closedCaptions
-     * @param {object} params
+     * @param {String} language The key of the text track that we want to enable/change.
+     * Usually a language code, but can also be the track id in the case of in-manifest
+     * or in-stream text tracks.
+     * @param {Object} closedCaptions An object containing a list of external VTT captions
+     * that the player should display to the end user.
+     * @param {Object} params An object containing additional parameters:
+     *  - mode: (String) The mode to set on the track that matches the language parameter
      */
     this.setClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
       console.log(">>>>setClosedCaptions", language);
+      // Most browsers will require crossorigin=anonymous in order to be able to
+      // load VTT files from a different domain. This needs to happen before any
+      // tracks are added
       this.setCrossorigin('anonymous');
       // Disable all tracks first
       this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
@@ -760,12 +771,18 @@ import TextTrackHelper from "./text_track/text_track_helper";
     }, this);
 
     /**
-     *
+     * The actual logic of setClosedCaptions() above. This is separated in order to
+     * allow us to queue any calls to setClosedCaptions() that happen before metadata
+     * is loaded.
      * @private
      * @method OoyalaVideoWrapper#executeSetClosedCaptions
-     * @param {string} language
-     * @param {object} closedCaptions
-     * @param {object} params
+     * @param {String} language The key of the text track that we want to enable/change.
+     * Usually a language code, but can also be the track id in the case of in-manifest
+     * or in-stream text tracks.
+     * @param {Object} closedCaptions An object containing a list of external VTT captions
+     * that the player should display to the end user.
+     * @param {Object} params An object containing additional parameters:
+     *  - mode: (String) The mode to set on the track that matches the language parameter
      */
     const executeSetClosedCaptions = (language, closedCaptions = {}, params = {}) => {
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
@@ -787,10 +804,10 @@ import TextTrackHelper from "./text_track/text_track_helper";
     };
 
     /**
-     * Sets the closed captions mode on the video element.
+     * Sets the given text track mode for ALL existing tracks.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptionsMode
-     * @param {string} mode The mode to set the text tracks element.
+     * @param {string} mode The mode to set on the text tracks.
      * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
     this.setClosedCaptionsMode = (mode) => {
@@ -995,30 +1012,36 @@ import TextTrackHelper from "./text_track/text_track_helper";
     }, this);
 
     /**
-     *
+     * Fired by the browser when new text tracks are added.
      * @method OoyalaVideoWrapper#onTextTracksAddTrack
      * @private
      */
     const onTextTracksAddTrack = () => {
+      // Update our internal map of available text tracks
       tryMapTextTracks();
+      // Notify core about closed captions available after the change
       checkForAvailableClosedCaptions();
     };
 
     /**
-     *
+     * Fired by the browser when text tracks are removed.
      * @method OoyalaVideoWrapper#onTextTracksRemoveTrack
      * @private
      */
     const onTextTracksRemoveTrack = () => {
+      // Update our internal map of available text tracks
       tryMapTextTracks();
+      // Notify core about closed captions available after the change
       checkForAvailableClosedCaptions();
     };
 
     /**
-     * Fired when there is a change on a text track.
+     * Fired by the browser when there is a change on a text track. We use this
+     * handler in order to compare text track modes against our own records in
+     * order to determine whether changes have been made by the native UI (mostly
+     * for iOS fullscreen mode).
      * @private
      * @method OoyalaVideoWrapper#onTextTracksChange
-     * @param {object} event The event from the track change
      */
     const onTextTracksChange = () => {
       let newLanguage;
@@ -1442,11 +1465,10 @@ import TextTrackHelper from "./text_track/text_track_helper";
     /************************************************************************************/
 
     /**
-     *
+     * Sequentially executes all the setClosedCaptions() calls that have
+     * been queued. The queue is cleared as a result of this operation.
      * @private
      * @method OoyalaVideoWrapper#dequeueSetClosedCaptions
-     * @param {type} description
-     * @return {type}
      */
     const dequeueSetClosedCaptions = _.bind(function() {
       let queuedArguments;
@@ -1457,13 +1479,18 @@ import TextTrackHelper from "./text_track/text_track_helper";
     }, this);
 
     /**
-     *
+     * Creates text tracks for all of the given external VTT captions. If any of
+     * the newly added tracks matches the targetLanguage then its mode will be set
+     * to targetMode. Note that the mode can't be set at creation time, so this
+     * happens when the addtrack event is fired.
      * @private
      * @method OoyalaVideoWrapper#addExternalVttCaptions
-     * @param {object} vttClosedCaptions
-     * @param {string} targetLanguage
-     * @param {string} targetMode
-     * @return {boolean}
+     * @param {Object} vttClosedCaptions A metadata object that containing a list of external VTT captions
+     * that the player should display to the end user.
+     * @param {String} targetLanguage The language or key of the track that should be set to targetMode
+     * (usually the language that should be active).
+     * @param {String} targetMode The mode that should be set on the track that matches targetLanguage.
+     * @return {Boolean} True if a track that matches targetLanguage was added as a result of this call, false otherwise.
      */
     const addExternalVttCaptions = (vttClosedCaptions = {}, targetLanguage, targetMode) => {
       let wasTargetTrackAdded = false;
@@ -1489,12 +1516,19 @@ import TextTrackHelper from "./text_track/text_track_helper";
     };
 
     /**
-     *
+     * Creates a single TextTrack object using the values provided in trackData.
+     * The new track's mode will be set to targetMode after creation if the track
+     * matches targetLanguage. Tracks that don't match targetLanguage will have a
+     * 'disabled' mode by default.
      * @private
      * @method OoyalaVideoWrapper#addExternalCaptionsTrack
-     * @param {object} trackData
-     * @param {string} targetLanguage
-     * @param {string} targetMode
+     * @param {Object} trackData An object with the following properties:
+     *  - url: {String} The url of a source VTT file
+     *  - name: {String} The label to display for this track
+     *  - language: {String} The language code of the closed captions
+     * @param {String} targetLanguage The language or key of the track that should be set to targetMode
+     * (usually the language that should be active).
+     * @param {String} targetMode The mode that should be set on the track that matches targetLanguage.
      */
     const addExternalCaptionsTrack = (trackData = {}, targetLanguage, targetMode) => {
       let trackMode;
@@ -1515,6 +1549,7 @@ import TextTrackHelper from "./text_track/text_track_helper";
       // Create the actual TextTrack object
       textTrackHelper.addTrack({
         id: trackId,
+        kind: CONSTANTS.TEXT_TRACK.KIND.SUBTITLES,
         // IMPORTANT:
         // We initially set the label to trackId since it's the only
         // cross-browser way to indentify the track after it's created
@@ -1525,7 +1560,10 @@ import TextTrackHelper from "./text_track/text_track_helper";
     };
 
     /**
-     *
+     * Registers unknown text tracks in our text track map and ensures that
+     * any tracks that we add have the track mode that corresponds to them.
+     * This method is called when there are text track changes such as when the
+     * addtrack or removetrack events are fired.
      * @private
      * @method OoyalaVideoWrapper#tryMapTextTracks
      */
@@ -1549,20 +1587,26 @@ import TextTrackHelper from "./text_track/text_track_helper";
           // Now that we've linked the TextTrack object to our map, we no longer
           // need the label in order to identify the track. We can set the actual
           // label on the track at this point
-          textTrackHelper.updateLabel(trackMetadata.id, trackMetadata.label);
+          textTrackHelper.updateTrackLabel(trackMetadata.id, trackMetadata.label);
           // Tracks are added as 'disabled' by default so we make sure to set
-          // the mode that we had previously stored for the newly added track
+          // the mode that we had previously stored for the newly added track.
+          // Note that track mode can't be set during creation that's why we
+          // need to wait until the browser reports the track addtion.
           setTextTrackMode(textTrack, trackMetadata.mode);
         }
-        // Add in-manifest/in-stream tracks to our text track map
+        // Add in-manifest/in-stream tracks to our text track map. All external
+        // tracks are already known to use, so any unrecognized tracks are assumed
+        // to be in-manifest/in-stream
         mapTextTrackIfUnknown(textTrack);
       });
     };
 
     /**
-     *
+     * Adds in-manifest/in-stream tracks to our text track map in order to allow
+     * us to keep track of their state and identify them by ids that we assign to them.
      * @private
      * @method OoyalaVideoWrapper#mapTextTrackIfUnknown
+     * @param {TextTrack} textTrack The TextTrack object which we want to try to map.
      */
     const mapTextTrackIfUnknown = (textTrack) => {
       // Any unkown track is assumed to be an in-manifest/in-stream track since
@@ -1571,8 +1615,8 @@ import TextTrackHelper from "./text_track/text_track_helper";
         textTrack: textTrack
       });
       const isTextTrack = (
-        textTrack.kind === 'captions' ||
-        textTrack.kind === 'subtitles'
+        textTrack.kind === CONSTANTS.TEXT_TRACK.KIND.CAPTIONS ||
+        textTrack.kind === CONSTANTS.TEXT_TRACK.KIND.SUBTITLES
       );
       // Add an entry to our text track map in order to be able to keep track of
       // the in-manifest/in-stream track's mode
@@ -1589,7 +1633,10 @@ import TextTrackHelper from "./text_track/text_track_helper";
     };
 
     /**
-     *
+     * Translates the tracks from the text track map into the format that the core
+     * uses in order to determine available closed captions languages (or tracks).
+     * Calling this function results in CAPTIONS_FOUND_ON_PLAYING being notified
+     * with the current state of our text track map.
      * @method OoyalaVideoWrapper#checkForAvailableClosedCaptions
      * @private
      */
@@ -1630,11 +1677,13 @@ import TextTrackHelper from "./text_track/text_track_helper";
     };
 
     /**
-     *
+     * Sets the given track mode on the given text track. The new mode is also
+     * updated in the relevant text track map entry in order for us to be able to
+     * detect native changes.
      * @private
      * @method OoyalaVideoWrapper#setTextTrackMode
-     * @param {TextTrack} textTrack
-     * @param {string} mode
+     * @param {TextTrack} textTrack The TextTrack object whose mode we want to set.
+     * @param {String} mode The mode that we want to set on the text track.
      */
     const setTextTrackMode = (textTrack, mode) => {
       if (textTrack && textTrack.mode !== mode) {

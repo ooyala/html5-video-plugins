@@ -1,11 +1,9 @@
-
-const ID_PREFIX = {
-  INTERNAL: 'CC',
-  EXTERNAL: 'VTT',
-};
+import CONSTANTS from "../constants/constants";
 
 /**
- *
+ * Allows us to store and associate metadata with a TextTrack object since we
+ * can't store any data on the object itself. Automatically generates an id for
+ * registered tracks which can be used identify the object later.
  */
 export default class TextTrackMap {
 
@@ -14,20 +12,22 @@ export default class TextTrackMap {
   }
 
   /**
-   *
+   * Creates an entry in the TextTrackMap which represents a TextTrack object that
+   * has been added to or found in the video element. Automatically generates an id
+   * that can be used to identify the TextTrack later on.
    * @public
-   * @param {Object} metadata
-   * @param {Boolean} isExternal
-   * @return {String}
+   * @param {Object} metadata An object with metadata related to a TextTrack
+   * @param {Boolean} isExternal Determines whether or not the TextTrack was added by the plugin (i.e. is external)
+   * @return {String} The auto-generated id assigned to the newly registered track
    */
   addEntry(metadata = {}, isExternal = false) {
     let idPrefix, trackCount;
 
     if (isExternal) {
-      idPrefix = ID_PREFIX.EXTERNAL;
+      idPrefix = CONSTANTS.ID_PREFIX.EXTERNAL;
       trackCount = this.getExternalEntries().length;
     } else {
-      idPrefix = ID_PREFIX.INTERNAL;
+      idPrefix = CONSTANTS.ID_PREFIX.INTERNAL;
       trackCount = this.getInternalEntries().length;
     }
     // Generate new id based on the track count for the given track type
@@ -42,10 +42,12 @@ export default class TextTrackMap {
   }
 
   /**
-   *
+   * Finds the metadata that matches the given search options.
    * @public
-   * @param {Object} searchOptions
-   * @return {Object}
+   * @param {Object} searchOptions An object whose key value pairs will be matched against
+   * the existing entries. All existing properties in searchOptions need to match in order
+   * for a given entry to be matched.
+   * @return {Object} The metadata object that matches the given search options or undefined if there are no matches.
    */
   findEntry(searchOptions = {}) {
     const textTrack = this.textTracks.find(currentTrack => {
@@ -63,10 +65,12 @@ export default class TextTrackMap {
   };
 
   /**
-   *
+   * Determines whether or not there exists an entry that matches the given search options.
    * @public
-   * @param {Object} searchOptions
-   * @return {Boolean}
+   * @param {Object} searchOptions An object whose key value pairs will be matched against
+   * the existing entries. All existing properties in searchOptions need to match in order
+   * for a given entry to be matched.
+   * @return {Boolean} True if the entry exists, false otherwise
    */
   existsEntry(searchOptions) {
     const exists = !!this.findEntry(searchOptions);
@@ -74,11 +78,14 @@ export default class TextTrackMap {
   }
 
   /**
-   *
+   * Finds an entry with the given search options and merges the provided metadata
+   * with the existing object/
    * @public
-   * @param {Object} searchOptions
-   * @param {Object} metadata
-   * @return {Object}
+   * @param {Object} searchOptions An object whose key value pairs will be matched against
+   * the existing entries. All existing properties in searchOptions need to match in order
+   * for a given entry to be matched.
+   * @param {Object} metadata An object containing the properties to be merged with the existing object
+   * @return {Object} The updated metadata entry or undefined if there were no matches
    */
   tryUpdateEntry(searchOptions, metadata = {}) {
     let entry = this.findEntry(searchOptions);
@@ -90,9 +97,9 @@ export default class TextTrackMap {
   }
 
   /**
-   *
+   * Gets all of the entries associated with internal in-manifest/in-stream text tracks.
    * @public
-   * @return {Array}
+   * @return {Array} An array with all the internal TextTrack objects.
    */
   getInternalEntries() {
     const internalEntries = this.textTracks.filter(trackMetadata =>
@@ -102,9 +109,9 @@ export default class TextTrackMap {
   }
 
   /**
-   *
+   * Gets all of the entries associated with external, manually added text tracks.
    * @public
-   * @return {Array}
+   * @return {Array} An array with all the external TextTrack objects.
    */
   getExternalEntries() {
     const externalEntries = this.textTracks.filter(trackMetadata =>
@@ -114,7 +121,7 @@ export default class TextTrackMap {
   }
 
   /**
-   *
+   * Clears all the text track metadata and resets id generation.
    * @public
    */
   clear() {
