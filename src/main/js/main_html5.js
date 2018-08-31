@@ -754,12 +754,6 @@ import CONSTANTS from "./constants/constants";
      */
     this.setClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
       console.log(">>>>setClosedCaptions", language);
-      // Most browsers will require crossorigin=anonymous in order to be able to
-      // load VTT files from a different domain. This needs to happen before any
-      // tracks are added
-      this.setCrossorigin('anonymous');
-      // Disable all tracks first
-      this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
 
       if (metadataLoaded) {
         dequeueSetClosedCaptions();
@@ -786,7 +780,16 @@ import CONSTANTS from "./constants/constants";
      */
     const executeSetClosedCaptions = (language, closedCaptions = {}, params = {}) => {
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
+      const externalCaptionsProvided = !!Object.keys(vttClosedCaptions).length;
       const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
+      // Most browsers will require crossorigin=anonymous in order to be able to
+      // load VTT files from a different domain. This needs to happen before any
+      // tracks are added. We only do this if we're actually adding external tracks
+      if (externalCaptionsProvided) {
+        this.setCrossorigin('anonymous');
+      }
+      // Start by disabling all tracks
+      this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
       // Create tracks for all VTT captions from content tree that we haven't
       // added before. If the track with the specified language is added, it
       // will be created with the desired mode automatically
