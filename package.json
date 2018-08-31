@@ -13,11 +13,12 @@
     "test": "jest"
   },
   "devDependencies": {
-    "browserify": "16.2.2",
-    "babelify": "^9.0.0",
     "@babel/core": "^7.0.0-beta.51",
+    "@babel/polyfill": "^7.0.0",
     "@babel/preset-env": "^7.0.0-beta.51",
     "babel-core": "^7.0.0-bridge.0",
+    "babelify": "^9.0.0",
+    "browserify": "16.2.2",
     "expect.js": "0.3.1",
     "file-lister": "^1.1.0",
     "gulp": "3.9.1",
@@ -30,11 +31,11 @@
     "jest-cli": "23.4.2",
     "jquery": "3.3.1",
     "jsdoc": "^3.3.3",
+    "sinon": "^6.0.0",
     "uglify": "^0.1.5",
     "underscore": "1.9.1",
     "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^2.0.0",
-    "sinon": "^6.0.0"
+    "vinyl-source-stream": "^2.0.0"
   },
   "repository": {
     "type": "git",
