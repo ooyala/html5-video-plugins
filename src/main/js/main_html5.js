@@ -967,7 +967,6 @@ import CONSTANTS from "./constants/constants";
     var onLoadedMetadata = _.bind(function() {
       if (_video.textTracks) {
         _video.textTracks.onaddtrack = onTextTracksAddTrack;
-        _video.textTracks.onremovetrack = onTextTracksRemoveTrack;
         _video.textTracks.onchange = onTextTracksChange;
       }
       // Execute any setClosedCaptions calls that occurred while
@@ -1020,18 +1019,6 @@ import CONSTANTS from "./constants/constants";
      * @private
      */
     const onTextTracksAddTrack = () => {
-      // Update our internal map of available text tracks
-      tryMapTextTracks();
-      // Notify core about closed captions available after the change
-      checkForAvailableClosedCaptions();
-    };
-
-    /**
-     * Fired by the browser when text tracks are removed.
-     * @method OoyalaVideoWrapper#onTextTracksRemoveTrack
-     * @private
-     */
-    const onTextTracksRemoveTrack = () => {
       // Update our internal map of available text tracks
       tryMapTextTracks();
       // Notify core about closed captions available after the change
