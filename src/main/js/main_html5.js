@@ -755,6 +755,17 @@ import CONSTANTS from "./constants/constants";
     this.setClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
       console.log(">>>>setClosedCaptions", language);
 
+      const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
+      const externalCaptionsProvided = !!Object.keys(vttClosedCaptions).length;
+      // Most browsers will require crossorigin=anonymous in order to be able to
+      // load VTT files from a different domain. This needs to happen before any
+      // tracks are added and, on Firefox, it also needs to be as early as possible
+      // (hence why don't queue this part of the operation). Note that we only do this
+      // if we're actually adding external tracks
+      if (externalCaptionsProvided) {
+        this.setCrossorigin('anonymous');
+      }
+
       if (metadataLoaded) {
         dequeueSetClosedCaptions();
         executeSetClosedCaptions.apply(this, arguments);
@@ -780,14 +791,7 @@ import CONSTANTS from "./constants/constants";
      */
     const executeSetClosedCaptions = (language, closedCaptions = {}, params = {}) => {
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
-      const externalCaptionsProvided = !!Object.keys(vttClosedCaptions).length;
       const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
-      // Most browsers will require crossorigin=anonymous in order to be able to
-      // load VTT files from a different domain. This needs to happen before any
-      // tracks are added. We only do this if we're actually adding external tracks
-      if (externalCaptionsProvided) {
-        this.setCrossorigin('anonymous');
-      }
       // Start by disabling all tracks
       this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
       // Create tracks for all VTT captions from content tree that we haven't
@@ -1042,25 +1046,25 @@ import CONSTANTS from "./constants/constants";
         const trackMetadata = textTrackMap.findEntry({
           textTrack: changedTrack
         });
-        // Any changes that happen before playback indicate that the browser is
-        // setting its default language. We ignore it in favor of our own defaults
-        if (hasStartedPlaying) {
-          // Changed tracks will come in pairs: one disabled, one enabled.
-          // When captions are turned off there should be a single disabled track
-          if (changedTrack.mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
-            newLanguage = newLanguage || 'none'; // This will be none when all changed tracks are disabled
-          } else {
-            newLanguage = trackMetadata.isInternal ? trackMetadata.language : trackMetadata.id;
-          }
-          // Make sure to remember the new mode that was set by the native UI
-          textTrackMap.tryUpdateEntry(
-            { id: trackMetadata.id },
-            { mode: changedTrack.mode }
-          );
-        } else {
-          OO.log('>>>>MainHtml5: Default browser CC language detected, ignoring in favor of user-specified language');
+        // Changed tracks will come in pairs (one disabled, one enabled), except when
+        // captions are turned off, in which case there should be a single disabled track
+        if (changedTrack.mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
+          // This will be none when all changed tracks are disabled
+          newLanguage = newLanguage || 'none';
+        } else if (changedTracks.length === 1) {
+          // A single enabled track (without a corresponding disabled track) indicates
+          // that the browser is forcing its default language. We ignore it in favor
+          // of our own default language
+          OO.log('>>>>MainHtml5: Default browser CC language detected, ignoring in favor of plugin default');
           changedTrack.mode = trackMetadata.mode;
+        } else {
+          newLanguage = trackMetadata.isExternal ? trackMetadata.language : trackMetadata.id;
         }
+        // Make sure to remember the new mode that was set by the native UI
+        textTrackMap.tryUpdateEntry(
+          { id: trackMetadata.id },
+          { mode: changedTrack.mode }
+        );
       }
       // Native text track change detected, update our own UI
       if (newLanguage) {
