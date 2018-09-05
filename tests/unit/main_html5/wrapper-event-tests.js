@@ -10,12 +10,17 @@ describe('main_html5 wrapper tests', function () {
   // Setup
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
+  if (!OO.log) {
+    OO.log = function() {};
+  }
+
   // Load file under test
   jest.dontMock('../../../src/main/js/main_html5');
+  jest.dontMock('../../../src/main/js/text_track/text_track_map');
   require('../../../src/main/js/main_html5');
 
   var closedCaptions = {
-    locale: {en: "English"},
+    locale: { en: "English" },
     closed_captions_vtt: {
       en: {
         name: "English",
@@ -36,6 +41,7 @@ describe('main_html5 wrapper tests', function () {
     parentElement = $("<div>");
     wrapper = pluginFactory.create(parentElement, "test", vtc.interface, {});
     element = parentElement.children()[0];
+    element.textTracks = [];
   });
 
   afterEach(function() {
@@ -422,9 +428,10 @@ describe('main_html5 wrapper tests', function () {
     expect(_.contains(vtc.notified, vtc.interface.EVENTS.MULTI_AUDIO_CHANGED)).to.eql(true);
   });
 
-  it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event if video has cc', function(){
+  it('should notify CAPTIONS_FOUND_ON_PLAYING on \'onaddtrack\' event if video has cc', function() {
     element.textTracks = [{ kind: "captions" }];
-    $(element).triggerHandler("playing"); // this adds in-stream captions
+    $(element).triggerHandler("loadedmetadata");
+    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC1'],
       locale: {
@@ -433,12 +440,12 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
-  it('should notify CAPTIONS_FOUND_ON_PLAYING on first video \'playing\' event for both live and external CCs on Safari (or Edge)', function(){
-    OO.isSafari = true;
-    element.textTracks = [{ language: "", label: "", kind: "subtitles" }]; // this is external CC
-    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true); // sets isLive flag to true
-    wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"}); // creates text tracks for external CCs
-    $(element).triggerHandler("playing"); // adds in-stream captions
+  it('should notify CAPTIONS_FOUND_ON_PLAYING on \'onaddtrack\' event for both internal and external CCs', function(){
+    element.textTracks = [{ language: "", label: "", kind: "subtitles" }]; // this is internal CC
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
+    wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" }); // creates text tracks for external CCs
+    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC1'],
       locale: {
@@ -448,27 +455,16 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
-  it('should notify CAPTIONS_FOUND_ON_PLAYING for live in-stream captions for Edge in a different way', function(){
-    OO.isEdge = true;
-    element.textTracks = [{}];
-    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
-    $(element).triggerHandler("playing"); // this adds in-stream captions
-
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
-      languages: ['CC1'], locale: { CC1: 'Captions (CC1)' }}]);
-  });
-
   it('should notify CAPTIONS_FOUND_ON_PLAYING with multiple in-manifest/in-stream captions', function() {
-    var isLive = true;
-    OO.isSafari = true;
     element.textTracks = [
       { language: "", label: "", kind: "subtitles" },
       { language: "", label: "", kind: "subtitles" },
       { language: "", label: "", kind: "subtitles" }
     ];
-    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
-    $(element).triggerHandler("playing");
+    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC1', 'CC2', 'CC3'],
       locale: {
@@ -481,16 +477,15 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should notify CAPTIONS_FOUND_ON_PLAYING with multiple in-manifest/in-stream captions using label and language metadata when available', function() {
-    var isLive = true;
-    OO.isSafari = true;
     element.textTracks = [
       { language: "", label: "", kind: "subtitles" },
       { language: "es", label: "", kind: "subtitles" },
       { language: "de", label: "German", kind: "subtitles" }
     ];
-    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
-    $(element).triggerHandler("playing");
+    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC1', 'CC2', 'CC3'],
       locale: {
@@ -503,14 +498,13 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should reset in-manifest/in-stream track ids when a new source is set', function() {
-    var isLive = true;
-    OO.isSafari = true;
     element.textTracks = [
       { language: "", label: "", kind: "subtitles" },
       { language: "", label: "", kind: "subtitles" },
     ];
-    wrapper.setVideoUrl("url1", OO.VIDEO.ENCODING.HLS, isLive);
-    $(element).triggerHandler("playing");
+    wrapper.setVideoUrl("url1", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
+    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC1', 'CC2'],
       locale: {
@@ -523,8 +517,9 @@ describe('main_html5 wrapper tests', function () {
       { language: "", label: "", kind: "subtitles" },
       { language: "", label: "", kind: "subtitles" },
     ];
-    wrapper.setVideoUrl("url2", OO.VIDEO.ENCODING.HLS, isLive);
-    $(element).triggerHandler("playing");
+    wrapper.setVideoUrl("url2", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
+    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['CC1', 'CC2'],
       locale: {
@@ -535,25 +530,15 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should NOT re-add manually added tracks to available captions when in-manifest/in-stream tracks are checked', function() {
-    var isLive = true;
-    OO.isSafari = true;
     element.textTracks = [
       { language: "", label: "", kind: "subtitles" },
       { language: "", label: "", kind: "subtitles" },
       { language: "", label: "", kind: "subtitles" }
     ];
-    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, isLive);
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
-    // Simulate manually added track showing up on video element's textTracks property
-    var newTrackId = $(element).find('track').get(0).id;
-    element.textTracks.push({
-      id: newTrackId,
-      language: "en",
-      label: "English",
-      kind: "subtitles"
-    });
-    // Check for stream captions
-    $(element).triggerHandler("playing");
+    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC1', 'CC2', 'CC3'],
       locale: {
@@ -573,10 +558,10 @@ describe('main_html5 wrapper tests', function () {
         }]
       }
     };
-    element.textTracks = [{
-      oncuechange: null
-    }];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
+    element.textTracks.onaddtrack();
     element.textTracks[0].oncuechange(event);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, event.currentTarget.activeCues[0].text]);
   });
@@ -591,10 +576,10 @@ describe('main_html5 wrapper tests', function () {
         }]
       }
     };
-    element.textTracks = [{
-      oncuechange: null
-    }];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
+    element.textTracks.onaddtrack();
     element.textTracks[0].oncuechange(event);
     expect(vtc.notifyParameters).to.eql([
       vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED,
@@ -605,60 +590,6 @@ describe('main_html5 wrapper tests', function () {
   it('should notify CLOSED_CAPTION_CUE_CHANGED from setClosedCaptionsMode if mode is disabled', function(){
     wrapper.setClosedCaptionsMode("disabled");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, ""]);
-  });
-
-  it('should notify CLOSED_CAPTION_CUE_CHANGED on \'timeupdate\' event in Firefox', function(){
-    element.textTracks = [{
-      activeCues: [{
-        text: "This is cue text."
-      }]
-    }];
-    OO.isFirefox = true;
-    $(element).triggerHandler("timeupdate");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, element.textTracks[0].activeCues[0].text]);
-  });
-
-  it('should notify CLOSED_CAPTION_CUE_CHANGED on \'timeupdate\' event in Firefox with all active cues', function(){
-    element.textTracks = [{
-      activeCues: [{
-        text: "This is cue text."
-      }, {
-        text: "This is more text."
-      }]
-    }];
-    OO.isFirefox = true;
-    $(element).triggerHandler("timeupdate");
-    expect(vtc.notifyParameters).to.eql([
-      vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED,
-      element.textTracks[0].activeCues[0].text + "\n" + element.textTracks[0].activeCues[1].text
-    ]);
-  });
-
-  it('should notify CLOSED_CAPTION_CUE_CHANGED with an empty string on \'timeupdate\' event in Firefox if there are no active cues', function(){
-    element.textTracks = [{
-      activeCues: [{
-        text: "This is cue text."
-      }]
-    }];
-    OO.isFirefox = true;
-    $(element).triggerHandler("timeupdate");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, element.textTracks[0].activeCues[0].text]);
-    element.textTracks = null;
-    $(element).triggerHandler("timeupdate");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, ""]);
-  });
-
-  it('should not notify CLOSED_CAPTION_CUE_CHANGED on \'timeupdate\' if the cue text has not changed', function(){
-    element.textTracks = [{
-      activeCues: [{
-        text: "This is cue text."
-      }]
-    }];
-    OO.isFirefox = true;
-    $(element).triggerHandler("timeupdate");
-    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, element.textTracks[0].activeCues[0].text]);
-    $(element).triggerHandler("timeupdate");
-    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.TIME_UPDATE);
   });
 
   it('should notify WAITING on video \'waiting\' event', function(){

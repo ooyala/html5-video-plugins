@@ -16,6 +16,9 @@ export default class TextTrackHelper {
    * @param {Object} trackData An object with the relevant properties to set on the text track object.
    */
   addTrack(trackData = {}) {
+    if (!this.video) {
+      return;
+    }
     const track = document.createElement('track');
     track.id = trackData.id;
     track.kind = trackData.kind;
@@ -133,8 +136,12 @@ export default class TextTrackHelper {
    * @param {TextTrackMap} textTrackMap A TextTrackMap that contains metadata for all of the video's TextTrack objects.
    */
   removeExternalTracks(textTrackMap = TextTrackMap()) {
+    if (!this.video) {
+      return;
+    }
+
     for (let trackMetadata of textTrackMap.getExternalEntries()) {
-      const trackElement = document.getElementById(trackMetadata.id);
+      const trackElement = this.video.querySelector(`#${trackMetadata.id}`);
 
       if (trackElement) {
         trackElement.remove();

@@ -57,3 +57,42 @@ readOnlyVideoProperties.forEach((prop) => {
     configurable: true
   });
 });
+
+// Simulate behavior in which appending a track element to the video element
+// results in a TextTrack object being created and added to the video's
+// textTracks property. This is not currently handled by jsdom out of the box.
+jest.mock('../src/main/js/text_track/text_track_helper', () => {
+  const TextTrackHelper = require.requireActual(
+    '../src/main/js/text_track/text_track_helper'
+  ).default;
+  const textTrackHelperProto = TextTrackHelper.prototype;
+
+  const originalAddTrack = textTrackHelperProto.addTrack;
+  // Override the class' addTrack method in order automatically create TextTrack
+  // objects when a Track element is created. The rest of the implementation is
+  // not mocked
+  Object.assign(textTrackHelperProto, {
+    addTrack: function(trackData) {
+      if (!this.video) {
+        return;
+      }
+      // Execute original logic first
+      originalAddTrack.apply(this, arguments);
+      // Add TextTrack object matching provided properties
+      if (!this.video.textTracks) {
+        this.video.textTracks = [];
+      }
+      this.video.textTracks.push({
+        id: trackData.id,
+        language: trackData.srclang,
+        // Note that the implementation initially sets the label to track id in
+        // order to be able to recognize the TextTrack object on the addtrack event
+        label: trackData.id,
+        kind: trackData.kind,
+        mode: 'disabled'
+      });
+    }
+  });
+
+  return TextTrackHelper;
+});
