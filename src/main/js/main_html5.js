@@ -753,8 +753,7 @@ import CONSTANTS from "./constants/constants";
      *  - mode: (String) The mode to set on the track that matches the language parameter
      */
     this.setClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
-      console.log(">>>>setClosedCaptions", language);
-
+      OO.log("MainHtml5: setClosedCaptions called", language, closedCaptions, params);
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
       const externalCaptionsProvided = !!Object.keys(vttClosedCaptions).length;
       // Most browsers will require crossorigin=anonymous in order to be able to
@@ -770,7 +769,7 @@ import CONSTANTS from "./constants/constants";
         dequeueSetClosedCaptions();
         executeSetClosedCaptions.apply(this, arguments);
       } else {
-        OO.log('>>>>MainHtml5: setClosedCaptions called before metadata loaded, queing operation.');
+        OO.log('MainHtml5: setClosedCaptions called before metadata loaded, queing operation.');
         setClosedCaptionsQueue.push(arguments);
       }
     }, this);
@@ -1055,7 +1054,7 @@ import CONSTANTS from "./constants/constants";
           // A single enabled track (without a corresponding disabled track) indicates
           // that the browser is forcing its default language. We ignore it in favor
           // of our own default language
-          OO.log('>>>>MainHtml5: Default browser CC language detected, ignoring in favor of plugin default');
+          OO.log('MainHtml5: Default browser CC language detected, ignoring in favor of plugin default');
           changedTrack.mode = trackMetadata.mode;
         } else {
           newLanguage = trackMetadata.isExternal ? trackMetadata.language : trackMetadata.id;
@@ -1072,7 +1071,7 @@ import CONSTANTS from "./constants/constants";
           this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE,
           { language: newLanguage }
         );
-        OO.log(`>>>>MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
+        OO.log(`MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
       }
     };
 
@@ -1571,7 +1570,7 @@ import CONSTANTS from "./constants/constants";
         });
 
         if (trackMetadata) {
-          OO.log(">>>>MainHtml5: Registering newly added text track:", trackMetadata.id);
+          OO.log("MainHtml5: Registering newly added text track:", trackMetadata.id);
           // Store a reference to the track on our track map in order to link
           // related metadata
           textTrackMap.tryUpdateEntry(
@@ -1585,7 +1584,7 @@ import CONSTANTS from "./constants/constants";
           // Tracks are added as 'disabled' by default so we make sure to set
           // the mode that we had previously stored for the newly added track.
           // Note that track mode can't be set during creation that's why we
-          // need to wait until the browser reports the track addtion.
+          // need to wait until the browser reports the track addition.
           setTextTrackMode(textTrack, trackMetadata.mode);
         }
         // Add in-manifest/in-stream tracks to our text track map. All external
@@ -1608,6 +1607,7 @@ import CONSTANTS from "./constants/constants";
       const isKnownTrack = textTrackMap.existsEntry({
         textTrack: textTrack
       });
+      // Avoid mapping metadata and other non-subtitle track kinds
       const isTextTrack = (
         textTrack.kind === CONSTANTS.TEXT_TRACK.KIND.CAPTIONS ||
         textTrack.kind === CONSTANTS.TEXT_TRACK.KIND.SUBTITLES
@@ -1615,7 +1615,7 @@ import CONSTANTS from "./constants/constants";
       // Add an entry to our text track map in order to be able to keep track of
       // the in-manifest/in-stream track's mode
       if (!isKnownTrack && isTextTrack) {
-        OO.log(">>>>MainHtml5: Registering internal text track:", textTrack);
+        OO.log("MainHtml5: Registering internal text track:", textTrack);
 
         textTrackMap.addEntry({
           label: textTrack.label,
@@ -1694,7 +1694,7 @@ import CONSTANTS from "./constants/constants";
         } else {
           textTrack.oncuechange = onClosedCaptionCueChange;
         }
-        OO.log('>>>>MainHtml5: Text track mode set:', textTrack.language, mode);
+        OO.log('MainHtml5: Text track mode set:', textTrack.language, mode);
       }
     };
 
