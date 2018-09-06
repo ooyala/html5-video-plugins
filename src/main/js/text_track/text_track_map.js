@@ -121,6 +121,18 @@ export default class TextTrackMap {
   }
 
   /**
+   * Determines whether or not all of the track entries are currently in 'disabled' mode.
+   * @public
+   * @return {Boolean} True if all tracks have 'disabled' mode, false otherwise
+   */
+  areAllDisabled() {
+    const allDisabled = this.textTracks.reduce((result, trackMetadata) =>
+      result && trackMetadata.mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED
+    , true);
+    return allDisabled;
+  }
+
+  /**
    * Clears all the text track metadata and resets id generation.
    * @public
    */

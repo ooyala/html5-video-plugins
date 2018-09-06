@@ -120,6 +120,7 @@ describe('main_html5 wrapper tests', function () {
   it('should clear closed captions when setting a new url', function(){
     wrapper.setVideoUrl("url");
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions(language, closedCaptions, params);
     element.textTracks.onaddtrack();
     // Make sure tracks are actually there before we remove them
@@ -132,6 +133,7 @@ describe('main_html5 wrapper tests', function () {
   it('should not clear closed captions when setting the same url', function(){
     wrapper.setVideoUrl("url");
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     element.textTracks.onaddtrack();
     wrapper.setClosedCaptions(language, closedCaptions, params);
     wrapper.setVideoUrl("url");
@@ -1151,6 +1153,7 @@ describe('main_html5 wrapper tests', function () {
   it('should set external closed captions', function(){
     wrapper.setVideoUrl("url");
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions(language, closedCaptions, params);
     element.textTracks.onaddtrack();
     expect(element.children.length > 0).to.be(true);
@@ -1165,6 +1168,7 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks = [{ mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, kind: "captions" }];
     wrapper.setVideoUrl("url");
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     element.textTracks.onaddtrack();
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
     wrapper.setClosedCaptions("CC1", {}, { mode: "showing" });
@@ -1175,6 +1179,7 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks = [{ kind: "captions" }, { kind: "captions" }];
     wrapper.setVideoUrl("url");
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     element.textTracks.onaddtrack();
 
     wrapper.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
@@ -1204,6 +1209,7 @@ describe('main_html5 wrapper tests', function () {
     ];
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     element.textTracks.onaddtrack();
     wrapper.setClosedCaptions("CC3", {}, { mode: OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING });
     expect(element.textTracks[0].mode).to.eql(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
@@ -1214,6 +1220,7 @@ describe('main_html5 wrapper tests', function () {
   it('should disable closed captions if language is null', function() {
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions(language, closedCaptions, params);
     element.textTracks.onaddtrack();
     expect(element.children.length > 0).to.be(true);

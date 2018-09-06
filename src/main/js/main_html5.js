@@ -185,7 +185,6 @@ import CONSTANTS from "./constants/constants";
     var videoEnded = false;
     var listeners = {};
     var loaded = false;
-    var metadataLoaded = false;
     var canPlay = false;
     var hasPlayed = false;
     var queuedSeekTime = null;
@@ -211,6 +210,7 @@ import CONSTANTS from "./constants/constants";
     var currentPlaybackSpeed = 1.0;
 
     let setClosedCaptionsQueue = [];
+    let externalCaptionsLanguages = {};
     const textTrackMap = new TextTrackMap();
     const textTrackHelper = new TextTrackHelper(_video);
 
@@ -349,7 +349,6 @@ import CONSTANTS from "./constants/constants";
       hasPlayed = false;
       queuedSeekTime = null;
       loaded = false;
-      metadataLoaded = false;
       hasStartedPlaying = false;
       pauseOnPlaying = false;
       isSeeking = false;
@@ -366,6 +365,7 @@ import CONSTANTS from "./constants/constants";
       stopUnderflowWatcher();
       lastCueText = null;
       setClosedCaptionsQueue = [];
+      externalCaptionsLanguages = {};
       textTrackHelper.removeExternalTracks(textTrackMap);
       textTrackMap.clear();
       // Restore the preload attribute to the value it had when the video
@@ -763,13 +763,19 @@ import CONSTANTS from "./constants/constants";
       // if we're actually adding external tracks
       if (externalCaptionsProvided) {
         this.setCrossorigin('anonymous');
-      }
 
-      if (metadataLoaded) {
+        for (let language in vttClosedCaptions) {
+          externalCaptionsLanguages[language] = true;
+        }
+      }
+      // Browsers tend to glitch when text tracks are added before metadata is
+      // loaded and in some cases fail to trigger the first cue if a track is
+      // added before canplay event is fired
+      if (canPlay) {
         dequeueSetClosedCaptions();
         executeSetClosedCaptions.apply(this, arguments);
       } else {
-        OO.log('MainHtml5: setClosedCaptions called before metadata loaded, queing operation.');
+        OO.log('MainHtml5: setClosedCaptions called before load, queing operation.');
         setClosedCaptionsQueue.push(arguments);
       }
     }, this);
@@ -791,8 +797,9 @@ import CONSTANTS from "./constants/constants";
     const executeSetClosedCaptions = (language, closedCaptions = {}, params = {}) => {
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
       const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
-      // Start by disabling all tracks
-      this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+      const targetTrack = textTrackHelper.findTrackByKey(language, textTrackMap);
+      // Start by disabling all tracks, except for the one whose mode we want to set
+      disableTextTracksExcept(targetTrack);
       // Create tracks for all VTT captions from content tree that we haven't
       // added before. If the track with the specified language is added, it
       // will be created with the desired mode automatically
@@ -801,10 +808,9 @@ import CONSTANTS from "./constants/constants";
         language,
         targetMode
       );
-      // If the desired track is not one of the newly added tracks then we look
-      // for it among the previously added tracks
+      // If the desired track is not one of the newly added tracks then we set
+      // the target mode on the pre-existing track that matches the target language
       if (!wasTargetTrackAdded) {
-        const targetTrack = textTrackHelper.findTrackByKey(language, textTrackMap);
         setTextTrackMode(targetTrack, targetMode);
       }
     };
@@ -972,9 +978,6 @@ import CONSTANTS from "./constants/constants";
         _video.textTracks.onaddtrack = onTextTracksAddTrack;
         _video.textTracks.onchange = onTextTracksChange;
       }
-      // Execute any setClosedCaptions calls that occurred while
-      // metadata was being loaded
-      dequeueSetClosedCaptions();
 
       if (_video.audioTracks) {
         _video.audioTracks.onchange = _onAudioChange;
@@ -986,7 +989,6 @@ import CONSTANTS from "./constants/constants";
         this.setPlaybackSpeed(1.0);
       }
       loaded = true;
-      metadataLoaded = true;
     }, this);
 
     /**
@@ -1050,10 +1052,11 @@ import CONSTANTS from "./constants/constants";
         if (changedTrack.mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
           // This will be none when all changed tracks are disabled
           newLanguage = newLanguage || 'none';
-        } else if (changedTracks.length === 1) {
-          // A single enabled track (without a corresponding disabled track) indicates
-          // that the browser is forcing its default language. We ignore it in favor
-          // of our own default language
+        // A single enabled track (without a corresponding disabled track) indicates
+        // that the browser is forcing its default language. The exception to this is
+        // when all tracks were previously disabled, which means that captions were
+        // enabled by the user via the native UI
+        } else if (!textTrackMap.areAllDisabled() && changedTracks.length === 1) {
           OO.log('MainHtml5: Default browser CC language detected, ignoring in favor of plugin default');
           changedTrack.mode = trackMetadata.mode;
         } else {
@@ -1172,6 +1175,10 @@ import CONSTANTS from "./constants/constants";
 
       //Notify controller of video width and height.
       if (firstPlay) {
+        // Dequeue any calls to setClosedCaptions() that occurred before
+        // the video was loaded
+        dequeueSetClosedCaptions();
+
         this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, {width: _video.videoWidth, height: _video.videoHeight});
 
         var availableAudio = this.getAvailableAudio();
@@ -1472,6 +1479,25 @@ import CONSTANTS from "./constants/constants";
     }, this);
 
     /**
+     * Sets the mode of all text tracks to 'disabled' except for targetTrack.
+     * @private
+     * @method OoyalaVideoWrapper#disableTextTracksExcept
+     * @param {TextTrack} The text track which we want to exclude from the disable operation.
+     */
+    const disableTextTracksExcept = (targetTrack) => {
+      // Start by disabling all tracks, except for the one whose mode we want to set
+      textTrackHelper.forEach(textTrack => {
+        // Note: Edge will get stuck on 'disabled' mode if you disable a track right
+        // before setting another mode on it, so we avoid disabling the target track
+        if (textTrack !== targetTrack) {
+          setTextTrackMode(textTrack, OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+        }
+      });
+      // Clear any captions left by previously active tracks
+      raiseClosedCaptionCueChanged('');
+    };
+
+    /**
      * Creates text tracks for all of the given external VTT captions. If any of
      * the newly added tracks matches the targetLanguage then its mode will be set
      * to targetMode. Note that the mode can't be set at creation time, so this
@@ -1650,7 +1676,12 @@ import CONSTANTS from "./constants/constants";
       // In-manifest/in-stream captions are reported with an id such as CC1 instead
       // of language in order to avoid conflicts with external VTTs
       for (let internalEntry of internalEntries) {
-        const isLanguageDefined = !!closedCaptionInfo.locale[internalEntry.language];
+        // Either the language was already added to the info above or it is one
+        // of the external captions that will be added after the video loads
+        const isLanguageDefined = (
+          !!closedCaptionInfo.locale[internalEntry.language] ||
+          !!externalCaptionsLanguages[internalEntry.language]
+        );
         // We do not report an in-manifest/in-stream track when its language is
         // already in use by external VTT captions
         if (!isLanguageDefined) {

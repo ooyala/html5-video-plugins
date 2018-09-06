@@ -444,6 +444,7 @@ describe('main_html5 wrapper tests', function () {
     element.textTracks = [{ language: "", label: "", kind: "subtitles" }]; // this is internal CC
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" }); // creates text tracks for external CCs
     element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
@@ -463,6 +464,7 @@ describe('main_html5 wrapper tests', function () {
     ];
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
     element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
@@ -484,6 +486,7 @@ describe('main_html5 wrapper tests', function () {
     ];
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
     element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
@@ -537,6 +540,7 @@ describe('main_html5 wrapper tests', function () {
     ];
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
     element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
@@ -560,6 +564,7 @@ describe('main_html5 wrapper tests', function () {
     };
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
     element.textTracks.onaddtrack();
     element.textTracks[0].oncuechange(event);
@@ -578,6 +583,7 @@ describe('main_html5 wrapper tests', function () {
     };
     wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
     element.textTracks.onaddtrack();
     element.textTracks[0].oncuechange(event);
