@@ -1576,6 +1576,10 @@ import CONSTANTS from "./constants/constants";
         srclang: trackData.language,
         src: trackData.url
       });
+      // MS Edge doesn't fire the addtrack event for manually added tracks
+      if (OO.isEdge) {
+        onTextTracksAddTrack();
+      }
     };
 
     /**
@@ -1614,7 +1618,7 @@ import CONSTANTS from "./constants/constants";
           setTextTrackMode(textTrack, trackMetadata.mode);
         }
         // Add in-manifest/in-stream tracks to our text track map. All external
-        // tracks are already known to use, so any unrecognized tracks are assumed
+        // tracks are already known to us, so any unrecognized tracks are assumed
         // to be in-manifest/in-stream
         mapTextTrackIfUnknown(textTrack);
       });
@@ -1692,7 +1696,7 @@ import CONSTANTS from "./constants/constants";
             `Captions (${key})`
           );
           // For in-manifest/in-stream we use id instead of language in order to
-          // account for cases in which lanugage metadata is unavailable and also
+          // account for cases in which language metadata is unavailable and also
           // to avoid conflicts with external VTT captions
           closedCaptionInfo.languages.push(key);
           closedCaptionInfo.locale[key] = label;

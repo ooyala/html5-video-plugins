@@ -54,7 +54,10 @@ export default class TextTrackMap {
       let isFound = true;
 
       for (let property in searchOptions) {
-        if (searchOptions[property] !== currentTrack[property]) {
+        if (
+          searchOptions.hasOwnProperty(property) &&
+          searchOptions[property] !== currentTrack[property]
+        ) {
           isFound = false;
           break;
         }

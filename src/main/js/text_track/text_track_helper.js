@@ -87,8 +87,15 @@ export default class TextTrackHelper {
   /**
    * Finds the TextTrack object that matches a key, which can be either the language
    * code of the track or a track id associated with the track on a TextTrackMap.
+   * Important:
+   * It is assumed that internal tracks are matched by id and external tracks are
+   * matched by language. This function will not return internal tracks that match
+   * a language key, for example. This limitation is imposed by the fact that the
+   * core uses language as key for closed captions. Ideally all tracks should be
+   * matched by id.
    * @public
-   * @param {String} languageOrId The language or track id of the track we want to find.
+   * @param {String} languageOrId The language or track id of the track we want to find. Note that
+   * language matches only internal tracks and track id only external tracks.
    * @param {TextTrackMap} textTrackMap A TextTrackMap that contains metadata for all of the video's TextTrack objects.
    * @return {TextTrack} The first TextTrack object that matches the given key or undefined if there are no matches.
    */
@@ -97,8 +104,17 @@ export default class TextTrackHelper {
       const trackMetadata = textTrackMap.findEntry({
         textTrack: currentTrack
       });
-      const matchesTrackId = !!trackMetadata && trackMetadata.id === languageOrId;
-      const matchesLanguage = currentTrack.language === languageOrId;
+      // Note: We don't match tracks that are unknown to us
+      const matchesTrackId = (
+        !!trackMetadata &&
+        !trackMetadata.isExternal && // We use track id as key for internal tracks
+        trackMetadata.id === languageOrId
+      );
+      const matchesLanguage = (
+        !!trackMetadata &&
+        trackMetadata.isExternal && // We use language as key for external tracks
+        currentTrack.language === languageOrId
+      );
       const keyMatchesTrack = matchesTrackId || matchesLanguage;
 
       return keyMatchesTrack;
