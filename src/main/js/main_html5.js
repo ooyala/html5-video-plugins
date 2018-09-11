@@ -43,6 +43,14 @@ import CONSTANTS from "./constants/constants";
           list.push(OO.VIDEO.ENCODING.MP4);
         }
 
+        if (!!videoElement.canPlayType("audio/ogg")) {
+          list.push(OO.VIDEO.ENCODING.OGG);
+        }
+        
+        if (!!videoElement.canPlayType("audio/x-m4a")) {
+          list.push(OO.VIDEO.ENCODING.M4A);
+        }
+
         if (!!videoElement.canPlayType("video/webm")) {
           list.push(OO.VIDEO.ENCODING.WEBM);
         }
@@ -56,6 +64,7 @@ import CONSTANTS from "./constants/constants";
           list.push(OO.VIDEO.ENCODING.HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_HLS);
+          list.push(OO.VIDEO.ENCODING.AUDIO_ONLY_HLS);
         }
 
         // Sony OperaTV supports HLS but doesn't properly report it so we are forcing it here
@@ -63,9 +72,10 @@ import CONSTANTS from "./constants/constants";
           list.push(OO.VIDEO.ENCODING.HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_HLS);
+          list.push(OO.VIDEO.ENCODING.AUDIO_ONLY_HLS);
+          
         }
       }
-
       return list;
     };
     this.encodings = getSupportedEncodings();
@@ -321,7 +331,8 @@ import CONSTANTS from "./constants/constants";
 
         isM3u8 = (encoding == OO.VIDEO.ENCODING.HLS ||
           encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS ||
-          encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_HLS
+          encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_HLS ||
+          encoding == OO.VIDEO.ENCODING.AUDIO_ONLY_HLS
         );
         isLive = live;
         urlChanged = true;
