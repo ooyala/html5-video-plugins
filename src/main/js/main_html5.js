@@ -1047,6 +1047,13 @@ import CONSTANTS from "./constants/constants";
         const trackMetadata = textTrackMap.findEntry({
           textTrack: changedTrack
         });
+        // We assume that any changes that occur prior to playback are browser
+        // defaults since the native UI couldn't have been displayed yet
+        if (!canPlay) {
+          OO.log('MainHtml5: Native CC changes detected before playback, ignoring.');
+          changedTrack.mode = trackMetadata.mode;
+          continue;
+        }
         // Changed tracks will come in pairs (one disabled, one enabled), except when
         // captions are turned off, in which case there should be a single disabled track
         if (changedTrack.mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
@@ -1060,7 +1067,15 @@ import CONSTANTS from "./constants/constants";
           OO.log('MainHtml5: Default browser CC language detected, ignoring in favor of plugin default');
           changedTrack.mode = trackMetadata.mode;
         } else {
-          newLanguage = trackMetadata.isExternal ? trackMetadata.language : trackMetadata.id;
+          const useLanguageAsKey = !!(
+            trackMetadata.isExternal ||
+            externalCaptionsLanguages[trackMetadata.language]
+          );
+          // We give priority to external VTT captions but Safari might pick an
+          // in-stream/in-manifest track when a CC language is chosen using the
+          // native UI. We make sure to enable the equivalent external track
+          // whenever both internal and external tracks exist for the same language
+          newLanguage = useLanguageAsKey ? trackMetadata.language : trackMetadata.id;
         }
         // Make sure to remember the new mode that was set by the native UI
         textTrackMap.tryUpdateEntry(
@@ -1493,8 +1508,6 @@ import CONSTANTS from "./constants/constants";
           setTextTrackMode(textTrack, OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
         }
       });
-      // Clear any captions left by previously active tracks
-      raiseClosedCaptionCueChanged('');
     };
 
     /**
