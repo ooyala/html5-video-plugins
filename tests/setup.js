@@ -31,6 +31,16 @@ global._ = OO._;
 // In a browser environment, all of the properties of "window" (like navigator) are in the global scope:
 OO._.extend(global, window);
 
+
+OO.CONSTANTS = {
+  CLOSED_CAPTIONS: {
+    SHOWING: "showing",
+    HIDDEN: "hidden",
+    DISABLED: "disabled"
+  },
+  SEEK_TO_END_LIMIT: 3
+};
+
 require.requireActual("../html5-common/js/utils/InitModules/InitOOHazmat.js");
 
 jest.dontMock('./utils/mock_vtc.js');

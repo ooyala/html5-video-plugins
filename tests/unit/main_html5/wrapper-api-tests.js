@@ -10,15 +10,6 @@ describe('main_html5 wrapper tests', function () {
   // Setup
   OO.Video = { plugin: function(plugin) { pluginFactory = plugin; } };
 
-  OO.CONSTANTS = {
-    CLOSED_CAPTIONS: {
-      SHOWING: "showing",
-      HIDDEN: "hidden",
-      DISABLED: "disabled"
-    },
-    SEEK_TO_END_LIMIT: 3
-  };
-
   var TRACK_CLASS = "track_cc";
   var closedCaptions = {
     locale: { en: "English" },
