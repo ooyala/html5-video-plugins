@@ -209,6 +209,7 @@ import CONSTANTS from "./constants/constants";
     var originalPreloadValue = $(_video).attr("preload") || "none";
     var currentPlaybackSpeed = 1.0;
 
+    let currentCCKey = '';
     let setClosedCaptionsQueue = [];
     let externalCaptionsLanguages = {};
     const textTrackMap = new TextTrackMap();
@@ -364,6 +365,7 @@ import CONSTANTS from "./constants/constants";
       isPriming = false;
       stopUnderflowWatcher();
       lastCueText = null;
+      currentCCKey = '';
       setClosedCaptionsQueue = [];
       externalCaptionsLanguages = {};
       textTrackHelper.removeExternalTracks(textTrackMap);
@@ -798,6 +800,11 @@ import CONSTANTS from "./constants/constants";
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
       const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
       const targetTrack = textTrackHelper.findTrackByKey(language, textTrackMap);
+      // Clear current CC cue if track is about to change
+      if (currentCCKey !== language) {
+        raiseClosedCaptionCueChanged('');
+      }
+      currentCCKey = language;
       // Start by disabling all tracks, except for the one whose mode we want to set
       disableTextTracksExcept(targetTrack);
       // Create tracks for all VTT captions from content tree that we haven't
