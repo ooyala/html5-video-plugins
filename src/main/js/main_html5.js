@@ -1065,7 +1065,6 @@ import CONSTANTS from "./constants/constants";
         // enabled by the user via the native UI
         } else if (!textTrackMap.areAllDisabled() && changedTracks.length === 1) {
           OO.log('MainHtml5: Default browser CC language detected, ignoring in favor of plugin default');
-          changedTrack.mode = trackMetadata.mode;
         } else {
           const useLanguageAsKey = !!(
             trackMetadata.isExternal ||
@@ -1077,11 +1076,10 @@ import CONSTANTS from "./constants/constants";
           // whenever both internal and external tracks exist for the same language
           newLanguage = useLanguageAsKey ? trackMetadata.language : trackMetadata.id;
         }
-        // Make sure to remember the new mode that was set by the native UI
-        textTrackMap.tryUpdateEntry(
-          { id: trackMetadata.id },
-          { mode: changedTrack.mode }
-        );
+        // Whether we're ignoring or propagating the changes we revert the track to
+        // it's last known mode. If there's a need for a language change it will
+        // happen as a result of the notification below
+        changedTrack.mode = trackMetadata.mode;
       }
       // Native text track change detected, update our own UI
       if (newLanguage) {
