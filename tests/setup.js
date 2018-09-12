@@ -95,9 +95,7 @@ jest.mock('../src/main/js/text_track/text_track_helper', () => {
       this.video.textTracks.push({
         id: trackData.id,
         language: trackData.srclang,
-        // Note that the implementation initially sets the label to track id in
-        // order to be able to recognize the TextTrack object on the addtrack event
-        label: trackData.id,
+        label: trackData.label,
         kind: trackData.kind,
         mode: 'disabled'
       });
