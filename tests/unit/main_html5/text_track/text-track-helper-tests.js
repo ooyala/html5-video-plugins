@@ -4,7 +4,7 @@ import TextTrackMap from "../../../../src/main/js/text_track/text_track_map";
 describe('TextTrackHelper', function() {
   let textTrackHelper, textTrackMap;
 
-  const getDummyTrack = (overrides = {}) => {
+  const getDummyTrackData = (overrides = {}) => {
     return {
       id: overrides.id || `id-${Date.now()}`,
       kind: overrides.kind || 'kind',
@@ -63,7 +63,7 @@ describe('TextTrackHelper', function() {
 
     it('should update the label of the matching track element', function() {
       const id = 'id1';
-      textTrackHelper.addTrack(getDummyTrack({
+      textTrackHelper.addTrack(getDummyTrackData({
         id: id,
         label: 'label'
       }));
@@ -78,10 +78,10 @@ describe('TextTrackHelper', function() {
 
     it('should execute a call back for each text track on the video element', function() {
       let callCount = 0;
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
       textTrackHelper.forEach(() => callCount++);
       expect(callCount).to.be(4);
     });
@@ -90,10 +90,10 @@ describe('TextTrackHelper', function() {
   describe('filter', function() {
 
     it('should return the elements that match the search criteria', function() {
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack({ id: 'match1', label: 'match' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'match2', label: 'match' }));
-      textTrackHelper.addTrack(getDummyTrack());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'match1', label: 'match' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'match2', label: 'match' }));
+      textTrackHelper.addTrack(getDummyTrackData());
       const result = textTrackHelper.filter(track => track.label === 'match');
       expect(result.length).to.be(2);
       expect(result[0].id).to.be('match1');
@@ -109,10 +109,10 @@ describe('TextTrackHelper', function() {
   describe('find', function() {
 
     it('should return the first track to match the search criteria', function() {
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack({ id: 'match1', label: 'match' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'match2', label: 'match' }));
-      textTrackHelper.addTrack(getDummyTrack());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'match1', label: 'match' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'match2', label: 'match' }));
+      textTrackHelper.addTrack(getDummyTrackData());
       const result = textTrackHelper.find(track => track.label === 'match');
       expect(result.id).to.be('match1');
     });
@@ -127,12 +127,12 @@ describe('TextTrackHelper', function() {
 
     it('should return the first external track that matches the language', function() {
       let isExternal;
-      textTrackHelper.addTrack(getDummyTrack({ id: 'CC1' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'CC2' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'CC1' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'CC2' }));
       isExternal = false;
       mapTracks(isExternal);
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT1', srclang: 'es' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT2', srclang: 'en' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT1', srclang: 'es' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT2', srclang: 'en' }));
       isExternal = true;
       mapTracks(isExternal);
       const result = textTrackHelper.findTrackByKey('en', textTrackMap);
@@ -141,12 +141,12 @@ describe('TextTrackHelper', function() {
 
     it('should return the first internal track that matches the track id', function() {
       let isExternal;
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT1' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT2' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT1' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT2' }));
       isExternal = true;
       mapTracks(isExternal);
-      textTrackHelper.addTrack(getDummyTrack({ id: 'CC1', srclang: 'es' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'CC2', srclang: 'en' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'CC1', srclang: 'es' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'CC2', srclang: 'en' }));
       isExternal = false;
       mapTracks(isExternal);
       const result = textTrackHelper.findTrackByKey('CC2', textTrackMap);
@@ -154,8 +154,8 @@ describe('TextTrackHelper', function() {
     });
 
     it('should ignore external tracks that match the track id', function() {
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT1', srclang: 'es' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT2', srclang: 'en' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT1', srclang: 'es' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT2', srclang: 'en' }));
       let isExternal = true;
       mapTracks(isExternal);
       const result = textTrackHelper.findTrackByKey('VTT2', textTrackMap);
@@ -164,11 +164,11 @@ describe('TextTrackHelper', function() {
 
     it('should ignore internal tracks that match the language', function() {
       let isExternal;
-      textTrackHelper.addTrack(getDummyTrack({ id: 'CC1', srclang: 'en' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'CC1', srclang: 'en' }));
       isExternal = false;
       mapTracks(isExternal);
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT1', srclang: 'en' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT2', srclang: 'es' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT1', srclang: 'en' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT2', srclang: 'es' }));
       isExternal = true;
       mapTracks(isExternal);
       const result = textTrackHelper.findTrackByKey('en', textTrackMap);
@@ -179,10 +179,10 @@ describe('TextTrackHelper', function() {
   describe('filterChangedTracks', function() {
 
     it('should return all tracks that have a mode that differs from the one stored in the TextTrackMap', function() {
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
       mapTracks();
       textTrackHelper.video.textTracks[1].mode = 'showing';
       textTrackHelper.video.textTracks[2].mode = 'showing';
@@ -195,10 +195,10 @@ describe('TextTrackHelper', function() {
     });
 
     it('should return an empty array if no tracks have been changed', function() {
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
-      textTrackHelper.addTrack(getDummyTrack());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
+      textTrackHelper.addTrack(getDummyTrackData());
       mapTracks();
       const result = textTrackHelper.filterChangedTracks(textTrackMap);
       expect(result.length).to.be(0);
@@ -210,13 +210,13 @@ describe('TextTrackHelper', function() {
 
     it('should remove all tracks marked as isExternal in the given TextTrackMap', function() {
       let isExternal, trackElements;
-      textTrackHelper.addTrack(getDummyTrack({ id: 'CC1' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'CC2' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'CC1' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'CC2' }));
       isExternal = false;
       mapTracks(isExternal);
       // Note: These need to match the ids generated by TextTrackMap
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT1' }));
-      textTrackHelper.addTrack(getDummyTrack({ id: 'VTT2' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT1' }));
+      textTrackHelper.addTrack(getDummyTrackData({ id: 'VTT2' }));
       isExternal = true;
       mapTracks(isExternal);
       trackElements = textTrackHelper.video.querySelectorAll('track');
