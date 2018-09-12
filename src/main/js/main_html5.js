@@ -10,6 +10,10 @@ require("../../../html5-common/js/utils/constants.js");
 require("../../../html5-common/js/utils/utils.js");
 require("../../../html5-common/js/utils/environment.js");
 
+import TextTrackMap from "./text_track/text_track_map";
+import TextTrackHelper from "./text_track/text_track_helper";
+import CONSTANTS from "./constants/constants";
+
 (function(_, $) {
   var pluginName = "ooyalaHtml5VideoTech";
   var currentInstances = {};
@@ -205,7 +209,6 @@ require("../../../html5-common/js/utils/environment.js");
     var currentTimeShift = 0;
     var currentVolumeSet = 0;
     var isM3u8 = false;
-    var TRACK_CLASS = "track_cc";
     var firstPlay = true;
     var videoDimension = {height: 0, width: 0};
     var initialTime = { value: 0, reached: true };
@@ -213,22 +216,14 @@ require("../../../html5-common/js/utils/environment.js");
     var isPriming = false;
     var isLive = false;
     var lastCueText = null;
-    var availableClosedCaptions = {};
-    var textTrackModes = {};
     var originalPreloadValue = $(_video).attr("preload") || "none";
     var currentPlaybackSpeed = 1.0;
-    /**
-     * Keeps track of the ids of all of the text tracks that were added by
-     * the plugin (as opposed to in-manifest/in-stream tracks) for the current stream.
-     * @type {Array}
-     */
-    var externalTextTrackIds = [];
-    /**
-     * Keeps track of the number of in-manifest/in-stream tracks that have been
-     * detected for the current stream.
-     * @type {Number}
-     */
-    var streamTextTrackCount = 0;
+
+    let currentCCKey = '';
+    let setClosedCaptionsQueue = [];
+    let externalCaptionsLanguages = {};
+    const textTrackMap = new TextTrackMap();
+    const textTrackHelper = new TextTrackHelper(_video);
 
     // Watch for underflow on Chrome
     var underflowWatcherTimer = null;
@@ -381,18 +376,15 @@ require("../../../html5-common/js/utils/environment.js");
       isPriming = false;
       stopUnderflowWatcher();
       lastCueText = null;
-      textTrackModes = {};
+      currentCCKey = '';
+      setClosedCaptionsQueue = [];
+      externalCaptionsLanguages = {};
+      textTrackHelper.removeExternalTracks(textTrackMap);
+      textTrackMap.clear();
       // Restore the preload attribute to the value it had when the video
       // element was created
       $(_video).attr("preload", originalPreloadValue);
-      // [PLAYER-212]
-      // Closed captions persist across discovery videos unless they are cleared
-      // when a new video is set
-      $(_video).find('.' + TRACK_CLASS).remove();
-      availableClosedCaptions = {};
       ignoreFirstPlayingEvent = false;
-      externalTextTrackIds = [];
-      streamTextTrackCount = 0;
     }, this);
 
     /**
@@ -467,7 +459,7 @@ require("../../../html5-common/js/utils/environment.js");
       var queuedSeekRequired = OO.isSafari && videoEnded && time === 0;
       initialTime.value = time;
       initialTime.reached = false;
-      
+
       // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
       // never raised, even if the seekable property returns an endtime greater than the seek time.
       // To avoid this, save seeking information for use later.
@@ -759,150 +751,104 @@ require("../../../html5-common/js/utils/environment.js");
     };
 
     /**
-     * Sets the closed captions on the video element.
+     * Creates text tracks for any external VTT sources provided and sets the
+     * mode of the track that matches the specified language to the specified mode.
+     * In a general sense this method is used for enabling the captions of a
+     * particular language.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptions
-     * @param {string} language The language of the closed captions. If null, the current closed captions will be removed.
-     * @param {object} closedCaptions The closedCaptions object
-     * @param {object} params The params to set with closed captions
+     * @param {String} language The key of the text track that we want to enable/change.
+     * Usually a language code, but can also be the track id in the case of in-manifest
+     * or in-stream text tracks.
+     * @param {Object} closedCaptions An object containing a list of external VTT captions
+     * that the player should display to the end user.
+     * @param {Object} params An object containing additional parameters:
+     *  - mode: (String) The mode to set on the track that matches the language parameter
      */
-    this.setClosedCaptions = _.bind(function(language, closedCaptions, params) {
-      var iosVersion = OO.iosMajorVersion;
-      var macOsSafariVersion = OO.macOsSafariVersion;
-      var useOldLogic = (iosVersion && iosVersion < 10) || (macOsSafariVersion && macOsSafariVersion < 10);
-      if (useOldLogic) { // XXX HACK! PLAYER-54 iOS and OSX Safari versions < 10 require re-creation of textTracks every time this function is called
-        $(_video).find('.' + TRACK_CLASS).remove();
-        textTrackModes = {};
-        if (language == null) {
-          return;
+    this.setClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
+      OO.log("MainHtml5: setClosedCaptions called", language, closedCaptions, params);
+      const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
+      const externalCaptionsProvided = !!Object.keys(vttClosedCaptions).length;
+      // Most browsers will require crossorigin=anonymous in order to be able to
+      // load VTT files from a different domain. This needs to happen before any
+      // tracks are added and, on Firefox, it also needs to be as early as possible
+      // (hence why don't queue this part of the operation). Note that we only do this
+      // if we're actually adding external tracks
+      if (externalCaptionsProvided) {
+        this.setCrossorigin('anonymous');
+
+        for (let language in vttClosedCaptions) {
+          externalCaptionsLanguages[language] = true;
         }
+      }
+      // Browsers tend to glitch when text tracks are added before metadata is
+      // loaded and in some cases fail to trigger the first cue if a track is
+      // added before canplay event is fired
+      if (canPlay) {
+        dequeueSetClosedCaptions();
+        executeSetClosedCaptions.apply(this, arguments);
       } else {
-        if (language == null) {
-          $(_video).find('.' + TRACK_CLASS).remove();
-          textTrackModes = {};
-          return;
-        }
-        // Remove captions before setting new ones if they are different, otherwise we may see native closed captions
-        if (closedCaptions) {
-          $(_video).children('.' + TRACK_CLASS).each(function() {
-            if ($(this).label != closedCaptions.locale[language] ||
-                $(this).srclang != language ||
-                $(this).kind != "subtitles") {
-              $(this).remove();
-            }
-          });
-        }
-      }
-
-      //Add the new closed captions if they are valid.
-      var captionsFormat = "closed_captions_vtt";
-      if (closedCaptions && closedCaptions[captionsFormat]) {
-        _.each(closedCaptions[captionsFormat], function(captions, languageKey) {
-          var captionInfo = {
-            label: captions.name,
-            src: captions.url,
-            language: languageKey,
-            inStream: false
-          };
-          addClosedCaptions(captionInfo);
-        });
-      }
-
-      var trackId = OO.getRandomString();
-      var captionMode = (params && params.mode) || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
-      //Set the closed captions based on the language and our available closed captions
-      if (availableClosedCaptions[language]) {
-        var captions = availableClosedCaptions[language];
-        //If the captions are in-stream, we just need to enable them; Otherwise we must add them to the video ourselves.
-        if (captions.inStream == true && _video.textTracks) {
-          for (var i = 0; i < _video.textTracks.length; i++) {
-            if (
-              (((OO.isSafari || OO.isEdge) && isLive) || _video.textTracks[i].kind === "captions") &&
-              // Enable only the track that matches the active language. For
-              // in-manifest/in-stream tracks the language will actually be the
-              // track id (something like CC1, CC2, etc.)
-              _video.textTracks[i].trackId === language
-            ) {
-              _video.textTracks[i].mode = captionMode;
-              _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
-            } else {
-              _video.textTracks[i].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
-              _video.textTracks[i].oncuechange = null;
-            }
-            // [PLAYER-327], [PLAYER-73]
-            // We keep track of all text track modes in order to prevent Safari from randomly
-            // changing them. We can't set the id of inStream tracks, so we use a custom
-            // trackId property instead
-            trackId = trySetStreamTextTrackId(_video.textTracks[i]);
-            textTrackModes[trackId] = _video.textTracks[i].mode;
-          }
-        } else if (!captions.inStream) {
-          this.setClosedCaptionsMode(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
-          if (useOldLogic) { // XXX HACK! PLAYER-54 create video element unconditionally as it was removed
-            $(_video).append("<track id='" + trackId + "' class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
-            if (_video.textTracks && _video.textTracks[0]) {
-              _video.textTracks[0].mode = captionMode;
-              //We only want to let the controller know of cue change if we aren't rendering cc from the plugin.
-              if (captionMode == OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN) {
-                _video.textTracks[0].oncuechange = onClosedCaptionCueChange;
-              }
-            }
-          } else {
-            if ($(_video).children('.' + TRACK_CLASS).length == 0) {
-              $(_video).append("<track id='" + trackId + "' class='" + TRACK_CLASS + "' kind='subtitles' label='" + captions.label + "' src='" + captions.src + "' srclang='" + captions.language + "' default>");
-            }
-            if (_video.textTracks && _video.textTracks.length > 0) {
-              for (var i = 0; i < _video.textTracks.length; i++) {
-                _video.textTracks[i].mode = captionMode;
-                //We only want to let the controller know of cue change if we aren't rendering cc from the plugin.
-                if (captionMode == OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN) {
-                  _video.textTracks[i].oncuechange = onClosedCaptionCueChange;
-                }
-              }
-            }
-          }
-          // [PLAYER-327], [PLAYER-73]
-          // Store mode of newly added tracks for future use in workaround
-          textTrackModes[trackId] = captionMode;
-          // Keep track of the fact that this track was added manually and is
-          // not an in-manifest/in-stream track
-          externalTextTrackIds.push(trackId);
-          //Sometimes there is a delay before the textTracks are accessible. This is a workaround.
-          _.delay(function(captionMode) {
-            if (_video.textTracks && _video.textTracks[0]) {
-              _video.textTracks[0].mode = captionMode;
-              if (OO.isFirefox) {
-                for (var i=0; i < _video.textTracks[0].cues.length; i++) {
-                  _video.textTracks[0].cues[i].line = 15;
-                }
-              }
-            }
-          }, 100, captionMode);
-        }
+        OO.log('MainHtml5: setClosedCaptions called before load, queing operation.');
+        setClosedCaptionsQueue.push(arguments);
       }
     }, this);
 
     /**
-     * Sets the closed captions mode on the video element.
+     * The actual logic of setClosedCaptions() above. This is separated in order to
+     * allow us to queue any calls to setClosedCaptions() that happen before metadata
+     * is loaded.
+     * @private
+     * @method OoyalaVideoWrapper#executeSetClosedCaptions
+     * @param {String} language The key of the text track that we want to enable/change.
+     * Usually a language code, but can also be the track id in the case of in-manifest
+     * or in-stream text tracks.
+     * @param {Object} closedCaptions An object containing a list of external VTT captions
+     * that the player should display to the end user.
+     * @param {Object} params An object containing additional parameters:
+     *  - mode: (String) The mode to set on the track that matches the language parameter
+     */
+    const executeSetClosedCaptions = (language, closedCaptions = {}, params = {}) => {
+      const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
+      const targetMode = params.mode || OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
+      const targetTrack = textTrackHelper.findTrackByKey(language, textTrackMap);
+      // Clear current CC cue if track is about to change
+      if (currentCCKey !== language) {
+        raiseClosedCaptionCueChanged('');
+      }
+      currentCCKey = language;
+      // Start by disabling all tracks, except for the one whose mode we want to set
+      disableTextTracksExcept(targetTrack);
+      // Create tracks for all VTT captions from content tree that we haven't
+      // added before. If the track with the specified language is added, it
+      // will be created with the desired mode automatically
+      const wasTargetTrackAdded = addExternalVttCaptions(
+        vttClosedCaptions,
+        language,
+        targetMode
+      );
+      // If the desired track is not one of the newly added tracks then we set
+      // the target mode on the pre-existing track that matches the target language
+      if (!wasTargetTrackAdded) {
+        setTextTrackMode(targetTrack, targetMode);
+      }
+    };
+
+    /**
+     * Sets the given text track mode for ALL existing tracks.
      * @public
      * @method OoyalaVideoWrapper#setClosedCaptionsMode
-     * @param {string} mode The mode to set the text tracks element.
+     * @param {string} mode The mode to set on the text tracks.
      * One of (OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED, OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN, OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING).
      */
-    this.setClosedCaptionsMode = _.bind(function(mode) {
-      if (_video.textTracks) {
-        for (var i = 0; i < _video.textTracks.length; i++) {
-          _video.textTracks[i].mode = mode;
-          // [PLAYER-327], [PLAYER-73]
-          // Store newly set track mode for future use in workaround
-          var trackId = _video.textTracks[i].id || _video.textTracks[i].trackId;
-          textTrackModes[trackId] = mode;
-        }
+    this.setClosedCaptionsMode = (mode) => {
+      textTrackHelper.forEach(textTrack =>
+        setTextTrackMode(textTrack, mode)
+      );
+
+      if (mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
+        raiseClosedCaptionCueChanged('');
       }
-      if (mode == OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
-        raiseClosedCaptionCueChanged("");
-      }
-    }, this);
+    };
 
     /**
      * Sets the crossorigin attribute on the video element.
@@ -1046,10 +992,8 @@ require("../../../html5-common/js/utils/environment.js");
      * @method OoyalaVideoWrapper#onLoadedMetadata
      */
     var onLoadedMetadata = _.bind(function() {
-      // [PLAYER-327], [PLAYER-73]
-      // We need to monitor track change in Safari in order to prevent
-      // it from overriding our settings
-      if (OO.isSafari && _video && _video.textTracks) {
+      if (_video.textTracks) {
+        _video.textTracks.onaddtrack = onTextTracksAddTrack;
         _video.textTracks.onchange = onTextTracksChange;
       }
 
@@ -1093,30 +1037,77 @@ require("../../../html5-common/js/utils/environment.js");
     }, this);
 
     /**
-     * Fired when there is a change on a text track.
+     * Fired by the browser when new text tracks are added.
+     * @method OoyalaVideoWrapper#onTextTracksAddTrack
+     * @private
+     */
+    const onTextTracksAddTrack = () => {
+      // Update our internal map of available text tracks
+      tryMapTextTracks();
+      // Notify core about closed captions available after the change
+      checkForAvailableClosedCaptions();
+    };
+
+    /**
+     * Fired by the browser when there is a change on a text track. We use this
+     * handler in order to compare text track modes against our own records in
+     * order to determine whether changes have been made by the native UI (mostly
+     * for iOS fullscreen mode).
      * @private
      * @method OoyalaVideoWrapper#onTextTracksChange
-     * @param {object} event The event from the track change
      */
-    var onTextTracksChange = _.bind(function(event) {
-      for (var i = 0; i < _video.textTracks.length; i++) {
-        var trackId = _video.textTracks[i].id || _video.textTracks[i].trackId;
-
-        if (typeof textTrackModes[trackId] === 'undefined') {
+    const onTextTracksChange = () => {
+      let newLanguage;
+      const changedTracks = textTrackHelper.filterChangedTracks(textTrackMap);
+      // Changed tracks are any whose mode is different from the one we last
+      // recorded on our text track map (i.e. the ones changed by the native UI)
+      for (let changedTrack of changedTracks) {
+        const trackMetadata = textTrackMap.findEntry({
+          textTrack: changedTrack
+        });
+        // We assume that any changes that occur prior to playback are browser
+        // defaults since the native UI couldn't have been displayed yet
+        if (!canPlay) {
+          OO.log('MainHtml5: Native CC changes detected before playback, ignoring.');
+          changedTrack.mode = trackMetadata.mode;
           continue;
         }
-        // [PLAYER-327], [PLAYER-73]
-        // Safari (desktop and iOS) sometimes randomly switches a track's mode. As a
-        // workaround, we force our own value if we detect that we have switched
-        // to a mode that we didn't set ourselves
-        if (_video.textTracks[i].mode !== textTrackModes[trackId]) {
-          OO.log("main_html5: Forcing text track mode for track " + trackId + ". Expected: '"
-                + textTrackModes[trackId] + "', received: '" + _video.textTracks[i].mode + "'");
-
-          _video.textTracks[i].mode = textTrackModes[trackId];
+        // Changed tracks will come in pairs (one disabled, one enabled), except when
+        // captions are turned off, in which case there should be a single disabled track
+        if (changedTrack.mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
+          // This will be none when all changed tracks are disabled
+          newLanguage = newLanguage || 'none';
+        // A single enabled track (without a corresponding disabled track) indicates
+        // that the browser is forcing its default language. The exception to this is
+        // when all tracks were previously disabled, which means that captions were
+        // enabled by the user via the native UI
+        } else if (!textTrackMap.areAllDisabled() && changedTracks.length === 1) {
+          OO.log('MainHtml5: Default browser CC language detected, ignoring in favor of plugin default');
+        } else {
+          const useLanguageAsKey = !!(
+            trackMetadata.isExternal ||
+            externalCaptionsLanguages[trackMetadata.language]
+          );
+          // We give priority to external VTT captions but Safari might pick an
+          // in-stream/in-manifest track when a CC language is chosen using the
+          // native UI. We make sure to enable the equivalent external track
+          // whenever both internal and external tracks exist for the same language
+          newLanguage = useLanguageAsKey ? trackMetadata.language : trackMetadata.id;
         }
+        // Whether we're ignoring or propagating the changes we revert the track to
+        // it's last known mode. If there's a need for a language change it will
+        // happen as a result of the notification below
+        changedTrack.mode = trackMetadata.mode;
       }
-    }, this);
+      // Native text track change detected, update our own UI
+      if (newLanguage) {
+        this.controller.notify(
+          this.controller.EVENTS.CAPTIONS_LANGUAGE_CHANGE,
+          { language: newLanguage }
+        );
+        OO.log(`MainHtml5: CC track has been changed to "${newLanguage}" by the native UI`);
+      }
+    };
 
     /**
      * Callback for when a closed caption track cue has changed.
@@ -1134,131 +1125,6 @@ require("../../../html5-common/js/utils/environment.js");
         }
       }
       raiseClosedCaptionCueChanged(cueText);
-    }, this);
-
-    /**
-     * Workaround for Firefox only.
-     * Check for active closed caption cues and relay them to the controller.
-     * @private
-     * @method OoyalaVideoWrapper#checkForClosedCaptionsCueChange
-     */
-    var checkForClosedCaptionsCueChange = _.bind(function() {
-      var cueText = "";
-      if (_video.textTracks) {
-        for (var i = 0; i < _video.textTracks.length; i++) {
-          if (_video.textTracks[i].activeCues) {
-            for (var j = 0; j < _video.textTracks[i].activeCues.length; j++) {
-              if (_video.textTracks[i].activeCues[j].text) {
-                cueText += _video.textTracks[i].activeCues[j].text + "\n";
-              }
-            }
-            break;
-          }
-        }
-      }
-      raiseClosedCaptionCueChanged(cueText);
-    }, this);
-
-    /**
-     * Check for in-stream and in manifest closed captions.
-     * @private
-     * @method OoyalaVideoWrapper#checkForClosedCaptions
-     */
-    var checkForClosedCaptions = _.bind(function() {
-      if (!_video.textTracks || !_video.textTracks.length) {
-        return;
-      }
-      var expectingStreamTextTracks = (OO.isSafari || OO.isEdge) && isLive;
-
-      Array.prototype.forEach.call(_video.textTracks, function(currentTrack) {
-        if (
-          (expectingStreamTextTracks || currentTrack.kind === 'captions') &&
-          // Manually added tracks have already been (or will be) added and notified
-          // when setClosedCaptions() is called, avoid mixing them up with in-manifest/in-stream tracks
-          !isExternalTextTrackId(currentTrack.id || currentTrack.trackId)
-        ) {
-          // For in-manifest/in-stream captions we use the id of the track (e.g.
-          // CC1, CC2, etc.) as a language in order to avoid conflicts with
-          // external captions.
-          var trackId = trySetStreamTextTrackId(currentTrack);
-          var label = currentTrack.label || currentTrack.language || 'Captions (' + trackId + ')';
-          var captionInfo = {
-            language: trackId,
-            inStream: true,
-            label: label
-          };
-          // Don't overwrite other closed captions of this language. They have priority.
-          if (!availableClosedCaptions[captionInfo.language]) {
-            addClosedCaptions(captionInfo);
-          }
-        }
-      });
-    }, this);
-
-    /**
-     * Determines whether or not the given track id belongs to an "external" text
-     * track that was added manually by the plugin (as opposed to an in-manifest
-     * or in-stream text track).
-     * @private
-     * @method OoyalaVideoWrapper#isExternalTextTrackId
-     * @param {String} trackId The id of the text track we want to check
-     * @return {Boolean} True if the track id belongs to an external track, false otherwise
-     */
-    var isExternalTextTrackId = _.bind(function(trackId) {
-      var isExternalId = externalTextTrackIds.indexOf(trackId) >= 0;
-      return isExternalId;
-    });
-
-    /**
-     * Tries to set a custom id on a in-manifest/in-stream TextTrack object which
-     * allows us to identify it for selection and workaround purposes. IDs set are
-     * stored on a custom trackId property and are of the type 'CCn', where n is the
-     * index of the track relative to the order in which it was found. Existing track
-     * ids will not be overriten.
-     * @private
-     * @method OoyalaVideoWrapper#trySetStreamTextTrackId
-     * @param {TextTrack} textTrack The TextTrack object whose id we want to set.
-     * @return {String} The new or pre-existing id of the track, null if textTrack is invalid
-     */
-    var trySetStreamTextTrackId = _.bind(function(textTrack) {
-      if (!textTrack) {
-        return null;
-      }
-      if (!textTrack.trackId) {
-        streamTextTrackCount++;
-        textTrack.trackId = 'CC' + streamTextTrackCount;
-      }
-      return textTrack.trackId;
-    });
-
-    /**
-     * Add new closed captions and relay them to the controller.
-     * @private
-     * @method OoyalaVideoWrapper#addClosedCaptions
-     */
-    var addClosedCaptions = _.bind(function(captionInfo) {
-      //Don't add captions if argument is null or we already have added these captions.
-      if (captionInfo == null || captionInfo.language == null || (availableClosedCaptions[captionInfo.language] &&
-        availableClosedCaptions[captionInfo.language].src == captionInfo.src)) return;
-      availableClosedCaptions[captionInfo.language] = captionInfo;
-      raiseCaptionsFoundOnPlaying();
-    }, this);
-
-    /**
-     * Notify the controller with new available closed captions.
-     * @private
-     * @method OoyalaVideoWrapper#raiseCaptionsFoundOnPlaying
-     */
-    var raiseCaptionsFoundOnPlaying = _.bind(function() {
-      var closedCaptionInfo = {
-        languages: [],
-        locale: {}
-      };
-      _.each(availableClosedCaptions, function(value, key) {
-        closedCaptionInfo.languages.push(key);
-        closedCaptionInfo.locale[key] = value.label;
-      });
-      this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
     }, this);
 
     /**
@@ -1340,6 +1206,10 @@ require("../../../html5-common/js/utils/environment.js");
 
       //Notify controller of video width and height.
       if (firstPlay) {
+        // Dequeue any calls to setClosedCaptions() that occurred before
+        // the video was loaded
+        dequeueSetClosedCaptions();
+
         this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, {width: _video.videoWidth, height: _video.videoHeight});
 
         var availableAudio = this.getAvailableAudio();
@@ -1395,7 +1265,6 @@ require("../../../html5-common/js/utils/environment.js");
       }
 
       startUnderflowWatcher();
-      checkForClosedCaptions();
 
       ignoreFirstPlayingEvent = false;
       firstPlay = false;
@@ -1527,11 +1396,6 @@ require("../../../html5-common/js/utils/environment.js");
       // iOS has issues seeking so if we queue a seek handle it here
       dequeueSeek();
 
-      //Workaround for Firefox because it doesn't support the oncuechange event on a text track
-      if (OO.isFirefox) {
-        checkForClosedCaptionsCueChange();
-      }
-
       forceEndOnTimeupdateIfRequired(event);
     }, this);
 
@@ -1630,6 +1494,273 @@ require("../../../html5-common/js/utils/environment.js");
     /************************************************************************************/
     // Helper methods
     /************************************************************************************/
+
+    /**
+     * Sequentially executes all the setClosedCaptions() calls that have
+     * been queued. The queue is cleared as a result of this operation.
+     * @private
+     * @method OoyalaVideoWrapper#dequeueSetClosedCaptions
+     */
+    const dequeueSetClosedCaptions = _.bind(function() {
+      let queuedArguments;
+
+      while (queuedArguments = setClosedCaptionsQueue.shift()) {
+        executeSetClosedCaptions.apply(this, queuedArguments);
+      }
+    }, this);
+
+    /**
+     * Sets the mode of all text tracks to 'disabled' except for targetTrack.
+     * @private
+     * @method OoyalaVideoWrapper#disableTextTracksExcept
+     * @param {TextTrack} The text track which we want to exclude from the disable operation.
+     */
+    const disableTextTracksExcept = (targetTrack) => {
+      // Start by disabling all tracks, except for the one whose mode we want to set
+      textTrackHelper.forEach(textTrack => {
+        // Note: Edge will get stuck on 'disabled' mode if you disable a track right
+        // before setting another mode on it, so we avoid disabling the target track
+        if (textTrack !== targetTrack) {
+          setTextTrackMode(textTrack, OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+        }
+      });
+    };
+
+    /**
+     * Creates text tracks for all of the given external VTT captions. If any of
+     * the newly added tracks matches the targetLanguage then its mode will be set
+     * to targetMode. Note that the mode can't be set at creation time, so this
+     * happens when the addtrack event is fired.
+     * @private
+     * @method OoyalaVideoWrapper#addExternalVttCaptions
+     * @param {Object} vttClosedCaptions A metadata object that containing a list of external VTT captions
+     * that the player should display to the end user.
+     * @param {String} targetLanguage The language or key of the track that should be set to targetMode
+     * (usually the language that should be active).
+     * @param {String} targetMode The mode that should be set on the track that matches targetLanguage.
+     * @return {Boolean} True if a track that matches targetLanguage was added as a result of this call, false otherwise.
+     */
+    const addExternalVttCaptions = (vttClosedCaptions = {}, targetLanguage, targetMode) => {
+      let wasTargetTrackAdded = false;
+
+      for (let language in vttClosedCaptions) {
+        const trackData = Object.assign(
+          { language: language },
+          vttClosedCaptions[language]
+        );
+        const existsTrack = textTrackMap.existsEntry({
+          src: trackData.url
+        });
+        // Only add tracks whose source url hasn't been added before
+        if (!existsTrack) {
+          addExternalCaptionsTrack(trackData, targetLanguage, targetMode);
+
+          if (language === targetLanguage) {
+            wasTargetTrackAdded = true;
+          }
+        }
+      }
+      return wasTargetTrackAdded;
+    };
+
+    /**
+     * Creates a single TextTrack object using the values provided in trackData.
+     * The new track's mode will be set to targetMode after creation if the track
+     * matches targetLanguage. Tracks that don't match targetLanguage will have a
+     * 'disabled' mode by default.
+     * @private
+     * @method OoyalaVideoWrapper#addExternalCaptionsTrack
+     * @param {Object} trackData An object with the following properties:
+     *  - url: {String} The url of a source VTT file
+     *  - name: {String} The label to display for this track
+     *  - language: {String} The language code of the closed captions
+     * @param {String} targetLanguage The language or key of the track that should be set to targetMode
+     * (usually the language that should be active).
+     * @param {String} targetMode The mode that should be set on the track that matches targetLanguage.
+     */
+    const addExternalCaptionsTrack = (trackData = {}, targetLanguage, targetMode) => {
+      let trackMode;
+      // Disable new tracks by default unless their language matches the language
+      // that is meant to be active
+      if (trackData.language === targetLanguage) {
+        trackMode = targetMode;
+      } else {
+        trackMode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+      }
+      // Keep a record of all the tracks that we add
+      const trackId = textTrackMap.addEntry({
+        src: trackData.url,
+        label: trackData.name,
+        language: trackData.language,
+        mode: trackMode
+      }, true);
+      // Create the actual TextTrack object
+      textTrackHelper.addTrack({
+        id: trackId,
+        kind: CONSTANTS.TEXT_TRACK.KIND.SUBTITLES,
+        // IMPORTANT:
+        // We initially set the label to trackId since it's the only
+        // cross-browser way to indentify the track after it's created
+        label: trackId,
+        srclang: trackData.language,
+        src: trackData.url
+      });
+      // MS Edge doesn't fire the addtrack event for manually added tracks
+      if (OO.isEdge) {
+        onTextTracksAddTrack();
+      }
+    };
+
+    /**
+     * Registers unknown text tracks in our text track map and ensures that
+     * any tracks that we add have the track mode that corresponds to them.
+     * This method is called when there are text track changes such as when the
+     * addtrack or removetrack events are fired.
+     * @private
+     * @method OoyalaVideoWrapper#tryMapTextTracks
+     */
+    const tryMapTextTracks = () => {
+      textTrackHelper.forEach(textTrack => {
+        // Any tracks that have a track id as a label are known to be external
+        // VTT tracks that we recently added. We rely on the label as the only
+        // cross-browser way to identify a TextTrack object after its creation
+        const trackMetadata = textTrackMap.findEntry({
+          id: textTrack.label
+        });
+
+        if (trackMetadata) {
+          OO.log("MainHtml5: Registering newly added text track:", trackMetadata.id);
+          // Store a reference to the track on our track map in order to link
+          // related metadata
+          textTrackMap.tryUpdateEntry(
+            { id: trackMetadata.id },
+            { textTrack: textTrack }
+          );
+          // Now that we've linked the TextTrack object to our map, we no longer
+          // need the label in order to identify the track. We can set the actual
+          // label on the track at this point
+          textTrackHelper.updateTrackLabel(trackMetadata.id, trackMetadata.label);
+          // Tracks are added as 'disabled' by default so we make sure to set
+          // the mode that we had previously stored for the newly added track.
+          // Note that track mode can't be set during creation that's why we
+          // need to wait until the browser reports the track addition.
+          setTextTrackMode(textTrack, trackMetadata.mode);
+        }
+        // Add in-manifest/in-stream tracks to our text track map. All external
+        // tracks are already known to us, so any unrecognized tracks are assumed
+        // to be in-manifest/in-stream
+        mapTextTrackIfUnknown(textTrack);
+      });
+    };
+
+    /**
+     * Adds in-manifest/in-stream tracks to our text track map in order to allow
+     * us to keep track of their state and identify them by ids that we assign to them.
+     * @private
+     * @method OoyalaVideoWrapper#mapTextTrackIfUnknown
+     * @param {TextTrack} textTrack The TextTrack object which we want to try to map.
+     */
+    const mapTextTrackIfUnknown = (textTrack) => {
+      // Any unkown track is assumed to be an in-manifest/in-stream track since
+      // we map external tracks when they are added
+      const isKnownTrack = textTrackMap.existsEntry({
+        textTrack: textTrack
+      });
+      // Avoid mapping metadata and other non-subtitle track kinds
+      const isTextTrack = (
+        textTrack.kind === CONSTANTS.TEXT_TRACK.KIND.CAPTIONS ||
+        textTrack.kind === CONSTANTS.TEXT_TRACK.KIND.SUBTITLES
+      );
+      // Add an entry to our text track map in order to be able to keep track of
+      // the in-manifest/in-stream track's mode
+      if (!isKnownTrack && isTextTrack) {
+        OO.log("MainHtml5: Registering internal text track:", textTrack);
+
+        textTrackMap.addEntry({
+          label: textTrack.label,
+          language: textTrack.language,
+          mode: textTrack.mode,
+          textTrack: textTrack
+        }, false);
+      }
+    };
+
+    /**
+     * Translates the tracks from the text track map into the format that the core
+     * uses in order to determine available closed captions languages (or tracks).
+     * Calling this function results in CAPTIONS_FOUND_ON_PLAYING being notified
+     * with the current state of our text track map.
+     * @method OoyalaVideoWrapper#checkForAvailableClosedCaptions
+     * @private
+     */
+    const checkForAvailableClosedCaptions = () => {
+      const closedCaptionInfo = {
+        languages: [],
+        locale: {}
+      };
+      const externalEntries = textTrackMap.getExternalEntries();
+      const internalEntries = textTrackMap.getInternalEntries();
+      // External tracks will override in-manifest/in-stream captions when languages
+      // collide, so we add their info first
+      for (let externalEntry of externalEntries) {
+        closedCaptionInfo.languages.push(externalEntry.language);
+        closedCaptionInfo.locale[externalEntry.language] = externalEntry.label;
+      }
+      // In-manifest/in-stream captions are reported with an id such as CC1 instead
+      // of language in order to avoid conflicts with external VTTs
+      for (let internalEntry of internalEntries) {
+        // Either the language was already added to the info above or it is one
+        // of the external captions that will be added after the video loads
+        const isLanguageDefined = (
+          !!closedCaptionInfo.locale[internalEntry.language] ||
+          !!externalCaptionsLanguages[internalEntry.language]
+        );
+        // We do not report an in-manifest/in-stream track when its language is
+        // already in use by external VTT captions
+        if (!isLanguageDefined) {
+          const key = internalEntry.id;
+          const label = (
+            internalEntry.label ||
+            internalEntry.language ||
+            `Captions (${key})`
+          );
+          // For in-manifest/in-stream we use id instead of language in order to
+          // account for cases in which language metadata is unavailable and also
+          // to avoid conflicts with external VTT captions
+          closedCaptionInfo.languages.push(key);
+          closedCaptionInfo.locale[key] = label;
+        }
+      }
+      this.controller.notify(this.controller.EVENTS.CAPTIONS_FOUND_ON_PLAYING, closedCaptionInfo);
+    };
+
+    /**
+     * Sets the given track mode on the given text track. The new mode is also
+     * updated in the relevant text track map entry in order for us to be able to
+     * detect native changes.
+     * @private
+     * @method OoyalaVideoWrapper#setTextTrackMode
+     * @param {TextTrack} textTrack The TextTrack object whose mode we want to set.
+     * @param {String} mode The mode that we want to set on the text track.
+     */
+    const setTextTrackMode = (textTrack, mode) => {
+      if (textTrack && textTrack.mode !== mode) {
+        textTrack.mode = mode;
+        // Keep track of the latest mode that was set in order to be able to
+        // detect any changes triggered by the native UI
+        textTrackMap.tryUpdateEntry(
+          { textTrack: textTrack },
+          { mode: mode }
+        );
+        // Make sure to listen to cue changes on active tracks
+        if (mode === OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED) {
+          textTrack.oncuechange = null;
+        } else {
+          textTrack.oncuechange = onClosedCaptionCueChange;
+        }
+        OO.log('MainHtml5: Text track mode set:', textTrack.language, mode);
+      }
+    };
 
     /**
      * If any plays are queued up, execute them.
