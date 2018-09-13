@@ -446,12 +446,28 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("loadedmetadata");
     $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" }); // creates text tracks for external CCs
-    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC1'],
       locale: {
         en: 'English',
         CC1: 'Captions (CC1)'
+      }
+    }]);
+  });
+
+  it('should ignore metadata tracks when notifying CAPTIONS_FOUND_ON_PLAYING', function(){
+    element.textTracks = [
+      { language: "en", label: "", kind: "subtitles" },
+      { language: "es", label: "", kind: "metadata" }
+    ];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
+    element.textTracks.onaddtrack();
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['CC1'],
+      locale: {
+        CC1: 'en',
       }
     }]);
   });
@@ -466,13 +482,34 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("loadedmetadata");
     $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
-    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC1', 'CC2', 'CC3'],
       locale: {
         en: 'English',
         CC1: 'Captions (CC1)',
         CC2: 'Captions (CC2)',
+        CC3: 'Captions (CC3)'
+      }
+    }]);
+  });
+
+  it('should notify CAPTIONS_FOUND_ON_PLAYING giving priority to external tracks that have the same language as in-manifest/in-stream tracks', function() {
+    element.textTracks = [
+      { language: "en", label: "Internal EN", kind: "subtitles" },
+      { language: "es", label: "Internal ES", kind: "subtitles" },
+      { language: "", label: "", kind: "subtitles" }
+    ];
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("loadedmetadata");
+    $(element).triggerHandler("canplay");
+    wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
+    // Only one english track is reported, internal tracks that don't collide
+    // with external are also reported
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
+      languages: ['en', 'CC2', 'CC3'],
+      locale: {
+        en: 'English',
+        CC2: 'Internal ES',
         CC3: 'Captions (CC3)'
       }
     }]);
@@ -488,7 +525,6 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("loadedmetadata");
     $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
-    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC1', 'CC2', 'CC3'],
       locale: {
@@ -542,7 +578,6 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("loadedmetadata");
     $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, { mode: "hidden" });
-    element.textTracks.onaddtrack();
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CAPTIONS_FOUND_ON_PLAYING, {
       languages: ['en', 'CC1', 'CC2', 'CC3'],
       locale: {
@@ -566,7 +601,6 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("loadedmetadata");
     $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
-    element.textTracks.onaddtrack();
     element.textTracks[0].oncuechange(event);
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED, event.currentTarget.activeCues[0].text]);
   });
@@ -585,7 +619,6 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("loadedmetadata");
     $(element).triggerHandler("canplay");
     wrapper.setClosedCaptions("en", closedCaptions, {mode: "hidden"});
-    element.textTracks.onaddtrack();
     element.textTracks[0].oncuechange(event);
     expect(vtc.notifyParameters).to.eql([
       vtc.interface.EVENTS.CLOSED_CAPTION_CUE_CHANGED,

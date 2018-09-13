@@ -99,6 +99,11 @@ jest.mock('../src/main/js/text_track/text_track_helper', () => {
         kind: trackData.kind,
         mode: 'disabled'
       });
+      // Trigger add track handler in order to fully simulate
+      // browser behavior
+      if (this.video.textTracks.onaddtrack) {
+        this.video.textTracks.onaddtrack();
+      }
     }
   });
 
