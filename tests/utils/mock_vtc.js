@@ -37,7 +37,8 @@ global.mock_vtc = function() {
       MUTED_PLAYBACK_SUCCEEDED: "mutedPlaybackSucceeded",
       MUTED_PLAYBACK_FAILED: "unmutedPlaybackFailed",
       MULTI_AUDIO_AVAILABLE: "multiAudioAvailable",
-      MULTI_AUDIO_CHANGED: "multiAudioChanged"
+      MULTI_AUDIO_CHANGED: "multiAudioChanged",
+      CAPTIONS_LANGUAGE_CHANGE: "captionsLanguageChange"
     },
     notify: function(){
       if (arguments.length > 0) {
