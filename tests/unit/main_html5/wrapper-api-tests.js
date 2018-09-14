@@ -1545,6 +1545,115 @@ describe('main_html5 wrapper tests', function () {
       expect(element.textTracks[1].language).to.be('en');
       expect(element.textTracks[1].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
     });
+
+    it('should ignore any changes that happen before canplay is fired', function() {
+      element.textTracks = [
+        { language: "en", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+        { language: "es", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+      ];
+      wrapper.setVideoUrl('url');
+      $(element).triggerHandler('loadedmetadata');
+      element.textTracks.onaddtrack();
+      element.textTracks[0].mode = OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN;
+      expect(element.textTracks[0].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+      element.textTracks.onchange();
+      expect(element.textTracks[0].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+      expect(vtc.notifyParameters[0]).to.not.be(vtc.interface.EVENTS.CAPTIONS_LANGUAGE_CHANGE);
+    });
+
+    it('should ignore any changes to a single track that happen when not all tracks were previously disabled', function() {
+      element.textTracks = [
+        { language: "en", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+        { language: "es", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+        { language: "fr", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+      ];
+      wrapper.setVideoUrl('url');
+      $(element).triggerHandler('loadedmetadata');
+      element.textTracks.onaddtrack();
+      $(element).triggerHandler('canplay');
+      // Enable first track before changing second
+      wrapper.setClosedCaptions('CC1', {}, ccParams);
+      element.textTracks[1].mode = OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN;
+      expect(element.textTracks[1].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+      element.textTracks.onchange();
+      expect(element.textTracks[1].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+      expect(vtc.notifyParameters[0]).to.not.be(vtc.interface.EVENTS.CAPTIONS_LANGUAGE_CHANGE);
+    });
+
+    it('should revert changed tracks to last known mode and notify CAPTIONS_LANGUAGE_CHANGE with key of enabled track', function() {
+      element.textTracks = [
+        { language: "en", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN },
+        { language: "es", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+        { language: "fr", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+      ];
+      wrapper.setVideoUrl('url');
+      $(element).triggerHandler('loadedmetadata');
+      element.textTracks.onaddtrack();
+      $(element).triggerHandler('canplay');
+      element.textTracks[0].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+      element.textTracks[1].mode = OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN;
+      expect(element.textTracks[0].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+      expect(element.textTracks[1].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+      element.textTracks.onchange();
+      expect(element.textTracks[0].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+      expect(element.textTracks[1].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+      expect(vtc.notifyParameters).to.eql([
+        vtc.interface.EVENTS.CAPTIONS_LANGUAGE_CHANGE,
+        { language: 'CC2'}
+      ]);
+    });
+
+    it('should revert changed track to last known mode and notify CAPTIONS_LANGUAGE_CHANGE with a value of "none" when active track is disabled', function() {
+      element.textTracks = [
+        { language: "en", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN },
+        { language: "es", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+        { language: "fr", label: "", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+      ];
+      wrapper.setVideoUrl('url');
+      $(element).triggerHandler('loadedmetadata');
+      element.textTracks.onaddtrack();
+      $(element).triggerHandler('canplay');
+      element.textTracks[0].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+      expect(element.textTracks[0].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+      element.textTracks.onchange();
+      expect(element.textTracks[0].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+      expect(vtc.notifyParameters).to.eql([
+        vtc.interface.EVENTS.CAPTIONS_LANGUAGE_CHANGE,
+        { language: 'none'}
+      ]);
+    });
+
+    it('should notify CAPTIONS_LANGUAGE_CHANGE with language code of equivalent external track when internal track is enabled', function() {
+      element.textTracks = [
+        { language: "en", label: "Internal EN", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+        { language: "fr", label: "Internal FR", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+        { language: "es", label: "Internal ES", kind: "subtitles", mode: OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED },
+      ];
+      wrapper.setVideoUrl('url');
+      $(element).triggerHandler('loadedmetadata');
+      element.textTracks.onaddtrack();
+      $(element).triggerHandler('canplay');
+      // Add and enable external english track
+      wrapper.setClosedCaptions('en', ccData, ccParams);
+      // Disable external english track and enable internal french track
+      element.textTracks[3].mode = OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED;
+      element.textTracks[1].mode = OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING;
+      // Make sure we're modifying the right tracks
+      expect(element.textTracks[3].id).to.be('VTT1');
+      expect(element.textTracks[3].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+      expect(element.textTracks[1].label).to.be('Internal FR');
+      expect(element.textTracks[1].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.SHOWING);
+      element.textTracks.onchange();
+      // Back to external english enabled, internal french disabled
+      expect(element.textTracks[3].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.HIDDEN);
+      expect(element.textTracks[1].mode).to.be(OO.CONSTANTS.CLOSED_CAPTIONS.DISABLED);
+      // Expect notification with 'fr', which will match the EXTERNAL french track,
+      // instead of CC2, which would've matched the internal french track
+      expect(vtc.notifyParameters).to.eql([
+        vtc.interface.EVENTS.CAPTIONS_LANGUAGE_CHANGE,
+        { language: 'fr'}
+      ]);
+    });
   });
 
 });
