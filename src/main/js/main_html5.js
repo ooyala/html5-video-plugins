@@ -205,6 +205,8 @@ import CONSTANTS from "./constants/constants";
     var isSeeking = false;
     var isWrapperSeeking = false;
     var wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
+    var handleFailover = false;
+    var failoverPlayheadTime = 0;
     var currentTime = 0;
     var currentTimeShift = 0;
     var currentVolumeSet = 0;
@@ -367,6 +369,8 @@ import CONSTANTS from "./constants/constants";
       isWrapperSeeking = false;
       firstPlay = true;
       wasPausedBeforePlaying = false;
+      handleFailover = false;
+      failoverPlayheadTime = 0;
       currentTime = 0;
       currentTimeShift = 0;
       videoEnded = false;
@@ -473,6 +477,17 @@ import CONSTANTS from "./constants/constants";
     };
 
     /**
+     * Notifies wrapper that failover has occurred in the Ooyala Player
+     * @public
+     * @method OoyalaVideoWrapper#handleFailover
+     * @param {number} failoverPlayhead The playhead time before failover (seconds)
+     */
+    this.handleFailover = function(failoverPlayhead) {
+      handleFailover = true;
+      failoverPlayheadTime = failoverPlayhead;
+    };
+
+    /**
      * Since there are no standards for error codes or names for play promises,
      * we'll compile a list of errors that represent a user interaction required error.
      * @private
@@ -545,6 +560,10 @@ import CONSTANTS from "./constants/constants";
           }
           if (typeof playPromise.then === 'function') {
             playPromise.then(_.bind(function() {
+              if (handleFailover) {
+                this.seek(failoverPlayheadTime);
+                handleFailover = false;
+              }
               //playback succeeded
               if (!_video.muted) {
                 this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
@@ -1152,12 +1171,14 @@ import CONSTANTS from "./constants/constants";
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
-      this.controller.notify(this.controller.EVENTS.PROGRESS,
+      if (!handleFailover) {
+        this.controller.notify(this.controller.EVENTS.PROGRESS,
                              { "currentTime": event.target.currentTime,
                                "duration": resolveDuration(event.target.duration),
                                "buffer": buffer,
                                "seekRange": getSafeSeekRange(event.target.seekable)
                              });
+      }
     }, this);
 
     /**
@@ -1371,7 +1392,9 @@ import CONSTANTS from "./constants/constants";
      * @param {object} event The event from the video
      */
     var raiseDurationChange = _.bind(function(event) {
-      raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
+      if (!isLive || isDvrAvailable()) {
+        raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
+      }
     }, this);
 
     /**
