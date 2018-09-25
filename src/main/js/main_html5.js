@@ -1392,7 +1392,7 @@ import CONSTANTS from "./constants/constants";
      * @param {object} event The event from the video
      */
     var raiseDurationChange = _.bind(function(event) {
-      if (!isLive || isDvrAvailable()) {
+      if (!handleFailover) {
         raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
       }
     }, this);
