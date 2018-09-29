@@ -893,7 +893,6 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should not raise durationChange before initial time is used', function(){
-    OO.isAndroid = true;
     element.duration = 20;
     stubSeekable(element, 0, 20);
     wrapper.setInitialTime(10);
@@ -906,6 +905,21 @@ describe('main_html5 wrapper tests', function () {
     expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.DURATION_CHANGE);
     element.currentTime = 11;
     $(element).triggerHandler("timeupdate");
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+  });
+
+  it('should not raise durationChange before initial time is used for a queued seek', function(){
+    OO.isAndroid = true;
+    element.duration = 20;
+    stubSeekable(element, 0, 20);
+    wrapper.setInitialTime(10);
+    element.currentTime = 9;
+    $(element).triggerHandler("durationchange");
+    expect(vtc.notifyParameters[0]).to.not.eql(vtc.interface.EVENTS.DURATION_CHANGE);
+    //timeupdate will dequeue the seek
+    $(element).triggerHandler("timeupdate");
+    $(element).triggerHandler("seeked");
     $(element).triggerHandler("durationchange");
     expect(vtc.notifyParameters[0]).to.eql(vtc.interface.EVENTS.DURATION_CHANGE);
   });
@@ -1043,6 +1057,51 @@ describe('main_html5 wrapper tests', function () {
         "buffer" : 0,
         "seekRange" : {"start": 0, "end" : 0}
     }]);
+  });
+
+  it('DVR: Should use initial time when seek ranges are available on time update event', () => {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    let initialTime = 10;
+    element.duration = 20;
+    wrapper.setInitialTime(initialTime);
+    wrapper.play();
+
+    element.currentTime = 0;
+    $(element).triggerHandler("timeupdate");
+    expect(element.currentTime).to.eql(0);
+
+    element.currentTime = 1;
+    $(element).triggerHandler("timeupdate");
+    expect(element.currentTime).to.eql(1);
+
+    stubSeekable(element, 0, 20);
+    element.seekable.length = 1;
+    element.currentTime = 2;
+    $(element).triggerHandler("timeupdate");
+    expect(element.currentTime).to.eql(initialTime);
+  });
+
+  it('DVR: Should use initial time when seek ranges are available on progress event', () => {
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    let initialTime = 10;
+    element.duration = 20;
+    wrapper.setInitialTime(initialTime);
+    wrapper.play();
+
+    element.currentTime = 0;
+    $(element).triggerHandler("progress");
+    $(element).triggerHandler("timeupdate");
+    expect(element.currentTime).to.eql(0);
+
+    element.currentTime = 1;
+    $(element).triggerHandler("progress");
+    $(element).triggerHandler("timeupdate");
+    expect(element.currentTime).to.eql(1);
+
+    stubSeekable(element, 0, 20);
+    element.seekable.length = 1;
+    $(element).triggerHandler("progress");
+    expect(element.currentTime).to.eql(initialTime);
   });
 
   it('DVR: should notify TIME_UPDATE on video \'timeupdate\' event with DVR-formatted values', function() {

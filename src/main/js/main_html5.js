@@ -611,6 +611,11 @@ import CONSTANTS from "./constants/constants";
       if (isLive) {
         //Live videos without DVR can't be seeked
         if (!isDvrAvailable()) {
+          //Re-queue the initial time seek if initial time has not been reached yet. This usually means
+          //the seek ranges are not available yet.
+          if (!initialTime.reached && time === initialTime.value) {
+            queueSeek(time);
+          }
           return false;
         } else {
           safeSeekTime = getSafeDvrSeekTime(_video, time);
@@ -1171,6 +1176,12 @@ import CONSTANTS from "./constants/constants";
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
+
+      //Progress updates mean seekable ranges could be available so let's attempt to dequeue the seek
+      if (isLive) {
+        dequeueSeek();
+      }
+
       if (!handleFailover) {
         this.controller.notify(this.controller.EVENTS.PROGRESS,
                              { "currentTime": event.target.currentTime,
@@ -1359,7 +1370,7 @@ import CONSTANTS from "./constants/constants";
       // If the stream is seekable, suppress seeks that come before or at the time initialTime is been reached
       // or that come while seeking.
       if (!initialTime.reached) {
-        initialTime.reached = true;
+        checkInitialTimeReached();
       } else {
         this.controller.notify(this.controller.EVENTS.SEEKED);
         raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event); // Firefox and Safari seek from paused state.
@@ -1398,6 +1409,20 @@ import CONSTANTS from "./constants/constants";
     }, this);
 
     /**
+     * Checks to see if the initial time has been reached. Will update related states if initial
+     * time has been reached.
+     * @private
+     * @method OoyalaVideoWrapper#checkInitialTimeReached
+     */
+    const checkInitialTimeReached = () => {
+      let currentTime = _video.currentTime;
+      if (!initialTime.reached && initialTime.value >= 0 && currentTime >= initialTime.value) {
+        initialTime.reached = true;
+        initialTime.value = 0;
+      }
+    };
+
+    /**
      * Notifies the controller that the time position has changed.  Handles seeks if seeks were enqueued and
      * the stream has become seekable.  Triggers end of stream for m3u8 if the stream won't raise it itself.
      * @private
@@ -1409,10 +1434,7 @@ import CONSTANTS from "./constants/constants";
         currentTime = _video.currentTime;
       }
 
-      if (initialTime.value >= 0 && (event.target.currentTime >= initialTime.value || initialTime.reached)) {
-        initialTime.reached = true;
-        initialTime.value = 0;
-      }
+      checkInitialTimeReached();
 
       raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
 
