@@ -46,7 +46,7 @@ import CONSTANTS from "./constants/constants";
         if (!!videoElement.canPlayType("audio/ogg")) {
           list.push(OO.VIDEO.ENCODING.OGG);
         }
-        
+
         if (!!videoElement.canPlayType("audio/x-m4a")) {
           list.push(OO.VIDEO.ENCODING.M4A);
         }
@@ -73,7 +73,6 @@ import CONSTANTS from "./constants/constants";
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_HLS);
           list.push(OO.VIDEO.ENCODING.AUDIO_ONLY_HLS);
-          
         }
       }
       return list;
@@ -199,6 +198,7 @@ import CONSTANTS from "./constants/constants";
     var hasPlayed = false;
     var queuedSeekTime = null;
     var playQueued = false;
+    var hasNotifiedInitialPlaying = false;
     var hasStartedPlaying = false;
     var pauseOnPlaying = false;
     var ignoreFirstPlayingEvent = false;
@@ -211,7 +211,11 @@ import CONSTANTS from "./constants/constants";
     var isM3u8 = false;
     var firstPlay = true;
     var videoDimension = {height: 0, width: 0};
-    var initialTime = { value: 0, reached: true };
+    var initialTime = {
+      value: 0,
+      reached: true,
+      pendingSeek: false
+    };
     var canSeek = true;
     var isPriming = false;
     var isLive = false;
@@ -361,6 +365,7 @@ import CONSTANTS from "./constants/constants";
       hasPlayed = false;
       queuedSeekTime = null;
       loaded = false;
+      hasNotifiedInitialPlaying = false;
       hasStartedPlaying = false;
       pauseOnPlaying = false;
       isSeeking = false;
@@ -371,7 +376,9 @@ import CONSTANTS from "./constants/constants";
       currentTimeShift = 0;
       videoEnded = false;
       videoDimension = {height: 0, width: 0};
-      initialTime = { value: 0, reached: true };
+      initialTime.value = 0;
+      initialTime.reached = true;
+      initialTime.pendingSeek = false;
       canSeek = true;
       isPriming = false;
       stopUnderflowWatcher();
@@ -440,36 +447,104 @@ import CONSTANTS from "./constants/constants";
     };
 
     /**
-     * Sets the initial time of the video playback.  For this plugin that is simply a seek which will be
-     * triggered upon 'loadedmetadata' event.
+     *
      * @public
      * @method OoyalaVideoWrapper#setInitialTime
      * @param {number} time The initial time of the video (seconds)
      */
     this.setInitialTime = function(time) {
-      //Ignore any initial times set to 0 if the content has not started playing. The content will start at time 0
-      //by default
-      if (typeof time !== "number" || (!hasStartedPlaying && time === 0)) {
+      if (
+        !_.isNumber(time) ||
+        !_.isFinite(time) ||
+        time <= 0
+      ) {
         return;
       }
-      // [PBW-5539] On Safari (iOS and Desktop), when triggering replay after the current browser tab looses focus, the
-      // current time seems to fall a few milliseconds behind the video duration, which
-      // makes the video play for a fraction of a second and then stop again at the end.
-      // In this case we allow setting the initial time back to 0 as a workaround for this
-      var queuedSeekRequired = OO.isSafari && videoEnded && time === 0;
       initialTime.value = time;
       initialTime.reached = false;
+      monitorSeekableRanges();
+    };
 
-      // [PBW-3866] Some Android devices (mostly Nexus) cannot be seeked too early or the seeked event is
-      // never raised, even if the seekable property returns an endtime greater than the seek time.
-      // To avoid this, save seeking information for use later.
-      // [PBW-5539] Same issue with desktop Safari when setting initialTime after video ends
-      // [PBW-7473] Same issue with IE11.
-      if (OO.isAndroid || OO.isIE11Plus || (queuedSeekRequired && !OO.isIos)) {
-        queueSeek(initialTime.value);
-      } else {
-        this.seek(initialTime.value);
+    const getSeekableRange = () => {
+      let seekableRange = {
+        start: 0,
+        end: 0
+      };
+      if (
+        _video &&
+        _video.seekable &&
+        _video.seekable.length
+      ) {
+        seekableRange.start = _video.seekable.start(0);
+        seekableRange.end = _video.seekable.end(0);
       }
+      return seekableRange;
+    };
+
+    const monitorSeekableRanges = () => {
+      if (
+        initialTime.reached ||
+        initialTime.pendingSeek
+      ) {
+        return;
+      }
+      const seekableRange = getSeekableRange();
+      // Seek to initial time if initial time value is within seekable ranges
+      if (
+        // _hasPlayed && // On Android seeking might fail if done before play request (even if seekable ranges are ready)
+        initialTime.value >= seekableRange.start &&
+        initialTime.value <= seekableRange.end
+      ) {
+        OO.log('MainHtml5: Trying to seek to initial time after checking seekable ranges.');
+        trySeekToInitialTime();
+      } else {
+        OO.log(`MainHtml5: initialTime value of ${initialTime.value} not within seekable range or waiting for play request:`, seekableRange);
+      }
+    };
+
+    const trySeekToInitialTime = () => {
+      if (
+        initialTime.reached ||
+        initialTime.pendingSeek
+      ) {
+        return;
+      }
+      // Shift to initial DVR time if it hasn't already been reached and we
+      // haven't already time-shifted
+      if (isLive) {
+        console.log(">>>>MainHtml5 tislive", isDvrAvailable());
+        if (isDvrAvailable()) {
+          initialTime.pendingSeek = true;
+
+          this.seek(initialTime.value);
+          OO.log('MainHtml5: Seeking to initial time for live DVR stream:', initialTime.value);
+        }
+      } else {
+        // For VOD we check whether or not the current time is already at
+        // or past the intial time value and only seek if it isn't
+        if (_video.currentTime < initialTime.value) {
+          initialTime.pendingSeek = true;
+
+          this.seek(initialTime.value);
+          OO.log('MainHtml5: Manually seeking to initial time for VOD stream:',  initialTime.value);
+        } else if (hasStartedPlaying) {
+          // Already at or past initial time point, notify PLAYING but only if playback
+          // has already started from Bitmovin's perspective (i.e. it has already fired
+          // its own playing event). If playback hasn't started we avoid triggering our
+          // player's PLAYING event early which would cause the scrubber bar to flash
+          tryNotifyInitialPlaying();
+        }
+      }
+    };
+
+    const tryNotifyInitialPlaying = () => {
+      if (hasNotifiedInitialPlaying) {
+        return;
+      }
+      console.log(">>>>MainHtml5wtryNotifyInitialPlayingy");
+      hasNotifiedInitialPlaying = true;
+      initialTime.reached = true;
+      this.controller.notify(this.controller.EVENTS.PLAYING);
     };
 
     /**
@@ -553,7 +628,11 @@ import CONSTANTS from "./constants/constants";
               }
 
               if (!pauseOnPlaying) {
-                this.controller.notify(this.controller.EVENTS.PLAYING);
+                console.log(">>>>MainHtml5:whatda?",23);
+                if (initialTime.reached) {
+                  tryNotifyInitialPlaying();
+                }
+                // this.controller.notify(this.controller.EVENTS.PLAYING);
               }
             }, this));
           }
@@ -1152,12 +1231,14 @@ import CONSTANTS from "./constants/constants";
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
-      this.controller.notify(this.controller.EVENTS.PROGRESS,
-                             { "currentTime": event.target.currentTime,
-                               "duration": resolveDuration(event.target.duration),
-                               "buffer": buffer,
-                               "seekRange": getSafeSeekRange(event.target.seekable)
-                             });
+      console.log(">>>>MainHtml5: progress event");
+      monitorSeekableRanges();
+      this.controller.notify(this.controller.EVENTS.PROGRESS, {
+        currentTime: event.target.currentTime,
+        duration: resolveDuration(event.target.duration),
+        buffer: buffer,
+        seekRange: getSafeSeekRange(event.target.seekable)
+      });
     }, this);
 
     /**
@@ -1260,8 +1341,12 @@ import CONSTANTS from "./constants/constants";
       //We want the initial PLAYING event to be from the play promise if play promises
       //are supported. This is to help with the muted autoplay workflow.
       //We want to ignore any playing events thrown by plays started with play promises
-      if (!ignoreFirstPlayingEvent) {
-        this.controller.notify(this.controller.EVENTS.PLAYING);
+      if (!ignoreFirstPlayingEvent && initialTime.reached) {
+        if (hasNotifiedInitialPlaying) {
+          this.controller.notify(this.controller.EVENTS.PLAYING);
+        } else {
+          tryNotifyInitialPlaying();
+        }
       }
 
       startUnderflowWatcher();
@@ -1324,7 +1409,7 @@ import CONSTANTS from "./constants/constants";
           _video.currentTime = currentTime;
         }
       }
-
+      console.log(">>>>MainHtml5 seekaboo", _video.currentTime);
       // Code below is mostly for fullscreen mode on iOS, where the video can be seeked
       // using the native player controls. We haven't updated currentTimeShift in this case,
       // so we do it at this point in order to show the correct shift in our inline controls
@@ -1335,11 +1420,30 @@ import CONSTANTS from "./constants/constants";
       }
       isWrapperSeeking = false;
 
+      if (isDvrAvailable() && initialTime.pendingSeek) {
+        initialTime.pendingSeek = false;
+        initialTime.reached = true;
+        console.log(">>>>MainHtml5wootney", _video.currentTime);
+        // Note:
+        // _hasStartedPlaying indicates that playback has started from BM's
+        // perspective, but not necessarily that we've notified our own PLAYING
+        // event. We don't notify our PLAYING event if playback hasn't started
+        // in order to avoid flashing the scrubber bar. The notification will be
+        // sent later on when BM fires its onPlaying event.
+        if (hasStartedPlaying) {
+          // We had been ignoring playhead updates until now, make sure player
+          // starts with correct playhead as it transitions to playing mode
+          // _onTimeChanged();
+          raisePlayhead(this.controller.EVENTS.TIME_UPDATE);
+          tryNotifyInitialPlaying();
+
+        }
+      }
+      initialTime.pendingSeek = false;
+
       // If the stream is seekable, suppress seeks that come before or at the time initialTime is been reached
       // or that come while seeking.
-      if (!initialTime.reached) {
-        initialTime.reached = true;
-      } else {
+      if (hasNotifiedInitialPlaying) {
         this.controller.notify(this.controller.EVENTS.SEEKED);
         raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event); // Firefox and Safari seek from paused state.
       }
@@ -1386,10 +1490,6 @@ import CONSTANTS from "./constants/constants";
         currentTime = _video.currentTime;
       }
 
-      if (initialTime.value >= 0 && (event.target.currentTime >= initialTime.value || initialTime.reached)) {
-        initialTime.reached = true;
-        initialTime.value = 0;
-      }
 
       raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
 
@@ -1999,14 +2099,27 @@ import CONSTANTS from "./constants/constants";
       // If the stream is seekable, supress playheads that come before the initialTime has been reached
       // or that come while seeking.
       // TODO: Check _video.seeking?
-      if (isSeeking || initialTime.value > 0) {
+      if (isSeeking) {
         return;
       }
+
+      console.log(">>>>MainHtml5: raisePlayhead");
+      if (!initialTime.reached) {
+        OO.log('MainHtml5: Checking initial time on onTimeChanged handler.');
+        trySeekToInitialTime();
+        // This will be true if the call above realized that the initial time
+        // had already been reached without the need for an additional seek.
+        // If initial time hasn't been reached yet we avoid executing _onTimeChanged logic
+        if (!initialTime.reached) {
+          return;
+        }
+      }
+      console.log(">>>>MainHtml5: raisePlayhead");
 
       var buffer = 0;
       var newCurrentTime = null;
       var currentLiveTime = 0;
-      var duration = resolveDuration(event.target.duration);
+      var duration = resolveDuration(_video.duration);
 
       // Live videos without DVR (i.e. maxTimeShift === 0) are treated as regular
       // videos for playhead update purposes
@@ -2025,7 +2138,7 @@ import CONSTANTS from "./constants/constants";
         // Just a precaution for older browsers, this should already be a number
         newCurrentTime = ensureNumber(_video.currentTime, null);
       }
-
+      console.log(">>>>>newCurrentTime", newCurrentTime);
       var seekable = getSafeSeekRange(getSafeSeekableObject());
       this.controller.notify(eventname, {
         currentTime: newCurrentTime,
