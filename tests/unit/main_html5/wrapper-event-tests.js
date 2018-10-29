@@ -772,6 +772,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should only raise ended event once per stream', function(){
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
     vtc.notifyParameters = null;
@@ -783,6 +784,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should unblock raising of ended event after a new stream begins loading', function(){
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
     vtc.notifyParameters = null;
@@ -791,6 +793,16 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler("loadstart");
     $(element).triggerHandler("ended");
     expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
+  });
+
+  it('should not raise ended event when video source is cleared', function(){
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.eql([vtc.interface.EVENTS.ENDED]);
+    vtc.notifyParameters = null;
+    wrapper.setVideoUrl("", OO.VIDEO.ENCODING.HLS);
+    $(element).triggerHandler("ended");
+    expect(vtc.notifyParameters).to.be(null);
   });
 
   // TODO: When we have platform testing support, test for iOS behavior for ended event raised when ended != true
@@ -1042,6 +1054,7 @@ describe('main_html5 wrapper tests', function () {
   });
 
   it('should raise timeUpdate on replay if initial time is more than video duration', function(){
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     element.duration = 20;
     wrapper.setInitialTime(40);
     wrapper.play();
@@ -1325,6 +1338,7 @@ describe('main_html5 wrapper tests', function () {
     $(element).triggerHandler({ type: "webkitendfullscreen" });
     expect(vtc.notifyParameters).to.not.be(null);
     vtc.notifyParameters = null;
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS);
     $(element).triggerHandler({ type: "play" });
     expect(vtc.notifyParameters).to.not.be(null);
     vtc.notifyParameters = null;

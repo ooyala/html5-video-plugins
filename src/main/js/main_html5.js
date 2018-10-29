@@ -46,7 +46,7 @@ import CONSTANTS from "./constants/constants";
         if (!!videoElement.canPlayType("audio/ogg")) {
           list.push(OO.VIDEO.ENCODING.OGG);
         }
-        
+
         if (!!videoElement.canPlayType("audio/x-m4a")) {
           list.push(OO.VIDEO.ENCODING.M4A);
         }
@@ -73,7 +73,7 @@ import CONSTANTS from "./constants/constants";
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_HLS);
           list.push(OO.VIDEO.ENCODING.AUDIO_HLS);
-          
+
         }
       }
       return list;
@@ -1384,7 +1384,10 @@ import CONSTANTS from "./constants/constants";
      */
     var raiseEndedEvent = _.bind(function(event) {
       stopUnderflowWatcher();
-      if (!_video.ended && OO.isSafari) {
+      if (
+        !_currentUrl || // iOS Safari will trigger an ended event when the source is cleared with an empty string
+        (!_video.ended && OO.isSafari)
+      ) {
         // iOS raises ended events sometimes when a new stream is played in the same video element
         // Prevent this faulty event from making it to the player message bus
         return;
