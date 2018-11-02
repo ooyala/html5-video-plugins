@@ -472,6 +472,41 @@ describe('main_html5 wrapper tests', function () {
     }]);
   });
 
+  it('should not notify DURATION_CHANGE or PROGRESS during failover', function(){
+    vtc.notifyParameters = [];
+    wrapper.handleFailover(100);
+    $(element).triggerHandler("duration");
+    expect(vtc.notifyParameters).to.eql([]);
+    $(element).triggerHandler("progress");
+    expect(vtc.notifyParameters).to.eql([]);
+  });
+
+  it('should seek to saved dvr position after play during failover', function(){
+    var savedPlayhead = 100;
+    const spy = sinon.spy(wrapper, "seek");
+    var originalPlay = element.play;
+    var playPromiseThen = null;
+    var playCalled = 0;
+    element.play = function() {
+      playCalled++;
+      return {
+        then: function(callback) {
+          playPromiseThen = callback;
+        }
+      };
+    };
+    wrapper.setVideoUrl("url", OO.VIDEO.ENCODING.HLS, true);
+    wrapper.handleFailover(savedPlayhead);
+    wrapper.play();
+    expect(playCalled).to.be(1);
+    stubSeekable(element, 0, savedPlayhead * 2);
+    playPromiseThen();
+	expect(spy.callCount).to.be(1);
+	expect(spy.calledWith(savedPlayhead)).to.be(true);
+    expect(element.currentTime).to.eql(100);
+    element.play = originalPlay;
+  });
+
   it('should notify CAPTIONS_FOUND_ON_PLAYING with multiple in-manifest/in-stream captions', function() {
     element.textTracks = [
       { language: "", label: "", kind: "subtitles" },
