@@ -44,11 +44,11 @@ import CONSTANTS from "./constants/constants";
         }
 
         if (!!videoElement.canPlayType("audio/ogg")) {
-          list.push(OO.VIDEO.ENCODING.OGG);
+          list.push(OO.VIDEO.ENCODING.AUDIO_OGG);
         }
 
         if (!!videoElement.canPlayType("audio/x-m4a")) {
-          list.push(OO.VIDEO.ENCODING.M4A);
+          list.push(OO.VIDEO.ENCODING.AUDIO_M4A);
         }
 
         if (!!videoElement.canPlayType("video/webm")) {
