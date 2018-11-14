@@ -455,10 +455,10 @@ describe('main_html5 wrapper tests', function () {
   it('should force seeks within SEEK_TO_END_LIMIT to seek to duration - 0.01', function(){
     var duration = 10;
     setFullSeekRange(duration);
-    var returns = wrapper.seek(duration - 3);
+    var returns = wrapper.seek(duration - 2.99);
     expect(returns).to.be(true);
     expect(element.currentTime).to.eql(duration - 0.01);
-    var returns = wrapper.seek(duration - 2.99);
+    var returns = wrapper.seek(duration - 2);
     expect(returns).to.be(true);
     expect(element.currentTime).to.eql(duration - 0.01);
     var returns = wrapper.seek(duration - 1);
