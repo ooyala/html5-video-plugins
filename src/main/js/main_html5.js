@@ -736,6 +736,8 @@ import CONSTANTS from "./constants/constants";
             ignoreFirstPlayingEvent = false;
           });
         }
+      } else {	
+        _video.pause();	
       }
     };
 
