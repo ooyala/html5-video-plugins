@@ -1,6 +1,6 @@
 {
   "name": "html5-video-plugins",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Video Tech Plugins for the Ooyala HTML5 player",
   "engines": {
     "node": ">=8.11.3"
