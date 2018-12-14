@@ -95,6 +95,16 @@ To automatically build the plugins when a file is changed, run the command:
 $ gulp watch
 ```
 
+You can also build the plugins with webpack:
+    a. In development mode without minification
+```bash
+ $ npm start
+```
+b. In production mode 
+    
+```bash
+ $ npm start:prod
+```
 ## JS Documentation
 
 To build the jsdocs style documentation, run the command:
