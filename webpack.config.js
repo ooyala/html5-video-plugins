@@ -1,4 +1,5 @@
 const path = require('path');
+const WebpackShellPlugin = require('webpack-shell-plugin');
 
 module.exports = {
   entry: {
@@ -11,6 +12,11 @@ module.exports = {
     path: path.resolve(__dirname, './build'),
     filename: '[name].min.js'
   },
+  plugins: [
+    new WebpackShellPlugin({
+      onBuildStart:['node ant-builds.js']
+    })
+  ],
   devtool: 'sourcemap',
   watch: true
 }
