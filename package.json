@@ -11,7 +11,7 @@
   "scripts": {
     "build": "gulp",
     "test": "jest",
-    "lint": "eslint src/**"
+    "lint": "eslint src/** --fix"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.51",
