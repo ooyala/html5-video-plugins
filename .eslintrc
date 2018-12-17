@@ -3,7 +3,8 @@
   "globals": {
     "_": false,
     "$": false,
-    "OO": false
+    "OO": false,
+    "YT": false
   },
   "plugins": [
     "require-jsdoc-except"
@@ -23,7 +24,7 @@
       }
     ],
     "no-continue": ["warn"],
-    "no-magic-numbers": ["error", { "ignore": [0, -1, 1] }],
+    "no-magic-numbers": ["error", { "ignore": [0, -1, 1, 100] }],
     "no-param-reassign": ["error"],
     "no-var": ["error"],
     "one-var-declaration-per-line": ["error"],
