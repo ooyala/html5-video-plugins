@@ -1,0 +1,59 @@
+{
+  "extends": "standard",
+  "globals": {
+    "_": false,
+    "$": false,
+    "OO": false
+  },
+  "plugins": [
+    "require-jsdoc-except"
+  ],
+  "rules": {
+    "space-before-function-paren": ["error", "never"],
+    "comma-dangle": ["error", "always-multiline"],
+    "default-case": ["error"],
+    "id-length": ["error", { "exceptions": ["_", "$"] }],
+    "max-len": [
+      "error", 110,
+      {
+        "ignoreComments": true,
+        "ignorePattern": "if \\(\/\\(\\w*|\\)\/",
+        "ignoreUrls": true,
+        "ignoreRegExpLiterals": true
+      }
+    ],
+    "no-continue": ["warn"],
+    "no-magic-numbers": ["error", { "ignore": [0, -1, 1] }],
+    "no-param-reassign": ["error"],
+    "no-var": ["error"],
+    "one-var-declaration-per-line": ["error"],
+    "require-jsdoc-except/require-jsdoc": [
+      "error",
+      {
+        "require": {
+          "MethodDefinition": true,
+          "ClassDeclaration": true,
+          "FunctionDeclaration": true
+        },
+        "ignore": [
+          "constructor",
+          "componentWillMount",
+          "componentDidMount",
+          "componentWillUnmount",
+          "componentWillReceiveProps",
+          "render"
+        ]
+      }
+    ],
+    "semi": ["error",  "always"],
+    "valid-jsdoc": [
+      "error",
+      {
+        "prefer": {
+          "return": "returns"
+        },
+        "requireReturn": false
+      }
+    ]
+  }
+}
