@@ -19,7 +19,7 @@ require('../../../html5-common/js/utils/constants.js');
   let pluginPath;
   let filename = 'osmf_flash.*.js';
   let scripts = document.getElementsByTagName('script');
-  for (let id = 0; i < scripts.length; id++) {
+  for (let id = 0; id < scripts.length; id++) {
     let match = scripts[id].src.match(filename);
     if (match && match.length > 0) {
       pluginPath = match.input.match(/.*\//)[0];
@@ -30,7 +30,8 @@ require('../../../html5-common/js/utils/constants.js');
     // [PLAYER-3129]
     // It's safe to hard-code the path to this file since this plugin isn't
     // being developed further. The .swf file shouldn't change anymore.
-    console.log('[OSMF]: Failed to determine .swf file path, will use default.');
+    console.log(
+      '[OSMF]: Failed to determine .swf file path, will use default.');
     pluginPath = '//player.ooyala.com/static/v4/production/video-plugin/';
   }
   pluginPath += 'osmf_flash.swf';
@@ -48,6 +49,7 @@ require('../../../html5-common/js/utils/constants.js');
     this.name = pluginName;
     // This module defaults to ready because no setup or external loading is required
     this.ready = true;
+
     /**
      * Checks whether flash player is available
      * @public
@@ -58,48 +60,62 @@ require('../../../html5-common/js/utils/constants.js');
       // ie
       try {
         try {
-          let axo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash.6');
+          let axo = new window.ActiveXObject('ShockwaveFlash.ShockwaveFlash.6');
           try {
             axo.AllowScriptAccess = 'always';
           } catch (exception) {
             return '6,0,0';
           }
         } catch (exception) {}
-        return new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version').replace(/\D+/g, ',').match(/^,?(.+),?$/)[1];
-      }
-      // other browsers
-      catch (e) {
+        return new window.ActiveXObject('ShockwaveFlash.ShockwaveFlash')
+          .GetVariable('$version')
+          .replace(/\D+/g, ',')
+          .match(/^,?(.+),?$/)[1];
+      } catch (exception) {
+        // other browsers
         try {
           if (navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin) {
-            return (navigator.plugins['Shockwave Flash 2.0'] || navigator.plugins['Shockwave Flash']).description.replace(/\D+/g, ',').match(/^,?(.+),?$/)[1];
+            return (navigator.plugins['Shockwave Flash 2.0'] ||
+              navigator.plugins['Shockwave Flash']).description.replace(/\D+/g,
+              ',').match(/^,?(.+),?$/)[1];
           }
-        } catch (e) {}
+        } catch (exception) {}
       }
       return '0,0,0';
     }
 
+    /**
+     * Checks whether flash player is available
+     * @public
+     * @method testForFlash
+     * @returns {Array} encoding as hds if flash version is available
+     */
     function testForFlash() {
+      const minimalFlashVersion = 11;
       let version = getFlashVersion().split(',').shift();
-      if (version < 11) {
+      if (version < minimalFlashVersion) {
         OO.log('OSMF: Flash not detected');
         return [];
       } else {
-        return [ OO.VIDEO.ENCODING.HDS ];
+        return [OO.VIDEO.ENCODING.HDS];
       }
     }
+
     this.encodings = testForFlash();
     this.technology = OO.VIDEO.TECHNOLOGY.FLASH;
-    this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-      OO.VIDEO.FEATURE.BITRATE_CONTROL ];
+    this.features = [
+      OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
+      OO.VIDEO.FEATURE.BITRATE_CONTROL];
 
     /**
      * Creates a video player instance using OoyalaFlashVideoWrapper.
      * @public
      * @method OoyalaFlashVideoFactory#create
      * @param {object} parentContainer The jquery div that should act as the parent for the video element
-     * @param {string} id The id of the video player instance to create
+     * @param {string} domId The id of the video player instance to create
      * @param {object} controller A reference to the video controller in the Ooyala player
      * @param {object} css The css to apply to the video element
+     * @param {string} playerId playerId
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, domId, controller, css, playerId) {
@@ -109,13 +125,14 @@ require('../../../html5-common/js/utils/constants.js');
       video.attr('preload', 'none');
 
       cssFromContainer = css;
-
+      let _playerId = playerId;
       if (!playerId) {
-        playerId = getRandomString();
+        _playerId = getRandomString();
       }
       parentContainer.append(video);
 
-      element = new OoyalaFlashVideoWrapper(domId, video[0], parentContainer, playerId);
+      const element = new OoyalaFlashVideoWrapper(domId, video[0], parentContainer,
+        _playerId);
       element.controller = controller;
       controller.notify(controller.EVENTS.CAN_PLAY);
 
@@ -150,16 +167,18 @@ require('../../../html5-common/js/utils/constants.js');
    * @param {string} domId The id of the video player element
    * @param {object} video The core video object to wrap - unused.
    * @param {string} parentContainer Id of the Div element in which the swf will be embedded
-   * @param {object} css The css to apply to the object element
+   * @param {string} playerId playerId
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaFlashVideoWrapper = function(domId, video, parentContainer, playerId) {
+  var OoyalaFlashVideoWrapper = function(
+    domId, video, parentContainer, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
     this.id = domId;
-    if (!parentContainer) parentContainer = 'container';
+    let _parentContainer = parentContainer;
+    if (!parentContainer) _parentContainer = 'container';
 
     let _video; // reference to the current swf being acted upon.
     let listeners = {};
@@ -235,7 +254,8 @@ require('../../../html5-common/js/utils/constants.js');
      * @method OoyalaFlashVideoWrapper#subscribeAllEvents
      */
     this.subscribeAllEvents = function() {
-      listeners = { 'play': _.bind(raisePlayEvent, this),
+      listeners = {
+        'play': _.bind(raisePlayEvent, this),
         'playing': _.bind(raisePlayingEvent, this),
         'ended': _.bind(raiseEndedEvent, this),
         'error': _.bind(raiseErrorEvent, this),
@@ -299,7 +319,7 @@ require('../../../html5-common/js/utils/constants.js');
         var parameters = { url: url, isLive: isLive };
       }
       if (_.isEmpty(_currentUrl)) {
-      // if (!_currentUrl) {
+        // if (!_currentUrl) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); // 0 -> no stream
       } else {
         this.callToFlash('setVideoUrl()', parameters);
@@ -327,7 +347,11 @@ require('../../../html5-common/js/utils/constants.js');
      * @param {object} params The parameters object
      */
     this.setClosedCaptions = function(language, closedCaptions, params) {
-      let parameters = { language: language, closedCaptions: closedCaptions, params: params };
+      let parameters = {
+        language: language,
+        closedCaptions: closedCaptions,
+        params: params,
+      };
       this.callToFlash('setVideoClosedCaptions()', parameters);
     };
 
@@ -368,7 +392,8 @@ require('../../../html5-common/js/utils/constants.js');
         loaded = true;
       } catch (ex) {
         // error because currentTime does not exist because stream hasn't been retrieved yet
-        OO.log('HDSFlash [' + this.id + ']: Failed to rewind video, probably ok; continuing');
+        OO.log('HDSFlash [' + this.id +
+          ']: Failed to rewind video, probably ok; continuing');
       }
     };
 
@@ -530,7 +555,8 @@ require('../../../html5-common/js/utils/constants.js');
     };
 
     var raisePlayEvent = function(event) {
-      newController.notify(newController.EVENTS.PLAY, { url: event.eventObject.url });
+      newController.notify(newController.EVENTS.PLAY,
+        { url: event.eventObject.url });
     };
 
     var raisePlayingEvent = function() {
@@ -571,8 +597,10 @@ require('../../../html5-common/js/utils/constants.js');
     var raiseVolumeEvent = function(event) {
       let volume = event.eventObject.volume;
       let muted = volume === 0;
-      newController.notify(newController.EVENTS.VOLUME_CHANGE, { 'volume': volume });
-      newController.notify(newController.EVENTS.MUTE_STATE_CHANGE, { muted: muted });
+      newController.notify(newController.EVENTS.VOLUME_CHANGE,
+        { 'volume': volume });
+      newController.notify(newController.EVENTS.MUTE_STATE_CHANGE,
+        { muted: muted });
     };
 
     var raiseWaitingEvent = function() {
@@ -595,10 +623,12 @@ require('../../../html5-common/js/utils/constants.js');
      */
     var raisePlayhead = _.bind(function(eventname, event) {
       newController.notify(eventname,
-        { 'currentTime': currentTime,
+        {
+          'currentTime': currentTime,
           'duration': totalTime,
           'buffer': buffer,
-          'seekRange': { 'begin': seekRange_start, 'end': seekRange_end } });
+          'seekRange': { 'begin': seekRange_start, 'end': seekRange_end },
+        });
     }, this);
 
     /**
@@ -609,10 +639,12 @@ require('../../../html5-common/js/utils/constants.js');
      */
     var raiseProgress = function(event) {
       newController.notify(newController.EVENTS.PROGRESS,
-        { 'currentTime': currentTime,
+        {
+          'currentTime': currentTime,
           'duration': totalTime,
           'buffer': buffer,
-          'seekRange': { 'begin': seekRange_start, 'end': seekRange_end } });
+          'seekRange': { 'begin': seekRange_start, 'end': seekRange_end },
+        });
     };
 
     /**
@@ -622,7 +654,8 @@ require('../../../html5-common/js/utils/constants.js');
      * @param {object} event The event from the video
      */
     var raiseCanPlayThrough = function(event) {
-      newController.notify(newController.EVENTS.BUFFERED, { url: event.eventObject.url });
+      newController.notify(newController.EVENTS.BUFFERED,
+        { url: event.eventObject.url });
     };
 
     var raiseFullScreenBegin = function(event) {
@@ -660,7 +693,8 @@ require('../../../html5-common/js/utils/constants.js');
           }
         }
       }
-      newController.notify(newController.EVENTS.BITRATES_AVAILABLE, vtcBitrates);
+      newController.notify(newController.EVENTS.BITRATES_AVAILABLE,
+        vtcBitrates);
     };
 
     var raiseSizeChanged = function(event) {
@@ -670,16 +704,19 @@ require('../../../html5-common/js/utils/constants.js');
       };
       // notify VTC about the asset's dimentions
       if (firstPlay) {
-        newController.notify(this.controller.EVENTS.ASSET_DIMENSION, assetDimension);
+        newController.notify(this.controller.EVENTS.ASSET_DIMENSION,
+          assetDimension);
         firstPlay = false;
       } else {
-        newController.notify(this.controller.EVENTS.SIZE_CHANGED, assetDimension);
+        newController.notify(this.controller.EVENTS.SIZE_CHANGED,
+          assetDimension);
       }
     };
 
     let raiseHiddenCaption = function(event) {
       let captionText = event.eventObject.text;
-      newController.notify(newController.EVENTS.CLOSED_CAPTION_CUE_CHANGED, captionText);
+      newController.notify(newController.EVENTS.CLOSED_CAPTION_CUE_CHANGED,
+        captionText);
     };
 
     call = function() {
@@ -725,18 +762,21 @@ require('../../../html5-common/js/utils/constants.js');
         case 'JSREADY':
           if (javascriptCommandQueue.length != 0) {
             for (var i = 0; i < javascriptCommandQueue.length; i++) {
-              this.callToFlash(javascriptCommandQueue[i][0], javascriptCommandQueue[i][1]);
+              this.callToFlash(javascriptCommandQueue[i][0],
+                javascriptCommandQueue[i][1]);
             }
           }
           for (i = 0; i < actionscriptCommandQueue.length; i++) {
-            this.callToFlash(actionscriptCommandQueue[i][0], actionscriptCommandQueue[i][1]);
+            this.callToFlash(actionscriptCommandQueue[i][0],
+              actionscriptCommandQueue[i][1]);
           }
           break;
         case 'PAUSED':
           raisePauseEvent();
           break;
         case 'BUFFERING':
-          newController.notify(newController.EVENTS.BUFFERING, { url: data.eventObject.url });
+          newController.notify(newController.EVENTS.BUFFERING,
+            { url: data.eventObject.url });
           break;
         case 'PLAY':
           raisePlayEvent(data);
@@ -838,9 +878,9 @@ require('../../../html5-common/js/utils/constants.js');
   is released under the MIT License <http://www.opensource.org/licenses/mit-license.php>
 */
 /**
-   * @class swfobject
-   * @classdesc Establishes the connection between player and the plugin
-   */
+ * @class swfobject
+ * @classdesc Establishes the connection between player and the plugin
+ */
 
 var swfobject = (function() {
   let UNDEF = 'undefined';
@@ -897,7 +937,9 @@ var swfobject = (function() {
   */
 
   let ua = (function() {
-    let w3cdom = typeof doc.getElementById !== UNDEF && typeof doc.getElementsByTagName !== UNDEF && typeof doc.createElement !== UNDEF;
+    let w3cdom = typeof doc.getElementById !== UNDEF &&
+      typeof doc.getElementsByTagName !== UNDEF && typeof doc.createElement !==
+      UNDEF;
 
     let u = nav.userAgent.toLowerCase();
 
@@ -907,7 +949,8 @@ var swfobject = (function() {
 
     let mac = p ? /mac/.test(p) : /mac/.test(u);
 
-    let webkit = /webkit/.test(u) ? parseFloat(u.replace(/^.*webkit\/(\d+(\.\d+)?).*$/, '$1')) : false;
+    let webkit = /webkit/.test(u) ? parseFloat(
+      u.replace(/^.*webkit\/(\d+(\.\d+)?).*$/, '$1')) : false;
     // returns either the webkit version or false if not webkit
 
     let ie = !+'\v1';
@@ -916,15 +959,19 @@ var swfobject = (function() {
     let playerVersion = [0, 0, 0];
 
     let d = null;
-    if (typeof nav.plugins !== UNDEF && typeof nav.plugins[SHOCKWAVE_FLASH] === OBJECT) {
+    if (typeof nav.plugins !== UNDEF && typeof nav.plugins[SHOCKWAVE_FLASH] ===
+      OBJECT) {
       d = nav.plugins[SHOCKWAVE_FLASH].description;
-      if (d && !(typeof nav.mimeTypes !== UNDEF && nav.mimeTypes[FLASH_MIME_TYPE] && !nav.mimeTypes[FLASH_MIME_TYPE].enabledPlugin)) { // navigator.mimeTypes["application/x-shockwave-flash"].enabledPlugin indicates whether plug-ins are enabled or disabled in Safari 3+
+      if (d &&
+        !(typeof nav.mimeTypes !== UNDEF && nav.mimeTypes[FLASH_MIME_TYPE] &&
+          !nav.mimeTypes[FLASH_MIME_TYPE].enabledPlugin)) { // navigator.mimeTypes["application/x-shockwave-flash"].enabledPlugin indicates whether plug-ins are enabled or disabled in Safari 3+
         plugin = true;
         ie = false; // cascaded feature detection for Internet Explorer
         d = d.replace(/^.*\s+(\S+\s+\S+$)/, '$1');
         playerVersion[0] = parseInt(d.replace(/^(.*)\..*$/, '$1'), 10);
         playerVersion[1] = parseInt(d.replace(/^.*\.(.*)\s.*$/, '$1'), 10);
-        playerVersion[2] = /[a-zA-Z]/.test(d) ? parseInt(d.replace(/^.*[a-zA-Z]+(.*)$/, '$1'), 10) : 0;
+        playerVersion[2] = /[a-zA-Z]/.test(d) ? parseInt(
+          d.replace(/^.*[a-zA-Z]+(.*)$/, '$1'), 10) : 0;
       }
     } else if (typeof win.ActiveXObject !== UNDEF) {
       try {
@@ -934,12 +981,22 @@ var swfobject = (function() {
           if (d) {
             ie = true; // cascaded feature detection for Internet Explorer
             d = d.split(' ')[1].split(',');
-            playerVersion = [parseInt(d[0], 10), parseInt(d[1], 10), parseInt(d[2], 10)];
+            playerVersion = [
+              parseInt(d[0], 10),
+              parseInt(d[1], 10),
+              parseInt(d[2], 10)];
           }
         }
       } catch (e) {}
     }
-    return { w3: w3cdom, pv: playerVersion, wk: webkit, ie: ie, win: windows, mac: mac };
+    return {
+      w3: w3cdom,
+      pv: playerVersion,
+      wk: webkit,
+      ie: ie,
+      win: windows,
+      mac: mac,
+    };
   }());
 
   /* Cross-browser onDomLoad
@@ -950,7 +1007,9 @@ var swfobject = (function() {
 
   let onDomLoad = (function() {
     if (!ua.w3) { return; }
-    if ((typeof doc.readyState !== UNDEF && doc.readyState == 'complete') || (typeof doc.readyState === UNDEF && (doc.getElementsByTagName('body')[0] || doc.body))) { // function is fired after onload, e.g. when script is inserted dynamically
+    if ((typeof doc.readyState !== UNDEF && doc.readyState == 'complete') ||
+      (typeof doc.readyState === UNDEF &&
+        (doc.getElementsByTagName('body')[0] || doc.body))) { // function is fired after onload, e.g. when script is inserted dynamically
       callDomLoadFunctions();
     }
     if (!isDomLoaded) {
@@ -994,7 +1053,8 @@ var swfobject = (function() {
   function callDomLoadFunctions() {
     if (isDomLoaded) { return; }
     try { // test if we can really add/remove elements to/from the DOM; we don't want to fire it too early
-      let t = doc.getElementsByTagName('body')[0].appendChild(createElement('span'));
+      let t = doc.getElementsByTagName('body')[0].appendChild(
+        createElement('span'));
       t.parentNode.removeChild(t);
     } catch (e) { return; }
     isDomLoaded = true;
@@ -1066,7 +1126,10 @@ var swfobject = (function() {
           let d = t.GetVariable('$version');
           if (d) {
             d = d.split(' ')[1].split(',');
-            ua.pv = [parseInt(d[0], 10), parseInt(d[1], 10), parseInt(d[2], 10)];
+            ua.pv = [
+              parseInt(d[0], 10),
+              parseInt(d[1], 10),
+              parseInt(d[2], 10)];
           }
         } else if (counter < 10) {
           counter++;
@@ -1094,7 +1157,8 @@ var swfobject = (function() {
         if (ua.pv[0] > 0) {
           let obj = getElementById(id);
           if (obj) {
-            if (hasPlayerVersion(regObjArr[i].swfVersion) && !(ua.wk && ua.wk < 312)) { // Flash Player version >= published SWF version: Houston, we have a match!
+            if (hasPlayerVersion(regObjArr[i].swfVersion) &&
+              !(ua.wk && ua.wk < 312)) { // Flash Player version >= published SWF version: Houston, we have a match!
               setVisibility(id, true);
               if (cb) {
                 cbObj.success = true;
@@ -1106,8 +1170,11 @@ var swfobject = (function() {
               att.data = regObjArr[i].expressInstall;
               att.width = obj.getAttribute('width') || '0';
               att.height = obj.getAttribute('height') || '0';
-              if (obj.getAttribute('class')) { att.styleclass = obj.getAttribute('class'); }
-              if (obj.getAttribute('align')) { att.align = obj.getAttribute('align'); }
+              if (obj.getAttribute(
+                'class')) { att.styleclass = obj.getAttribute('class'); }
+              if (obj.getAttribute('align')) {
+                att.align = obj.getAttribute('align');
+              }
               // parse HTML object param element's name-value pairs
               let par = {};
               let p = obj.getElementsByTagName('param');
@@ -1161,7 +1228,8 @@ var swfobject = (function() {
     - no Webkit engines older than version 312
   */
   function canExpressInstall() {
-    return !isExpressInstallActive && hasPlayerVersion('6.0.65') && (ua.win || ua.mac) && !(ua.wk && ua.wk < 312);
+    return !isExpressInstallActive && hasPlayerVersion('6.0.65') &&
+      (ua.win || ua.mac) && !(ua.wk && ua.wk < 312);
   }
 
   /* Show the Adobe Express Install dialog
@@ -1181,12 +1249,18 @@ var swfobject = (function() {
         storedAltContentId = replaceElemIdStr;
       }
       att.id = EXPRESS_INSTALL_ID;
-      if (typeof att.width === UNDEF || (!/%$/.test(att.width) && parseInt(att.width, 10) < 310)) { att.width = '310'; }
-      if (typeof att.height === UNDEF || (!/%$/.test(att.height) && parseInt(att.height, 10) < 137)) { att.height = '137'; }
+      if (typeof att.width === UNDEF ||
+        (!/%$/.test(att.width) && parseInt(att.width, 10) <
+          310)) { att.width = '310'; }
+      if (typeof att.height === UNDEF ||
+        (!/%$/.test(att.height) && parseInt(att.height, 10) <
+          137)) { att.height = '137'; }
       doc.title = doc.title.slice(0, 47) + ' - Flash Player Installation';
       let pt = ua.ie && ua.win ? 'ActiveX' : 'PlugIn';
 
-      let fv = 'MMredirectURL=' + encodeURI(window.location).toString().replace(/&/g, '%26') + '&MMplayerType=' + pt + '&MMdoctitle=' + doc.title;
+      let fv = 'MMredirectURL=' +
+        encodeURI(window.location).toString().replace(/&/g, '%26') +
+        '&MMplayerType=' + pt + '&MMdoctitle=' + doc.title;
       if (typeof par.flashvars !== UNDEF) {
         par.flashvars += '&' + fv;
       } else {
@@ -1245,7 +1319,8 @@ var swfobject = (function() {
         if (c) {
           let cl = c.length;
           for (let i = 0; i < cl; i++) {
-            if (!(c[i].nodeType == 1 && c[i].nodeName == 'PARAM') && !(c[i].nodeType == 8)) {
+            if (!(c[i].nodeType == 1 && c[i].nodeName == 'PARAM') &&
+              !(c[i].nodeType == 8)) {
               ac.appendChild(c[i].cloneNode(true));
             }
           }
@@ -1258,7 +1333,8 @@ var swfobject = (function() {
   /* Cross-browser dynamic SWF creation
   */
   function createSWF(attObj, parObj, id) {
-    let r; let
+    let r;
+    let
       el = getElementById(id);
     if (ua.wk && ua.wk < 312) { return r; }
     if (el) {
@@ -1284,7 +1360,8 @@ var swfobject = (function() {
             par += '<param name="' + j + '" value="' + parObj[j] + '" />';
           }
         }
-        el.outerHTML = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"' + att + '>' + par + '</object>';
+        el.outerHTML = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"' +
+          att + '>' + par + '</object>';
         objIdArr[objIdArr.length] = attObj.id; // stored to fix object 'leaks' on unload (dynamic publishing only)
         r = getElementById(attObj.id);
       } else { // well-behaving browsers
@@ -1376,12 +1453,14 @@ var swfobject = (function() {
   /* Flash Player and SWF content version matching
   */
   function hasPlayerVersion(rv) {
-    let pv = ua.pv; let
+    let pv = ua.pv;
+    let
       v = rv.split('.');
     v[0] = parseInt(v[0], 10);
     v[1] = parseInt(v[1], 10) || 0; // supports short notation, e.g. "9" instead of "9.0.0"
     v[2] = parseInt(v[2], 10) || 0;
-    return !!((pv[0] > v[0] || (pv[0] == v[0] && pv[1] > v[1]) || (pv[0] == v[0] && pv[1] == v[1] && pv[2] >= v[2])));
+    return !!((pv[0] > v[0] || (pv[0] == v[0] && pv[1] > v[1]) ||
+      (pv[0] == v[0] && pv[1] == v[1] && pv[2] >= v[2])));
   }
 
   /* Cross-browser dynamic CSS creation
@@ -1402,7 +1481,8 @@ var swfobject = (function() {
       s.setAttribute('type', 'text/css');
       s.setAttribute('media', m);
       dynamicStylesheet = h.appendChild(s);
-      if (ua.ie && ua.win && typeof doc.styleSheets !== UNDEF && doc.styleSheets.length > 0) {
+      if (ua.ie && ua.win && typeof doc.styleSheets !== UNDEF &&
+        doc.styleSheets.length > 0) {
         dynamicStylesheet = doc.styleSheets[doc.styleSheets.length - 1];
       }
       dynamicStylesheetMedia = m;
@@ -1414,7 +1494,8 @@ var swfobject = (function() {
       }
     } else {
       if (dynamicStylesheet && typeof doc.createTextNode !== UNDEF) {
-        dynamicStylesheet.appendChild(doc.createTextNode(sel + ' {' + decl + '}'));
+        dynamicStylesheet.appendChild(
+          doc.createTextNode(sel + ' {' + decl + '}'));
       }
     }
   }
@@ -1434,7 +1515,9 @@ var swfobject = (function() {
   function urlEncodeIfNecessary(s) {
     let regex = /[\\\"<>\.;]/;
     let hasBadChars = regex.exec(s) != null;
-    return hasBadChars && typeof encodeURIComponent !== UNDEF ? encodeURIComponent(s) : s;
+    return hasBadChars && typeof encodeURIComponent !== UNDEF
+      ? encodeURIComponent(s)
+      : s;
   }
 
   /* Release memory to avoid memory leaks caused by closures, fix hanging audio/video threads and force open sockets/NetConnections to disconnect (Internet Explorer only)
@@ -1445,7 +1528,8 @@ var swfobject = (function() {
         // remove listeners to avoid memory leaks
         let ll = listenersArr.length;
         for (let i = 0; i < ll; i++) {
-          listenersArr[i][0].detachEvent(listenersArr[i][1], listenersArr[i][2]);
+          listenersArr[i][0].detachEvent(listenersArr[i][1],
+            listenersArr[i][2]);
         }
         // cleanup dynamically embedded objects to fix audio/video threads and force open sockets and NetConnections to disconnect
         let il = objIdArr.length;
@@ -1469,7 +1553,8 @@ var swfobject = (function() {
     /* Public API
       - Reference: http://code.google.com/p/swfobject/wiki/documentation
     */
-    registerObject: function(objectIdStr, swfVersionStr, xiSwfUrlStr, callbackFn) {
+    registerObject: function(
+      objectIdStr, swfVersionStr, xiSwfUrlStr, callbackFn) {
       if (ua.w3 && objectIdStr && swfVersionStr) {
         let regObj = {};
         regObj.id = objectIdStr;
@@ -1489,9 +1574,12 @@ var swfobject = (function() {
       }
     },
 
-    embedSWF: function(swfUrlStr, replaceElemIdStr, widthStr, heightStr, swfVersionStr, xiSwfUrlStr, flashvarsObj, parObj, attObj, callbackFn) {
+    embedSWF: function(
+      swfUrlStr, replaceElemIdStr, widthStr, heightStr, swfVersionStr,
+      xiSwfUrlStr, flashvarsObj, parObj, attObj, callbackFn) {
       let callbackObj = { success: false, id: replaceElemIdStr };
-      if (ua.w3 && !(ua.wk && ua.wk < 312) && swfUrlStr && replaceElemIdStr && widthStr && heightStr && swfVersionStr) {
+      if (ua.w3 && !(ua.wk && ua.wk < 312) && swfUrlStr && replaceElemIdStr &&
+        widthStr && heightStr && swfVersionStr) {
         setVisibility(replaceElemIdStr, false);
         addDomLoadEvent(function() {
           widthStr += ''; // auto-convert to string
@@ -1591,7 +1679,8 @@ var swfobject = (function() {
         let pairs = q.split('&');
         for (let i = 0; i < pairs.length; i++) {
           if (pairs[i].substring(0, pairs[i].indexOf('=')) == param) {
-            return urlEncodeIfNecessary(pairs[i].substring((pairs[i].indexOf('=') + 1)));
+            return urlEncodeIfNecessary(
+              pairs[i].substring((pairs[i].indexOf('=') + 1)));
           }
         }
       }
