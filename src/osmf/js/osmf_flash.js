@@ -17,10 +17,10 @@ require('../../../html5-common/js/utils/constants.js');
    */
 
   let pluginPath;
-  let filename = 'osmf_flash.*\.js';
+  let filename = 'osmf_flash.*.js';
   let scripts = document.getElementsByTagName('script');
-  for (var i = 0; i < scripts.length; i++) {
-    let match = scripts[i].src.match(filename);
+  for (let id = 0; i < scripts.length; id++) {
+    let match = scripts[id].src.match(filename);
     if (match && match.length > 0) {
       pluginPath = match.input.match(/.*\//)[0];
       break;
@@ -52,7 +52,7 @@ require('../../../html5-common/js/utils/constants.js');
      * Checks whether flash player is available
      * @public
      * @method getFlashVersion
-     * @returns encoding as hds if flash version is available
+     * @returns {string} encoding as hds if flash version is available
      */
     function getFlashVersion() {
       // ie
@@ -61,10 +61,10 @@ require('../../../html5-common/js/utils/constants.js');
           let axo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash.6');
           try {
             axo.AllowScriptAccess = 'always';
-          } catch (e) {
+          } catch (exception) {
             return '6,0,0';
           }
-        } catch (e) {}
+        } catch (exception) {}
         return new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version').replace(/\D+/g, ',').match(/^,?(.+),?$/)[1];
       }
       // other browsers
