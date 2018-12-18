@@ -118,6 +118,7 @@ require('../../../html5-common/js/utils/constants.js');
       switch (javascriptCommandQueue[index][0]) {
         case OO.EVENTS.PLAY:
           element.play();
+          // eslint-disable-next-line no-undef
           hasPlayed = true;
           break;
         case OO.EVENTS.SEEK:

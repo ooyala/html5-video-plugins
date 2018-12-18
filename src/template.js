@@ -89,7 +89,7 @@ require('../html5-common/js/utils/constants.js');
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var TemplateVideoWrapper = function(domId, video) {
+  const TemplateVideoWrapper = function(domId, video) {
     let _video = video;
     let listeners = {};
 
@@ -150,7 +150,7 @@ require('../html5-common/js/utils/constants.js');
         'webkitbeginfullscreen': _.bind(raiseFullScreenBegin, this),
         'webkitendfullscreen': _.bind(raiseFullScreenEnd, this),
       };
-      _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
+      _.each(listeners, function(listener, index) { $(_video).on(index, listener); }, this);
     };
 
     /**
@@ -159,8 +159,8 @@ require('../html5-common/js/utils/constants.js');
      * @private
      * @method TemplateVideoWrapper#unsubscribeAllEvents
      */
-    var unsubscribeAllEvents = _.bind(function() {
-      _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
+    const unsubscribeAllEvents = _.bind(function() {
+      _.each(listeners, function(listener, index) { $(_video).off(index, listener); }, this);
     }, this);
 
     /**
@@ -286,7 +286,7 @@ require('../html5-common/js/utils/constants.js');
      * @returns {boolean} True if the video element is muted, false otherwise
      */
     this.isMuted = function() {
-
+      return true;
     };
 
     /**
@@ -307,6 +307,7 @@ require('../html5-common/js/utils/constants.js');
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
+      return 0;
     };
 
     /**
@@ -376,7 +377,9 @@ require('../html5-common/js/utils/constants.js');
      * @method TemplateVideoWrapper#getAvailableAudio
      * @returns {Array} - an array of all available audio tracks
      */
-    this.getAvailableAudio = function() {};
+    this.getAvailableAudio = function() {
+      return [];
+    };
 
     /**
      * ets the audio track to the ID specified by trackID
@@ -385,7 +388,9 @@ require('../html5-common/js/utils/constants.js');
      * @param {String} trackID - the ID of the audio track to activate
      * @returns {Array} - an array of all available audio tracks
      */
-    this.setAudio = function(trackID) {};
+    this.setAudio = function(trackID) {
+      return [];
+    };
 
     /**
      * Sets the stream to play back based on given stream ID. Plugin must support the
@@ -415,66 +420,67 @@ require('../html5-common/js/utils/constants.js');
      * @returns {number} The speed multiplier
      */
     this.getPlaybackSpeed = function() {
+      return 1;
     };
 
     // **********************************************************************************/
     // Example callback methods
     // **********************************************************************************/
 
-    var raisePlayEvent = function(event) {
+    const raisePlayEvent = function(event) {
       this.controller.notify(this.controller.EVENTS.PLAY, { url: event.target.src });
     };
 
-    var raisePlayingEvent = function() {
+    const raisePlayingEvent = function() {
       this.controller.notify(this.controller.EVENTS.PLAYING);
     };
 
-    var raiseEndedEvent = function() {
+    const raiseEndedEvent = function() {
       this.controller.notify(this.controller.EVENTS.ENDED);
     };
 
-    var raiseErrorEvent = function(event) {
+    const raiseErrorEvent = function(event) {
       let code = event.target.error ? event.target.error.code : -1;
       this.controller.notify(this.controller.EVENTS.ERROR, { 'errorcode': code });
     };
 
-    var raiseSeekingEvent = function() {
+    const raiseSeekingEvent = function() {
       this.controller.notify(this.controller.EVENTS.SEEKING);
     };
 
-    var raiseSeekedEvent = function() {
+    const raiseSeekedEvent = function() {
       this.controller.notify(this.controller.EVENTS.SEEKED);
     };
 
-    var raisePauseEvent = function() {
+    const raisePauseEvent = function() {
       this.controller.notify(this.controller.EVENTS.PAUSED);
     };
 
-    var raiseRatechangeEvent = function() {
+    const raiseRatechangeEvent = function() {
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     };
 
-    var raiseStalledEvent = function() {
+    const raiseStalledEvent = function() {
       this.controller.notify(this.controller.EVENTS.STALLED);
     };
 
-    var raiseVolumeEvent = function(event) {
+    const raiseVolumeEvent = function(event) {
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { 'volume': event.target.volume });
     };
 
-    var raiseWaitingEvent = function() {
+    const raiseWaitingEvent = function() {
       this.controller.notify(this.controller.EVENTS.WAITING);
     };
 
-    var raiseTimeUpdate = function(event) {
+    const raiseTimeUpdate = function(event) {
       raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
     };
 
-    var raiseDurationChange = function(event) {
+    const raiseDurationChange = function(event) {
       raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
     };
 
-    var raisePlayhead = _.bind(function(eventname, event) {
+    const raisePlayhead = _.bind(function(eventname, event) {
       this.controller.notify(eventname,
         { 'currentTime': event.target.currentTime,
           'duration': event.target.duration,
@@ -482,7 +488,7 @@ require('../html5-common/js/utils/constants.js');
           'seekRange': { 'begin': 0, 'end': 10 } });
     }, this);
 
-    var raiseProgress = function(event) {
+    const raiseProgress = function(event) {
       this.controller.notify(this.controller.EVENTS.PROGRESS,
         { 'currentTime': event.target.currentTime,
           'duration': event.target.duration,
@@ -490,20 +496,20 @@ require('../html5-common/js/utils/constants.js');
           'seekRange': { 'begin': 0, 'end': 10 } });
     };
 
-    var raiseCanPlayThrough = function() {
+    const raiseCanPlayThrough = function() {
       this.controller.notify(this.controller.EVENTS.BUFFERED);
     };
 
-    var raiseFullScreenBegin = function(event) {
+    const raiseFullScreenBegin = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
         { 'isFullScreen': true, 'paused': event.target.paused });
     };
 
-    var raiseFullScreenEnd = function(event) {
+    const raiseFullScreenEnd = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
         { 'isFullScreen': false, 'paused': event.target.paused });
     };
-
+    /* eslint-disable no-unused-vars */
     // The VTC should be notified whenever a plugin changes streams to a different bitrate or resolution.
     // Bitrate should be reported in bits per second.
     let raiseBitrateChanged = function(event) {
