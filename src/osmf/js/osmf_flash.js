@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /*
  * OSMF flash video plugin
  */
@@ -172,13 +174,11 @@ require('../../../html5-common/js/utils/constants.js');
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var OoyalaFlashVideoWrapper = function(
+  const OoyalaFlashVideoWrapper = function(
     domId, video, parentContainer, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
     this.id = domId;
-    let _parentContainer = parentContainer;
-    if (!parentContainer) _parentContainer = 'container';
 
     let _video; // reference to the current swf being acted upon.
     let listeners = {};
@@ -216,8 +216,8 @@ require('../../../html5-common/js/utils/constants.js');
     attributes.style = 'position:absolute;';
     // Combine the css object into a string for swfobject.
     if (cssFromContainer.length) {
-      for (i in cssFromContainer) {
-        attributes.style += i + ':' + cssFromContainer[i] + '; ';
+      for (let attr in cssFromContainer) {
+        attributes.style += attr + ':' + cssFromContainer[attr] + '; ';
       }
     }
     attributes.name = domId;
@@ -240,9 +240,11 @@ require('../../../html5-common/js/utils/constants.js');
 
     // Return if the Dom and JavaScript are ready.
     // We cannot predict the presence of jQuery, so use a core javascript technique here.
-    isReady = _.bind(function() {
+    this.isReady = _.bind(function() {
       if (document.readyState === 'complete') {
-        if (_video == undefined) _video = getSwf(this.id);
+        if (!_video) {
+          _video = getSwf(this.id);
+        }
         return true;
       }
     }, this);
@@ -280,8 +282,8 @@ require('../../../html5-common/js/utils/constants.js');
         'sizeChanged': _.bind(raiseSizeChanged, this),
         'fullscreenChanged': _.bind(raiseSizeChanged, this),
       };
-      _.each(listeners, function(v, i) {
-        $(_video).on(i, v);
+      _.each(listeners, function(listener, index) {
+        $(_video).on(index, listener);
       }, this);
     };
 
@@ -292,7 +294,7 @@ require('../../../html5-common/js/utils/constants.js');
      * @method OoyalaFlashVideoWrapper#unsubscribeAllEvents
      */
     this.unsubscribeAllEvents = function() {
-      _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
+      _.each(listeners, function(listener, index) { $(_video).off(index, listener); }, this);
     };
 
     /**
@@ -306,20 +308,19 @@ require('../../../html5-common/js/utils/constants.js');
      */
     this.setVideoUrl = function(url, encoding, isLive) {
       let urlChanged = false;
+      let parameters;
       newController = this.controller;
 
-      if (_currentUrl.replace(/[\?&]_=[^&]+$/, '') != url) {
+      if (_currentUrl.replace(/[?&]_=[^&]+$/, '') !== url) {
         _currentUrl = url || '';
         _readyToPlay = false;
         urlChanged = true;
         hasPlayed = false;
         loaded = false;
         firstPlay = true;
-        url = _currentUrl;
-        var parameters = { url: url, isLive: isLive };
+        parameters = { url: _currentUrl, isLive: isLive };
       }
       if (_.isEmpty(_currentUrl)) {
-        // if (!_currentUrl) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: 0 }); // 0 -> no stream
       } else {
         this.callToFlash('setVideoUrl()', parameters);
@@ -522,12 +523,11 @@ require('../../../html5-common/js/utils/constants.js');
     };
 
     // Calls a Flash method
-    this.callToFlash = function(data, dataObj) {
-      if (_video == undefined) {
+    this.callToFlash = function(data, dataObj = 'null') {
+      if (!_video) {
         javascriptCommandQueue.push([data, dataObj]);
       } else {
         if (_video.sendToActionScript) {
-          dataObj = typeof dataObj !== 'undefined' ? dataObj : 'null';
           return _video.sendToActionScript(data, dataObj, this.id);
         } else {
           if (actionscriptCommandQueue.length <= 100) {
@@ -545,56 +545,56 @@ require('../../../html5-common/js/utils/constants.js');
      * @private
      * @method OoyalaFlashVideoWrapper#onLoadStart
      */
-    var onLoadStart = function() {
+    const onLoadStart = function() {
       firstPlay = true;
       _currentUrl = this.callToFlash('getUrl');
     };
 
-    var onLoadedMetadata = function() {
+    const onLoadedMetadata = function() {
       dequeueSeek();
     };
 
-    var raisePlayEvent = function(event) {
+    const raisePlayEvent = function(event) {
       newController.notify(newController.EVENTS.PLAY,
         { url: event.eventObject.url });
     };
 
-    var raisePlayingEvent = function() {
+    const raisePlayingEvent = function() {
       newController.notify(newController.EVENTS.PLAYING);
     };
 
-    var raiseEndedEvent = function() {
+    const raiseEndedEvent = function() {
       if (videoEnded) { return; } // no double firing ended event.
       videoEnded = true;
       newController.notify(newController.EVENTS.ENDED);
     };
 
-    var raiseErrorEvent = function(event) {
+    const raiseErrorEvent = function(event) {
       let code = event.eventObject.errorCode ? event.eventObject.errorCode : -1;
       newController.notify(newController.EVENTS.ERROR, { 'errorcode': code });
     };
 
-    var raiseSeekingEvent = function() {
+    const raiseSeekingEvent = function() {
       newController.notify(newController.EVENTS.SEEKING);
     };
 
-    var raiseSeekedEvent = function() {
+    const raiseSeekedEvent = function() {
       newController.notify(newController.EVENTS.SEEKED);
     };
 
-    var raisePauseEvent = function() {
+    const raisePauseEvent = function() {
       newController.notify(newController.EVENTS.PAUSED);
     };
 
-    var raiseRatechangeEvent = function() {
+    const raiseRatechangeEvent = function() {
       newController.notify(newController.EVENTS.RATE_CHANGE);
     };
 
-    var raiseStalledEvent = function() {
+    const raiseStalledEvent = function() {
       newController.notify(newController.EVENTS.STALLED);
     };
 
-    var raiseVolumeEvent = function(event) {
+    const raiseVolumeEvent = function(event) {
       let volume = event.eventObject.volume;
       let muted = volume === 0;
       newController.notify(newController.EVENTS.VOLUME_CHANGE,
@@ -603,16 +603,16 @@ require('../../../html5-common/js/utils/constants.js');
         { muted: muted });
     };
 
-    var raiseWaitingEvent = function() {
+    const raiseWaitingEvent = function() {
       videoEnded = false;
       newController.notify(newController.EVENTS.WAITING);
     };
 
-    var raiseTimeUpdate = function(event) {
+    const raiseTimeUpdate = function(event) {
       raisePlayhead(newController.EVENTS.TIME_UPDATE, event);
     };
 
-    var raiseDurationChange = function(event) {
+    const raiseDurationChange = function(event) {
       raisePlayhead(newController.EVENTS.DURATION_CHANGE, event);
     };
 
@@ -621,7 +621,7 @@ require('../../../html5-common/js/utils/constants.js');
      * @private
      * @method OoyalaFlashVideoWrapper#raisePlayhead
      */
-    var raisePlayhead = _.bind(function(eventname, event) {
+    const raisePlayhead = _.bind(function(eventname, event) {
       newController.notify(eventname,
         {
           'currentTime': currentTime,
@@ -637,7 +637,7 @@ require('../../../html5-common/js/utils/constants.js');
      * @method OoyalaFlashVideoWrapper#raiseProgress
      * @param {object} event The event from the video
      */
-    var raiseProgress = function(event) {
+    const raiseProgress = function(event) {
       newController.notify(newController.EVENTS.PROGRESS,
         {
           'currentTime': currentTime,
@@ -653,22 +653,22 @@ require('../../../html5-common/js/utils/constants.js');
      * @method OoyalaFlashVideoWrapper#raiseCanPlayThrough
      * @param {object} event The event from the video
      */
-    var raiseCanPlayThrough = function(event) {
+    const raiseCanPlayThrough = function(event) {
       newController.notify(newController.EVENTS.BUFFERED,
         { url: event.eventObject.url });
     };
 
-    var raiseFullScreenBegin = function(event) {
+    const raiseFullScreenBegin = function(event) {
       newController.notify(newController.EVENTS.FULLSCREEN_CHANGED,
         { 'isFullScreen': true, 'paused': event.target.paused });
     };
 
-    var raiseFullScreenEnd = function(event) {
-      newController.notify(newControllerr.EVENTS.FULLSCREEN_CHANGED,
+    const raiseFullScreenEnd = function(event) {
+      newController.notify(newController.EVENTS.FULLSCREEN_CHANGED,
         { 'isFullScreen': false, 'paused': event.target.paused });
     };
 
-    var raiseBitrateChanged = function(event) {
+    const raiseBitrateChanged = function(event) {
       let vtcBitrate = {
         id: event.eventObject.id,
         width: event.eventObject.width,
@@ -678,7 +678,7 @@ require('../../../html5-common/js/utils/constants.js');
       newController.notify(newController.EVENTS.BITRATE_CHANGED, vtcBitrate);
     };
 
-    var raiseBitratesAvailable = function(event) {
+    const raiseBitratesAvailable = function(event) {
       let vtcBitrates = [{ id: 'auto', width: 0, height: 0, bitrate: 0 }];
       if (event) {
         for (let key in event.eventObject) {
@@ -697,7 +697,7 @@ require('../../../html5-common/js/utils/constants.js');
         vtcBitrates);
     };
 
-    var raiseSizeChanged = function(event) {
+    const raiseSizeChanged = function(event) {
       let assetDimension = {
         width: event.eventObject.width,
         height: event.eventObject.height,
@@ -719,7 +719,7 @@ require('../../../html5-common/js/utils/constants.js');
         captionText);
     };
 
-    call = function() {
+    const call = function() {
       OO.log('[OSMF]:JFlashBridge: Call: ', arguments);
 
       let klass = flashItems[arguments[0]];
@@ -734,25 +734,26 @@ require('../../../html5-common/js/utils/constants.js');
     // Receives a callback from Flash
     this.onCallback = function(data) {
       let eventtitle = ' ';
+      let eventData;
 
       for (let key in data) {
-        if (key == 'eventtype') {
+        if (key === 'eventtype') {
           eventtitle = data[key];
-        } else if (key == 'eventObject') {
+        } else if (key === 'eventObject') {
           eventData = data[key];
         }
       }
       if (eventData != null) {
         for (let item in eventData) {
-          if (item == 'currentTime') {
+          if (item === 'currentTime') {
             currentTime = eventData[item];
-          } else if (item == 'buffer') {
+          } else if (item === 'buffer') {
             buffer = eventData[item];
-          } else if (item == 'duration') {
+          } else if (item === 'duration') {
             totalTime = eventData[item];
-          } else if (item == 'seekRange_start') {
+          } else if (item === 'seekRange_start') {
             seekRange_start = eventData[item];
-          } else if (item == 'seekRange_end') {
+          } else if (item === 'seekRange_end') {
             seekRange_end = eventData[item];
           }
         }
@@ -760,15 +761,15 @@ require('../../../html5-common/js/utils/constants.js');
 
       switch (eventtitle) {
         case 'JSREADY':
-          if (javascriptCommandQueue.length != 0) {
-            for (var i = 0; i < javascriptCommandQueue.length; i++) {
-              this.callToFlash(javascriptCommandQueue[i][0],
-                javascriptCommandQueue[i][1]);
+          if (javascriptCommandQueue.length) {
+            for (let id = 0; id < javascriptCommandQueue.length; id++) {
+              this.callToFlash(javascriptCommandQueue[id][0],
+                javascriptCommandQueue[id][1]);
             }
           }
-          for (i = 0; i < actionscriptCommandQueue.length; i++) {
-            this.callToFlash(actionscriptCommandQueue[i][0],
-              actionscriptCommandQueue[i][1]);
+          for (let id = 0; id < actionscriptCommandQueue.length; id++) {
+            this.callToFlash(actionscriptCommandQueue[id][0],
+              actionscriptCommandQueue[id][1]);
           }
           break;
         case 'PAUSED':
@@ -792,9 +793,6 @@ require('../../../html5-common/js/utils/constants.js');
           break;
         case 'SEEKED':
           raiseSeekedEvent();
-          break;
-        case 'PAUSED':
-          raisePauseEvent();
           break;
         case 'RATE_CHANGE':
           raiseRatechangeEvent();
@@ -841,6 +839,8 @@ require('../../../html5-common/js/utils/constants.js');
         case 'ERROR':
           raiseErrorEvent(data);
           break;
+        default:
+          break;
       }
       return true;
     };
@@ -857,7 +857,7 @@ require('../../../html5-common/js/utils/constants.js');
    * @param {string} thisId the id of the swf object sought.
    * @returns {object} the object containing the desired swf.
    */
-  var getSwf = function(thisId) {
+  const getSwf = function(thisId) {
     return document.getElementsByName(thisId)[0];
   };
 
@@ -867,8 +867,11 @@ require('../../../html5-common/js/utils/constants.js');
    * @method OoyalaFlashVideoWrapper#getRandomString
    * @returns {string} A random string
    */
-  var getRandomString = function() {
-    return Math.random().toString(36).substring(7);
+  const getRandomString = function() {
+    const radix = 36;
+    const substringIndex = 7;
+
+    return Math.random().toString(radix).substring(substringIndex);
   };
 
   OO.Video.plugin(new OoyalaFlashVideoFactory());
@@ -882,8 +885,8 @@ require('../../../html5-common/js/utils/constants.js');
  * @classdesc Establishes the connection between player and the plugin
  */
 
-var swfobject = (function() {
-  let UNDEF = 'undefined';
+const swfobject = (function() {
+  const UNDEF = 'undefined';
 
   let OBJECT = 'object';
 
@@ -937,9 +940,8 @@ var swfobject = (function() {
   */
 
   let ua = (function() {
-    let w3cdom = typeof doc.getElementById !== UNDEF &&
-      typeof doc.getElementsByTagName !== UNDEF && typeof doc.createElement !==
-      UNDEF;
+    let w3cdom = typeof doc.getElementById !== 'undefined' &&
+      typeof doc.getElementsByTagName !== UNDEF && typeof doc.createElement !== UNDEF;
 
     let u = nav.userAgent.toLowerCase();
 

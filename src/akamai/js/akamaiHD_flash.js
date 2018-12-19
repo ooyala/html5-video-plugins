@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /*
  * Akamai HD flash video plugin
  */

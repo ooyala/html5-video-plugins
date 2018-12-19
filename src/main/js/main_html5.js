@@ -91,7 +91,8 @@ require('../../../html5-common/js/utils/environment.js');
      * @param {object} pluginParams An object containing all of the options set for this plugin
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, domId, controller, css, playerId, pluginParams) {
+    this.create = function(
+      parentContainer, domId, controller, css, playerId = getRandomString(), pluginParams) {
       // If the current player has reached max supported elements, do not create a new one
       if (this.maxSupportedElements > 0 && playerId &&
           currentInstances[playerId] >= this.maxSupportedElements) {
@@ -122,14 +123,11 @@ require('../../../html5-common/js/utils/environment.js');
 
         // enable inline playback for mobile
         if (pluginParams['iosPlayMode'] === 'inline') {
-          if (OO.iosMajorVersion >= 10) {
+          const iosVersion = 10;
+          if (OO.iosMajorVersion >= iosVersion) {
             video.attr('playsinline', '');
           }
         }
-      }
-
-      if (!playerId) {
-        playerId = getRandomString();
       }
 
       let element = new OoyalaVideoWrapper(domId, video[0], playerId);
@@ -167,8 +165,9 @@ require('../../../html5-common/js/utils/environment.js');
      */
     this.maxSupportedElements = (function() {
       let iosRequireSingleElement = OO.isIos;
+      const chromeVersion = 40;
       let androidRequireSingleElement = OO.isAndroid &&
-                                        (!OO.isAndroid4Plus || OO.chromeMajorVersion < 40);
+                                        (!OO.isAndroid4Plus || OO.chromeMajorVersion < chromeVersion);
       return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : -1;
     })();
   };
@@ -178,12 +177,13 @@ require('../../../html5-common/js/utils/environment.js');
    * @classdesc Player object that wraps HTML5 video tags
    * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
+   * @param {string} playerId playerId
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    * @property {string} playerId An id representing the unique player instance
    */
-  var OoyalaVideoWrapper = function(domId, video, playerId) {
+  const OoyalaVideoWrapper = function(domId, video, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
     this.audioTracks = [];
@@ -233,8 +233,9 @@ require('../../../html5-common/js/utils/environment.js');
 
     // [PBW-4000] On Android, if the chrome browser loses focus, then the stream cannot be seeked before it
     // is played again.  Detect visibility changes and delay seeks when focus is lost.
+    let watchHidden;
     if (OO.isAndroid && OO.isChrome) {
-      var watchHidden = _.bind(function(evt) {
+      const watchHidden = _.bind(function(evt) {
         if (document.hidden) {
           canSeek = false;
         }
@@ -294,7 +295,7 @@ require('../../../html5-common/js/utils/environment.js');
       };
       // events not used:
       // suspend, abort, emptied, loadeddata, resize, change, addtrack, removetrack
-      _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
+      _.each(listeners, function(listener, index) { $(_video).on(index, listener); }, this);
       // The volumechange event does not seem to fire for mute state changes when using jQuery
       // to add the event listener. It does work using the below line. We need this event to fire properly
       // or else other SDKs (such as the Freewheel ad SDK) that make use of this video element may have
@@ -308,8 +309,8 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#unsubscribeAllEvents
      */
-    var unsubscribeAllEvents = function() {
-      _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
+    const unsubscribeAllEvents = function() {
+      _.each(listeners, function(listener, index) { $(_video).off(index, listener); }, this);
       _video.removeEventListener('volumechange', raiseVolumeEvent);
     };
 
@@ -327,13 +328,13 @@ require('../../../html5-common/js/utils/environment.js');
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
       let urlChanged = false;
-      if (_currentUrl.replace(/[\?&]_=[^&]+$/, '') != url) {
+      if (_currentUrl.replace(/[?&]_=[^&]+$/, '') !== url) {
         _currentUrl = url || '';
 
-        isM3u8 = (encoding == OO.VIDEO.ENCODING.HLS ||
-          encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS ||
-          encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_HLS ||
-          encoding == OO.VIDEO.ENCODING.AUDIO_HLS
+        isM3u8 = (encoding === OO.VIDEO.ENCODING.HLS ||
+          encoding === OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS ||
+          encoding === OO.VIDEO.ENCODING.AKAMAI_HD2_HLS ||
+          encoding === OO.VIDEO.ENCODING.AUDIO_HLS
         );
         isLive = live;
         urlChanged = true;
@@ -355,7 +356,7 @@ require('../../../html5-common/js/utils/environment.js');
       return urlChanged;
     };
 
-    var resetStreamData = _.bind(function() {
+    const resetStreamData = _.bind(function() {
       this.audioTracks = [];
       playQueued = false;
       canPlay = false;
@@ -415,7 +416,8 @@ require('../../../html5-common/js/utils/environment.js');
           currentTime = 0;
         } else {
           try {
-            if (OO.isIos && OO.iosMajorVersion == 8) {
+            const iosVersion = 8;
+            if (OO.isIos && OO.iosMajorVersion === iosVersion) {
               // On iOS, wait for durationChange before setting currenttime
               $(_video).on('durationchange', _.bind(function() {
                 _video.currentTime = 0;
@@ -889,7 +891,8 @@ require('../../../html5-common/js/utils/environment.js');
         // At the time of writing iOS Safari doesn't seem to enforce same origin policy
         // for either HLS manifests/segments or VTT files. We avoid setting crossorigin
         // as a workaround for iOS 11 since it currently appears to not be needed.
-        let isIos11 = OO.isIos && OO.iosMajorVersion === 11;
+        const iosVersion = 11;
+        let isIos11 = OO.isIos && OO.iosMajorVersion === iosVersion;
 
         if (!isIos11) {
           $(_video).attr('crossorigin', crossorigin);
@@ -1001,7 +1004,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#onLoadStart
      */
-    var onLoadStart = _.bind(function() {
+    const onLoadStart = _.bind(function() {
       stopUnderflowWatcher();
       _currentUrl = _video.src;
       firstPlay = true;
@@ -1014,7 +1017,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#onLoadedMetadata
      */
-    var onLoadedMetadata = _.bind(function() {
+    const onLoadedMetadata = _.bind(function() {
       if (_video.textTracks) {
         _video.textTracks.onaddtrack = onTextTracksAddTrack;
         _video.textTracks.onchange = onTextTracksChange;
@@ -1038,7 +1041,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoFactory#onAudioChange
      * @callback OoyalaVideoFactory#raiseAudioChange
      */
-    var _onAudioChange = _.bind(function(event) {
+    const _onAudioChange = _.bind(function(event) {
       let audioTracks = this.getAvailableAudio();
       raiseAudioChange(audioTracks);
     }, this);
@@ -1049,7 +1052,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoFactory#onAudioChange
      * @fires VideoController#EVENTS.MULTI_AUDIO_CHANGE
      */
-    var raiseAudioChange = _.bind(function(audioTracks) {
+    const raiseAudioChange = _.bind(function(audioTracks) {
       // the problem here is that onchange gets triggered twice so
       // we compare old this.audioTracks with new audioTracks
       // to get updated tracks just once
@@ -1141,9 +1144,9 @@ require('../../../html5-common/js/utils/environment.js');
     let onClosedCaptionCueChange = _.bind(function(event) {
       let cueText = '';
       if (event && event.currentTarget && event.currentTarget.activeCues) {
-        for (let i = 0; i < event.currentTarget.activeCues.length; i++) {
-          if (event.currentTarget.activeCues[i].text) {
-            cueText += event.currentTarget.activeCues[i].text + '\n';
+        for (let index = 0; index < event.currentTarget.activeCues.length; index++) {
+          if (event.currentTarget.activeCues[index].text) {
+            cueText += event.currentTarget.activeCues[index].text + '\n';
           }
         }
       }
@@ -1156,11 +1159,11 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseClosedCaptionCueChanged
      * @param {string} cueText The text of the new closed caption cue. Empty string signifies no active cue.
      */
-    var raiseClosedCaptionCueChanged = _.bind(function(cueText) {
-      cueText = cueText.trim();
-      if (cueText != lastCueText) {
-        lastCueText = cueText;
-        this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueText);
+    const raiseClosedCaptionCueChanged = _.bind(function(cueText) {
+      const _cueText = cueText.trim();
+      if (_cueText !== lastCueText) {
+        lastCueText = _cueText;
+        this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, _cueText);
       }
     }, this);
 
@@ -1170,7 +1173,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseProgress
      * @param {object} event The event from the video
      */
-    var raiseProgress = _.bind(function(event) {
+    const raiseProgress = _.bind(function(event) {
       let buffer = 0;
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
@@ -1197,12 +1200,14 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseErrorEvent
      * @param {object} event The event from the video
      */
-    var raiseErrorEvent = _.bind(function(event) {
+    const raiseErrorEvent = _.bind(function(event) {
       stopUnderflowWatcher();
 
       let code = event.target.error ? event.target.error.code : -1;
       // Suppress error code 4 when raised by a video element with a null or empty src
-      if (!(code === 4 && ($(event.target).attr('src') === 'null' || $(event.target).attr('src') === ''))) {
+      const errorCode = 4;
+      if (!(code === errorCode &&
+        ($(event.target).attr('src') === 'null' || $(event.target).attr('src') === ''))) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
       }
     }, this);
@@ -1213,7 +1218,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseStalledEvent
      * @param {object} event The event from the video
      */
-    var raiseStalledEvent = _.bind(function(event) {
+    const raiseStalledEvent = _.bind(function(event) {
       // Fix multiple video tag error in iPad
       if (OO.isIpad && event.target.currentTime === 0) {
         _video.pause();
@@ -1227,7 +1232,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raiseCanPlay
      */
-    var raiseCanPlay = _.bind(function() {
+    const raiseCanPlay = _.bind(function() {
       // On firefox and iOS, at the end of an underflow the video raises 'canplay' instead of
       // 'canplaythrough'.  If that happens, raise canPlayThrough.
       if ((OO.isFirefox || OO.isIos) && waitingEventRaised) {
@@ -1241,7 +1246,8 @@ require('../../../html5-common/js/utils/environment.js');
         // the video was loaded
         dequeueSetClosedCaptions();
 
-        this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, { width: _video.videoWidth, height: _video.videoHeight });
+        this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION,
+          { width: _video.videoWidth, height: _video.videoHeight });
 
         let availableAudio = this.getAvailableAudio();
         if (availableAudio && availableAudio.length > 1) {
@@ -1256,7 +1262,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raiseCanPlayThrough
      */
-    var raiseCanPlayThrough = _.bind(function() {
+    const raiseCanPlayThrough = _.bind(function() {
       waitingEventRaised = false;
       this.controller.notify(this.controller.EVENTS.BUFFERED, { 'url': _video.currentSrc });
     }, this);
@@ -1266,7 +1272,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raisePlayingEvent
      */
-    var raisePlayingEvent = _.bind(function() {
+    const raisePlayingEvent = _.bind(function() {
       // Do not raise playback events if the video is priming
       if (isPriming) {
         return;
@@ -1309,7 +1315,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
-    var raiseWaitingEvent = _.bind(function() {
+    const raiseWaitingEvent = _.bind(function() {
       // WAITING event is not raised if no video is assigned yet
       if (_.isEmpty(_video.currentSrc)) {
         return;
@@ -1323,7 +1329,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raiseSeekingEvent
      */
-    var raiseSeekingEvent = _.bind(function() {
+    const raiseSeekingEvent = _.bind(function() {
       isSeeking = true;
 
       // Do not raise playback events if the video is priming
@@ -1339,7 +1345,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
-    var raiseSeekedEvent = _.bind(function(event) { // Firefox known issue: lack of global event.
+    const raiseSeekedEvent = _.bind(function(event) { // Firefox known issue: lack of global event.
       isSeeking = false;
 
       // After done seeking, see if any play events were received and execute them now
@@ -1381,7 +1387,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
-    var raiseEndedEvent = _.bind(function(event) {
+    const raiseEndedEvent = _.bind(function(event) {
       stopUnderflowWatcher();
       if (
         !_currentUrl || // iOS Safari will trigger an ended event when the source is cleared with an empty string
@@ -1404,7 +1410,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseDurationChange
      * @param {object} event The event from the video
      */
-    var raiseDurationChange = _.bind(function(event) {
+    const raiseDurationChange = _.bind(function(event) {
       if (!handleFailover) {
         raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
       }
@@ -1431,7 +1437,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseTimeUpdate
      * @param {object} event The event from the video
      */
-    var raiseTimeUpdate = _.bind(function(event) {
+    const raiseTimeUpdate = _.bind(function(event) {
       if (!isSeeking) {
         currentTime = _video.currentTime;
       }
@@ -1452,7 +1458,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raisePlayEvent
      * @param {object} event The event from the video
      */
-    var raisePlayEvent = _.bind(function(event) {
+    const raisePlayEvent = _.bind(function(event) {
       // Do not raise playback events if the video is priming
       if (isPriming) {
         return;
@@ -1466,7 +1472,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raisePauseEvent
      */
-    var raisePauseEvent = _.bind(function() {
+    const raisePauseEvent = _.bind(function() {
       // Do not raise playback events if the video is priming
       if (isPriming) {
         return;
@@ -1484,7 +1490,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#removeControlsAttr
      */
-    let removeControlsAttr = _.bind(function() {
+    const removeControlsAttr = _.bind(function() {
       if (OO.isIos && _video.hasAttribute('controls')) {
         _video.removeAttribute('controls');
       }
@@ -1495,7 +1501,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raiseRatechangeEvent
      */
-    var raiseRatechangeEvent = _.bind(function() {
+    const raiseRatechangeEvent = _.bind(function() {
       let playbackRate = _video ? _video.playbackRate : null;
 
       this.controller.notify(this.controller.EVENTS.PLAYBACK_RATE_CHANGE, {
@@ -1509,7 +1515,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseVolumeEvent
      * @param {object} event The event raised by the video.
      */
-    var raiseVolumeEvent = _.bind(function(event) {
+    const raiseVolumeEvent = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: event.target.volume });
       this.controller.notify(this.controller.EVENTS.MUTE_STATE_CHANGE, { muted: _video.muted });
     }, this);
@@ -1520,7 +1526,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseFullScreenBegin
      * @param {object} event The event raised by the video.
      */
-    var raiseFullScreenBegin = _.bind(function(event) {
+    const raiseFullScreenBegin = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
         { isFullScreen: true, paused: event.target.paused });
     }, this);
@@ -1531,7 +1537,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#raiseFullScreenEnd
      * @param {object} event The event raised by the video.
      */
-    var raiseFullScreenEnd = _.bind(function(event) {
+    const raiseFullScreenEnd = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
         { 'isFullScreen': false, 'paused': event.target.paused });
       removeControlsAttr();
