@@ -1565,7 +1565,7 @@ require('../../../html5-common/js/utils/environment.js');
      * Sets the mode of all text tracks to 'disabled' except for targetTrack.
      * @private
      * @method OoyalaVideoWrapper#disableTextTracksExcept
-     * @param {TextTrack} The text track which we want to exclude from the disable operation.
+     * @param {String} targetTrack The text track which we want to exclude from the disable operation.
      */
     const disableTextTracksExcept = (targetTrack) => {
       // Start by disabling all tracks, except for the one whose mode we want to set
@@ -1819,7 +1819,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#dequeuePlay
      */
-    var dequeuePlay = _.bind(function() {
+    const dequeuePlay = _.bind(function() {
       if (playQueued) {
         playQueued = false;
         this.play();
@@ -1832,7 +1832,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#executePlay
      * @param {boolean} priming True if the element is preparing for device playback
      */
-    var executePlay = _.bind(function(priming) {
+    const executePlay = _.bind(function(priming) {
       isPriming = priming;
 
       // TODO: Check if no src url is configured?
@@ -1857,7 +1857,7 @@ require('../../../html5-common/js/utils/environment.js');
      *                           function, and an end function.
      * @returns {object} The safe seek range object containing { "start": number, "end": number}
      */
-    var getSafeSeekRange = function(seekRange) {
+    const getSafeSeekRange = function(seekRange) {
       if (!seekRange || !seekRange.length || !(typeof seekRange.start === 'function') ||
           !(typeof seekRange.end === 'function')) {
         return { 'start': 0, 'end': 0 };
@@ -1874,7 +1874,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#getSafeSeekableObject
      * @returns {object?} Either the video seekable object or null
      */
-    let getSafeSeekableObject = function() {
+    const getSafeSeekableObject = function() {
       if (OO.isSafari && !canPlay) {
         // Safety against accessing seekable before SAFARI browser canPlay media
         return null;
@@ -1892,17 +1892,19 @@ require('../../../html5-common/js/utils/environment.js');
      * @param {number} duration The video's duration
      * @returns {number} The safe seek-to position
      */
-    let convertToSafeSeekTime = function(time, duration) {
+    const convertToSafeSeekTime = function(time, duration) {
       // If seeking within some threshold of the end of the stream, seek to end of stream directly
       if (duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) {
         time = duration;
       }
-
       let safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
 
       // iPad with 6.1 has an interesting bug that causes the video to break if seeking exactly to zero
-      if (OO.isIpad && safeTime < 0.1) {
-        safeTime = 0.1;
+      if (OO.isIpad) {
+        const minimumSafeTime = 0.1;
+        if (safeTime < minimumSafeTime) {
+          safeTime = minimumSafeTime;
+        }
       }
       return safeTime;
     };
@@ -1915,7 +1917,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @param {number} time The desired seek-to position
      * @returns {?number} The seek-to position, or null if seeking is not possible
      */
-    var getSafeSeekTimeIfPossible = function(_video, time) {
+    const getSafeSeekTimeIfPossible = function(_video, time) {
       if ((typeof time !== 'number') || !canSeek) {
         return null;
       }
@@ -1945,16 +1947,16 @@ require('../../../html5-common/js/utils/environment.js');
      * The return value will be constrained to valid values within the DVR window. The current playhead
      * will be returned when seekTime is not a valid, finite or positive number.
      */
-    var getSafeDvrSeekTime = function(video, seekTime) {
+    const getSafeDvrSeekTime = function(video, seekTime) {
       // Note that we set seekTime to an invalid negative value if not a number
-      seekTime = ensureNumber(seekTime, -1);
+      const _seekTime = ensureNumber(seekTime, -1);
       // When seekTime is negative or not a valid number, return the current time
       // in order to avoid seeking
-      if (seekTime < 0) {
+      if (_seekTime < 0) {
         return (video || {}).currentTime || 0;
       }
       let seekRange = getSafeSeekRange(getSafeSeekableObject());
-      let safeSeekTime = seekRange.start + seekTime;
+      let safeSeekTime = seekRange.start + _seekTime;
       // Make sure seek time isn't larger than maximum seekable value, if it is,
       // seek to maximum value instead
       safeSeekTime = Math.min(safeSeekTime, seekRange.end);
@@ -1967,7 +1969,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#queueSeek
      * @param {number} time The desired seek-to position
      */
-    var queueSeek = function(time) {
+    const queueSeek = function(time) {
       queuedSeekTime = time;
     };
 
@@ -1976,7 +1978,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#dequeueSeek
      */
-    var dequeueSeek = _.bind(function() {
+    const dequeueSeek = _.bind(function() {
       if (queuedSeekTime === null) { return; }
       let seekTime = queuedSeekTime;
       queuedSeekTime = null;
@@ -1989,7 +1991,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @method OoyalaVideoWrapper#isDvrAvailable
      * @returns {Boolean} True if DVR is available, false otherwise.
      */
-    var isDvrAvailable = function() {
+    const isDvrAvailable = function() {
       let maxTimeShift = getMaxTimeShift();
       let result = maxTimeShift !== 0;
       return result;
@@ -1999,18 +2001,19 @@ require('../../../html5-common/js/utils/environment.js');
      * Returns the current time shift offset to the live edge in seconds for DVR-enabled streams.
      * @private
      * @method OoyalaVideoWrapper#getTimeShift
+     * @param {number} currentTime currentTime
      * @returns {Number} The negative value of the current time shift offset, in seconds. Returns 0
      * if currently at the live edge.
      */
-    var getTimeShift = function(currentTime) {
+    const getTimeShift = function(currentTime) {
       if (!isLive) {
         return 0;
       }
       let timeShift = 0;
       let seekRange = getSafeSeekRange(getSafeSeekableObject());
       // If not a valid number set to seekRange.end so that timeShift equals zero
-      currentTime = ensureNumber(currentTime, seekRange.end);
-      timeShift = currentTime - seekRange.end;
+      const _currentTime = ensureNumber(currentTime, seekRange.end);
+      timeShift = _currentTime - seekRange.end;
       // Discard positive time shifts
       timeShift = Math.min(timeShift, 0);
       // Shouldn't be greater than max time shift
@@ -2026,7 +2029,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @returns {Number} The maximum amount of seconds that the current video can be seeked back
      * represented as a negative number, or zero, if DVR is not available.
      */
-    var getMaxTimeShift = function(event) {
+    const getMaxTimeShift = function() {
       if (!isLive) {
         return 0;
       }
@@ -2042,7 +2045,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#raisePlayhead
      */
-    var raisePlayhead = _.bind(function(eventname, event) {
+    const raisePlayhead = _.bind(function(eventname, event) {
       // Do not raise playback events if the video is priming
       if (isPriming) {
         return;
@@ -2096,7 +2099,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @returns {Number} The Number equivalent of value if it can be converted and is finite.
      * When value doesn't meet the criteria the function will return either defaultValue (if provided) or null.
      */
-    var ensureNumber = function(value, defaultValue) {
+    const ensureNumber = function(value, defaultValue) {
       let number;
       if (value === null || _.isArray(value)) {
         value = NaN;
@@ -2119,7 +2122,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @param {number} duration The reported duration of the video in seconds
      * @returns {number} The resolved duration of the video in seconds
      */
-    var resolveDuration = function(duration) {
+    const resolveDuration = function(duration) {
       if (duration === Infinity || isNaN(duration)) {
         return 0;
       }
@@ -2133,7 +2136,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#forceEndOnPausedIfRequired
      */
-    var forceEndOnPausedIfRequired = _.bind(function() {
+    const forceEndOnPausedIfRequired = _.bind(function() {
       if (OO.isSafari && !OO.isIos) {
         if (_video.ended) {
           console.log('VTC_OO: Force through the end of stream for Safari', _video.currentSrc,
@@ -2150,15 +2153,16 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#forceEndOnTimeupdateIfRequired
      */
-    var forceEndOnTimeupdateIfRequired = _.bind(function(event) {
+    const forceEndOnTimeupdateIfRequired = _.bind(function(event) {
       if (isM3u8) {
         let durationResolved = resolveDuration(event.target.duration);
         let durationInt = Math.floor(durationResolved);
-        if ((_video.currentTime == durationResolved) && (durationResolved > durationInt)) {
-          console.log('VTC_OO: manually triggering end of stream for m3u8', _currentUrl, durationResolved,
-            _video.currentTime);
+        if ((_video.currentTime === durationResolved) && (durationResolved > durationInt)) {
+          console.log('VTC_OO: manually triggering end of stream for m3u8',
+            _currentUrl, durationResolved, _video.currentTime);
           _.defer(raiseEndedEvent);
-        } else if (OO.isSafari && !OO.isIos && isSeeking === true && !_video.ended && Math.round(_video.currentTime) === Math.round(_video.duration)) {
+        } else if (OO.isSafari && !OO.isIos && isSeeking === true &&
+          !_video.ended && Math.round(_video.currentTime) === Math.round(_video.duration)) {
           this.controller.notify(this.controller.EVENTS.SEEKED);
           videoEnded = true;
           initialTime.value = 0;
@@ -2175,7 +2179,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#startUnderflowWatcher
      */
-    var startUnderflowWatcher = _.bind(function() {
+    const startUnderflowWatcher = _.bind(function() {
       if ((OO.isChrome || OO.isIos || OO.isIE11Plus || OO.isEdge) && !underflowWatcherTimer) {
         let watchInterval = 300;
         underflowWatcherTimer = setInterval(underflowWatcher, watchInterval);
@@ -2188,7 +2192,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#underflowWatcher
      */
-    var underflowWatcher = _.bind(function() {
+    const underflowWatcher = _.bind(function() {
       if (!hasPlayed) {
         return;
       }
@@ -2197,7 +2201,7 @@ require('../../../html5-common/js/utils/environment.js');
         return stopUnderflowWatcher();
       }
 
-      if (!_video.paused && _video.currentTime == watcherTime) {
+      if (!_video.paused && _video.currentTime === watcherTime) {
         if (!waitingEventRaised) {
           raiseWaitingEvent();
         }
@@ -2214,7 +2218,7 @@ require('../../../html5-common/js/utils/environment.js');
      * @private
      * @method OoyalaVideoWrapper#stopUnderflowWatcher
      */
-    var stopUnderflowWatcher = _.bind(function() {
+    const stopUnderflowWatcher = _.bind(function() {
       clearInterval(underflowWatcherTimer);
       underflowWatcherTimer = null;
       waitingEventRaised = false;
@@ -2228,8 +2232,10 @@ require('../../../html5-common/js/utils/environment.js');
    * @method getRandomString
    * @returns {string} A random string
    */
-  var getRandomString = function() {
-    return Math.random().toString(36).substring(7);
+  const getRandomString = function() {
+    const radix = 36;
+    const substringIndex = 7;
+    return Math.random().toString(radix).substring(substringIndex);
   };
 
   OO.Video.plugin(new OoyalaVideoFactory());
