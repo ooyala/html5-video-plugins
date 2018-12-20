@@ -211,6 +211,7 @@ require('../../../html5-common/js/utils/environment.js');
     let currentVolumeSet = 0;
     let isM3u8 = false;
     let firstPlay = true;
+    // eslint-disable-next-line
     let videoDimension = { height: 0, width: 0 };
     let initialTime = { value: 0, reached: true };
     let canSeek = true;
@@ -1555,7 +1556,7 @@ require('../../../html5-common/js/utils/environment.js');
      */
     const dequeueSetClosedCaptions = _.bind(function() {
       let queuedArguments;
-
+      // eslint-disable-next-line
       while (queuedArguments = setClosedCaptionsQueue.shift()) {
         executeSetClosedCaptions.apply(this, queuedArguments);
       }
@@ -1895,6 +1896,7 @@ require('../../../html5-common/js/utils/environment.js');
     const convertToSafeSeekTime = function(time, duration) {
       // If seeking within some threshold of the end of the stream, seek to end of stream directly
       if (duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) {
+        // eslint-disable-next-line
         time = duration;
       }
       let safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
@@ -2102,6 +2104,7 @@ require('../../../html5-common/js/utils/environment.js');
     const ensureNumber = function(value, defaultValue) {
       let number;
       if (value === null || _.isArray(value)) {
+        // eslint-disable-next-line
         value = NaN;
       }
       if (_.isNumber(value)) {
