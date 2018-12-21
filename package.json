@@ -11,8 +11,9 @@
   "scripts": {
     "build": "gulp",
     "test": "jest",
-    "start": "webpack --mode development",
-    "start:prod": "webpack --mode production"
+    "build:future": "webpack --mode development",
+    "build-prod": "webpack --mode production",
+    "start": "webpack-dev-server"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.51",
@@ -40,6 +41,7 @@
     "vinyl-source-stream": "^2.0.0",
     "webpack": "^4.27.1",
     "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.1.10",
     "webpack-shell-plugin": "^0.5.0"
   },
   "repository": {

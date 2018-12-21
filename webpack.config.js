@@ -18,5 +18,7 @@ module.exports = {
     })
   ],
   devtool: 'sourcemap',
-  watch: true
+  devServer: {
+    compress: true
+  }
 }
