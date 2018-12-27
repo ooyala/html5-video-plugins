@@ -4,9 +4,9 @@
  * version: 0.1
  */
 
-require("../html5-common/js/utils/InitModules/InitOO.js");
-require("../html5-common/js/utils/InitModules/InitOOUnderscore.js");
-require("../html5-common/js/utils/constants.js");
+require('../html5-common/js/utils/InitModules/InitOO.js');
+require('../html5-common/js/utils/InitModules/InitOOUnderscore.js');
+require('../html5-common/js/utils/constants.js');
 
 (function(_, $) {
   /**
@@ -17,11 +17,11 @@ require("../html5-common/js/utils/constants.js");
    * @property {object} features An array of supported features (ex. OO.VIDEO.FEATURE.CLOSED_CAPTIONS)
    * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
    */
-  var TemplateVideoFactory = function() {
-    this.name = "templateVideoTech";
+  let TemplateVideoFactory = function() {
+    this.name = 'templateVideoTech';
     this.encodings = [OO.VIDEO.ENCODING.HLS, OO.VIDEO.ENCODING.MP4];
     this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-                      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
+      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     /**
@@ -36,14 +36,14 @@ require("../html5-common/js/utils/constants.js");
      * @returns {object} A reference to the wrapper for the newly created element
      */
     this.create = function(parentContainer, domId, ooyalaVideoController, css, playerId) {
-      var element = {};
-      var wrapper = new TemplateVideoWrapper(domId, element);
+      let element = {};
+      let wrapper = new TemplateVideoWrapper(domId, element);
       wrapper.controller = ooyalaVideoController;
       wrapper.subscribeAllEvents();
       return wrapper;
     };
 
-   /**
+    /**
     * Creates a video player instance using TemplateVideoWrapper which wraps and existing video element.
     * This function is only needed if the feature OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_TAKE is supported.
     * @public
@@ -54,8 +54,8 @@ require("../html5-common/js/utils/constants.js");
     * @returns {object} A reference to the wrapper for the video element
     */
     this.createFromExisting = function(domId, ooyalaVideoController, playerId) {
-      var sharedVideoElement = $("#" + domId)[0];
-      var wrapper = new TemplateVideoWrapper(domId, sharedVideoElement);
+      let sharedVideoElement = $('#' + domId)[0];
+      let wrapper = new TemplateVideoWrapper(domId, sharedVideoElement);
       wrapper.controller = ooyalaVideoController;
       wrapper.subscribeAllEvents();
       return wrapper;
@@ -89,9 +89,9 @@ require("../html5-common/js/utils/constants.js");
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    */
-  var TemplateVideoWrapper = function(domId, video) {
-    var _video = video;
-    var listeners = {};
+  const TemplateVideoWrapper = function(domId, video) {
+    let _video = video;
+    let listeners = {};
 
     this.controller = {};
     this.disableNativeSeek = false;
@@ -131,26 +131,26 @@ require("../html5-common/js/utils/constants.js");
      * @method TemplateVideoWrapper#subscribeAllEvents
      */
     this.subscribeAllEvents = function() {
-      listeners = { "play": _.bind(raisePlayEvent, this),
-                    "playing": _.bind(raisePlayingEvent, this),
-                    "ended": _.bind(raiseEndedEvent, this),
-                    "error": _.bind(raiseErrorEvent, this),
-                    "seeking": _.bind(raiseSeekingEvent, this),
-                    "seeked": _.bind(raiseSeekedEvent, this),
-                    "pause": _.bind(raisePauseEvent, this),
-                    "ratechange": _.bind(raiseRatechangeEvent, this),
-                    "stalled": _.bind(raiseStalledEvent, this),
-                    "volumechange": _.bind(raiseVolumeEvent, this),
-                    "volumechangeNew": _.bind(raiseVolumeEvent, this),
-                    "waiting": _.bind(raiseWaitingEvent, this),
-                    "timeupdate": _.bind(raiseTimeUpdate, this),
-                    "durationchange": _.bind(raiseDurationChange, this),
-                    "progress": _.bind(raiseProgress, this),
-                    "canplaythrough": _.bind(raiseCanPlayThrough, this),
-                    "webkitbeginfullscreen": _.bind(raiseFullScreenBegin, this),
-                    "webkitendfullscreen": _.bind(raiseFullScreenEnd, this)
-                  };
-      _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
+      listeners = { 'play': _.bind(raisePlayEvent, this),
+        'playing': _.bind(raisePlayingEvent, this),
+        'ended': _.bind(raiseEndedEvent, this),
+        'error': _.bind(raiseErrorEvent, this),
+        'seeking': _.bind(raiseSeekingEvent, this),
+        'seeked': _.bind(raiseSeekedEvent, this),
+        'pause': _.bind(raisePauseEvent, this),
+        'ratechange': _.bind(raiseRatechangeEvent, this),
+        'stalled': _.bind(raiseStalledEvent, this),
+        'volumechange': _.bind(raiseVolumeEvent, this),
+        'volumechangeNew': _.bind(raiseVolumeEvent, this),
+        'waiting': _.bind(raiseWaitingEvent, this),
+        'timeupdate': _.bind(raiseTimeUpdate, this),
+        'durationchange': _.bind(raiseDurationChange, this),
+        'progress': _.bind(raiseProgress, this),
+        'canplaythrough': _.bind(raiseCanPlayThrough, this),
+        'webkitbeginfullscreen': _.bind(raiseFullScreenBegin, this),
+        'webkitendfullscreen': _.bind(raiseFullScreenEnd, this),
+      };
+      _.each(listeners, function(listener, index) { $(_video).on(index, listener); }, this);
     };
 
     /**
@@ -159,8 +159,8 @@ require("../html5-common/js/utils/constants.js");
      * @private
      * @method TemplateVideoWrapper#unsubscribeAllEvents
      */
-    var unsubscribeAllEvents = _.bind(function() {
-      _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
+    const unsubscribeAllEvents = _.bind(function() {
+      _.each(listeners, function(listener, index) { $(_video).off(index, listener); }, this);
     }, this);
 
     /**
@@ -286,7 +286,7 @@ require("../html5-common/js/utils/constants.js");
      * @returns {boolean} True if the video element is muted, false otherwise
      */
     this.isMuted = function() {
-
+      return true;
     };
 
     /**
@@ -307,6 +307,7 @@ require("../html5-common/js/utils/constants.js");
      * @returns {number} The current time position of the video (seconds)
      */
     this.getCurrentTime = function() {
+      return 0;
     };
 
     /**
@@ -376,7 +377,9 @@ require("../html5-common/js/utils/constants.js");
      * @method TemplateVideoWrapper#getAvailableAudio
      * @returns {Array} - an array of all available audio tracks
      */
-    this.getAvailableAudio = function() {};
+    this.getAvailableAudio = function() {
+      return [];
+    };
 
     /**
      * ets the audio track to the ID specified by trackID
@@ -385,7 +388,9 @@ require("../html5-common/js/utils/constants.js");
      * @param {String} trackID - the ID of the audio track to activate
      * @returns {Array} - an array of all available audio tracks
      */
-    this.setAudio = function(trackID) {};
+    this.setAudio = function(trackID) {
+      return [];
+    };
 
     /**
      * Sets the stream to play back based on given stream ID. Plugin must support the
@@ -415,113 +420,114 @@ require("../html5-common/js/utils/constants.js");
      * @returns {number} The speed multiplier
      */
     this.getPlaybackSpeed = function() {
+      return 1;
     };
 
     // **********************************************************************************/
     // Example callback methods
     // **********************************************************************************/
 
-    var raisePlayEvent = function(event) {
+    const raisePlayEvent = function(event) {
       this.controller.notify(this.controller.EVENTS.PLAY, { url: event.target.src });
     };
 
-    var raisePlayingEvent = function() {
+    const raisePlayingEvent = function() {
       this.controller.notify(this.controller.EVENTS.PLAYING);
     };
 
-    var raiseEndedEvent = function() {
+    const raiseEndedEvent = function() {
       this.controller.notify(this.controller.EVENTS.ENDED);
     };
 
-    var raiseErrorEvent = function(event) {
-      var code = event.target.error ? event.target.error.code : -1;
-      this.controller.notify(this.controller.EVENTS.ERROR, { "errorcode" : code });
+    const raiseErrorEvent = function(event) {
+      let code = event.target.error ? event.target.error.code : -1;
+      this.controller.notify(this.controller.EVENTS.ERROR, { 'errorcode': code });
     };
 
-    var raiseSeekingEvent = function() {
+    const raiseSeekingEvent = function() {
       this.controller.notify(this.controller.EVENTS.SEEKING);
     };
 
-    var raiseSeekedEvent = function() {
+    const raiseSeekedEvent = function() {
       this.controller.notify(this.controller.EVENTS.SEEKED);
     };
 
-    var raisePauseEvent = function() {
+    const raisePauseEvent = function() {
       this.controller.notify(this.controller.EVENTS.PAUSED);
     };
 
-    var raiseRatechangeEvent = function() {
+    const raiseRatechangeEvent = function() {
       this.controller.notify(this.controller.EVENTS.RATE_CHANGE);
     };
 
-    var raiseStalledEvent = function() {
+    const raiseStalledEvent = function() {
       this.controller.notify(this.controller.EVENTS.STALLED);
     };
 
-    var raiseVolumeEvent = function(event) {
-      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { "volume" : event.target.volume });
+    const raiseVolumeEvent = function(event) {
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { 'volume': event.target.volume });
     };
 
-    var raiseWaitingEvent = function() {
+    const raiseWaitingEvent = function() {
       this.controller.notify(this.controller.EVENTS.WAITING);
     };
 
-    var raiseTimeUpdate = function(event) {
+    const raiseTimeUpdate = function(event) {
       raisePlayhead(this.controller.EVENTS.TIME_UPDATE, event);
     };
 
-    var raiseDurationChange = function(event) {
+    const raiseDurationChange = function(event) {
       raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
     };
 
-    var raisePlayhead = _.bind(function(eventname, event) {
+    const raisePlayhead = _.bind(function(eventname, event) {
       this.controller.notify(eventname,
-                             { "currentTime" : event.target.currentTime,
-                               "duration" : event.target.duration,
-                               "buffer" : 10,
-                               "seekRange" : { "begin" : 0, "end" : 10 } });
+        { 'currentTime': event.target.currentTime,
+          'duration': event.target.duration,
+          'buffer': 10,
+          'seekRange': { 'begin': 0, 'end': 10 } });
     }, this);
 
-    var raiseProgress = function(event) {
+    const raiseProgress = function(event) {
       this.controller.notify(this.controller.EVENTS.PROGRESS,
-                             { "currentTime": event.target.currentTime,
-                               "duration": event.target.duration,
-                               "buffer": 10,
-                               "seekRange": { "begin": 0, "end": 10 } });
+        { 'currentTime': event.target.currentTime,
+          'duration': event.target.duration,
+          'buffer': 10,
+          'seekRange': { 'begin': 0, 'end': 10 } });
     };
 
-    var raiseCanPlayThrough = function() {
+    const raiseCanPlayThrough = function() {
       this.controller.notify(this.controller.EVENTS.BUFFERED);
     };
 
-    var raiseFullScreenBegin = function(event) {
+    const raiseFullScreenBegin = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen" : true, "paused" : event.target.paused });
+        { 'isFullScreen': true, 'paused': event.target.paused });
     };
 
-    var raiseFullScreenEnd = function(event) {
+    const raiseFullScreenEnd = function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen" : false, "paused" : event.target.paused });
+        { 'isFullScreen': false, 'paused': event.target.paused });
     };
-
+    /* eslint-disable no-unused-vars */
     // The VTC should be notified whenever a plugin changes streams to a different bitrate or resolution.
     // Bitrate should be reported in bits per second.
-    var raiseBitrateChanged = function(event) {
+    let raiseBitrateChanged = function(event) {
       this.controller.notify(this.controller.EVENTS.BITRATE_CHANGED,
-                             {"id": "medium", "height": 1080, "width": 1920, "bitrate": 7500000});
+        { 'id': 'medium', 'height': 1080, 'width': 1920, 'bitrate': 7500000 });
     };
 
     // Plugin must support the BITRATE_CONTROL feature notify the controller of this event.
     // Bitrate should be reported in bits per second.
-    var raiseBitratesAvailable = function(event) {
+    let raiseBitratesAvailable = function(event) {
       this.controller.notify(this.controller.EVENTS.BITRATES_AVAILABLE,
-                             [{"id": "low", "height": 1080, "width": 1920, "bitrate": 3750000},
-                              {"id": "medium", "height": 1080, "width": 1920, "bitrate": 7500000},
-                              {"id": "high","height": 1080, "width": 1920, "bitrate": 15000000}]);
+        [{ 'id': 'low', 'height': 1080, 'width': 1920, 'bitrate': 3750000 },
+          { 'id': 'medium', 'height': 1080, 'width': 1920, 'bitrate': 7500000 },
+          { 'id': 'high', 'height': 1080, 'width': 1920, 'bitrate': 15000000 }]);
     };
 
     // The VTC should be notified with new cue text whenever a plugin closed caption cue changes.
-    var raiseClosedCaptionCueChanged = function(cueText) {
+    let raiseClosedCaptionCueChanged = function(cueText) {
       this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueText);
     };
   };

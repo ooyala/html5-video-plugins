@@ -13,7 +13,7 @@ const CONSTANTS = {
       DESCRIPTIONS: 'descriptions',
       CHAPTERS: 'chapters',
       METADATA: 'metadata',
-    }
+    },
   },
 
 };

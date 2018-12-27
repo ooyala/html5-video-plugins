@@ -3,20 +3,20 @@
  * version: 0.1
  */
 
-require("../../../html5-common/js/utils/InitModules/InitOO.js");
-require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
-require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
-require("../../../html5-common/js/utils/constants.js");
-require("../../../html5-common/js/utils/utils.js");
-require("../../../html5-common/js/utils/environment.js");
+import TextTrackMap from './text_track/text_track_map';
+import TextTrackHelper from './text_track/text_track_helper';
+import CONSTANTS from './constants/constants';
 
-import TextTrackMap from "./text_track/text_track_map";
-import TextTrackHelper from "./text_track/text_track_helper";
-import CONSTANTS from "./constants/constants";
+require('../../../html5-common/js/utils/InitModules/InitOO.js');
+require('../../../html5-common/js/utils/InitModules/InitOOUnderscore.js');
+require('../../../html5-common/js/utils/InitModules/InitOOHazmat.js');
+require('../../../html5-common/js/utils/constants.js');
+require('../../../html5-common/js/utils/utils.js');
+require('../../../html5-common/js/utils/environment.js');
 
 (function(_, $) {
-  var pluginName = "ooyalaHtml5VideoTech";
-  var currentInstances = {};
+  let pluginName = 'ooyalaHtml5VideoTech';
+  let currentInstances = {};
 
   /**
    * @class OoyalaVideoFactory
@@ -26,37 +26,37 @@ import CONSTANTS from "./constants/constants";
    * @property {object} features An array of supported features (ex. OO.VIDEO.FEATURE.CLOSED_CAPTIONS)
    * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
    */
-  var OoyalaVideoFactory = function() {
+  let OoyalaVideoFactory = function() {
     this.name = pluginName;
 
     this.features = [ OO.VIDEO.FEATURE.CLOSED_CAPTIONS,
-                      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
+      OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
 
     // Determine supported encodings
-    var getSupportedEncodings = function() {
-      var list = [];
-      var videoElement = document.createElement("video");
+    let getSupportedEncodings = function() {
+      let list = [];
+      let videoElement = document.createElement('video');
 
-      if (typeof videoElement.canPlayType === "function") {
-        if (!!videoElement.canPlayType("video/mp4")) {
+      if (typeof videoElement.canPlayType === 'function') {
+        if (videoElement.canPlayType('video/mp4')) {
           list.push(OO.VIDEO.ENCODING.MP4);
         }
 
-        if (!!videoElement.canPlayType("audio/ogg")) {
+        if (videoElement.canPlayType('audio/ogg')) {
           list.push(OO.VIDEO.ENCODING.AUDIO_OGG);
         }
 
-        if (!!videoElement.canPlayType("audio/x-m4a")) {
+        if (videoElement.canPlayType('audio/x-m4a')) {
           list.push(OO.VIDEO.ENCODING.AUDIO_M4A);
         }
 
-        if (!!videoElement.canPlayType("video/webm")) {
+        if (videoElement.canPlayType('video/webm')) {
           list.push(OO.VIDEO.ENCODING.WEBM);
         }
 
-        if ((!!videoElement.canPlayType("application/vnd.apple.mpegurl") ||
-             !!videoElement.canPlayType("application/x-mpegURL")) &&
+        if ((!!videoElement.canPlayType('application/vnd.apple.mpegurl') ||
+             !!videoElement.canPlayType('application/x-mpegURL')) &&
             !OO.isSmartTV && !OO.isRimDevice &&
             (!OO.isMacOs || OO.isMacOsLionOrLater)) {
           // 2012 models of Samsung and LG smart TV's do not support HLS even if reported
@@ -73,7 +73,6 @@ import CONSTANTS from "./constants/constants";
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_HLS);
           list.push(OO.VIDEO.ENCODING.AUDIO_HLS);
-
         }
       }
       return list;
@@ -92,25 +91,26 @@ import CONSTANTS from "./constants/constants";
      * @param {object} pluginParams An object containing all of the options set for this plugin
      * @returns {object} A reference to the wrapper for the newly created element
      */
-    this.create = function(parentContainer, domId, controller, css, playerId, pluginParams) {
+    this.create = function(
+      parentContainer, domId, controller, css, playerId = getRandomString(), pluginParams) {
       // If the current player has reached max supported elements, do not create a new one
       if (this.maxSupportedElements > 0 && playerId &&
           currentInstances[playerId] >= this.maxSupportedElements) {
         return;
       }
 
-      var video = $("<video>");
-      video.attr("class", "video");
-      video.attr("id", domId);
+      let video = $('<video>');
+      video.attr('class', 'video');
+      video.attr('id', domId);
 
       // [PBW-5470] On Safari, when preload is set to 'none' and the user switches to a
       // different tab while the video is about to auto play, the browser stops playback but
       // doesn't fire a 'pause' event, which causes the player to get stuck in 'buffering' state.
       // Setting preload to 'metadata' (or 'auto') allows Safari to auto resume when the tab is refocused.
       if (OO.isSafari && !OO.isIos) {
-        video.attr("preload", "metadata");
+        video.attr('preload', 'metadata');
       } else {
-        video.attr("preload", "none");
+        video.attr('preload', 'none');
       }
 
       video.css(css);
@@ -119,21 +119,18 @@ import CONSTANTS from "./constants/constants";
         // enable airplay for iOS
         // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
         //
-        video.attr("x-webkit-airplay", "allow");
+        video.attr('x-webkit-airplay', 'allow');
 
-        //enable inline playback for mobile
-        if (pluginParams["iosPlayMode"] === "inline") {
-          if (OO.iosMajorVersion >= 10) {
+        // enable inline playback for mobile
+        if (pluginParams['iosPlayMode'] === 'inline') {
+          const iosVersion = 10;
+          if (OO.iosMajorVersion >= iosVersion) {
             video.attr('playsinline', '');
           }
         }
       }
 
-      if (!playerId) {
-        playerId = getRandomString();
-      }
-
-      var element = new OoyalaVideoWrapper(domId, video[0], playerId);
+      let element = new OoyalaVideoWrapper(domId, video[0], playerId);
       if (currentInstances[playerId] && currentInstances[playerId] >= 0) {
         currentInstances[playerId]++;
       } else {
@@ -167,9 +164,10 @@ import CONSTANTS from "./constants/constants";
      * @property OoyalaVideoFactory#maxSupportedElements
      */
     this.maxSupportedElements = (function() {
-      var iosRequireSingleElement = OO.isIos;
-      var androidRequireSingleElement = OO.isAndroid &&
-                                        (!OO.isAndroid4Plus || OO.chromeMajorVersion < 40);
+      let iosRequireSingleElement = OO.isIos;
+      const chromeVersion = 40;
+      let androidRequireSingleElement = OO.isAndroid &&
+                                        (!OO.isAndroid4Plus || OO.chromeMajorVersion < chromeVersion);
       return (iosRequireSingleElement || androidRequireSingleElement) ? 1 : -1;
     })();
   };
@@ -179,47 +177,49 @@ import CONSTANTS from "./constants/constants";
    * @classdesc Player object that wraps HTML5 video tags
    * @param {string} domId The dom id of the video player element
    * @param {object} video The core video object to wrap
+   * @param {string} playerId playerId
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
    * @property {string} playerId An id representing the unique player instance
    */
-  var OoyalaVideoWrapper = function(domId, video, playerId) {
+  const OoyalaVideoWrapper = function(domId, video, playerId) {
     this.controller = {};
     this.disableNativeSeek = false;
     this.audioTracks = [];
 
-    var _video = video;
-    var _playerId = playerId;
-    var _currentUrl = '';
-    var videoEnded = false;
-    var listeners = {};
-    var loaded = false;
-    var canPlay = false;
-    var hasPlayed = false;
-    var queuedSeekTime = null;
-    var playQueued = false;
-    var hasStartedPlaying = false;
-    var pauseOnPlaying = false;
-    var ignoreFirstPlayingEvent = false;
-    var isSeeking = false;
-    var isWrapperSeeking = false;
-    var wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
-    var handleFailover = false;
-    var failoverPlayheadTime = 0;
-    var currentTime = 0;
-    var currentTimeShift = 0;
-    var currentVolumeSet = 0;
-    var isM3u8 = false;
-    var firstPlay = true;
-    var videoDimension = {height: 0, width: 0};
-    var initialTime = { value: 0, reached: true };
-    var canSeek = true;
-    var isPriming = false;
-    var isLive = false;
-    var lastCueText = null;
-    var originalPreloadValue = $(_video).attr("preload") || "none";
-    var currentPlaybackSpeed = 1.0;
+    let _video = video;
+    let _playerId = playerId;
+    let _currentUrl = '';
+    let videoEnded = false;
+    let listeners = {};
+    let loaded = false;
+    let canPlay = false;
+    let hasPlayed = false;
+    let queuedSeekTime = null;
+    let playQueued = false;
+    let hasStartedPlaying = false;
+    let pauseOnPlaying = false;
+    let ignoreFirstPlayingEvent = false;
+    let isSeeking = false;
+    let isWrapperSeeking = false;
+    let wasPausedBeforePlaying = false; // "playing" here refers to the "playing" event
+    let handleFailover = false;
+    let failoverPlayheadTime = 0;
+    let currentTime = 0;
+    let currentTimeShift = 0;
+    let currentVolumeSet = 0;
+    let isM3u8 = false;
+    let firstPlay = true;
+    // eslint-disable-next-line
+    let videoDimension = { height: 0, width: 0 };
+    let initialTime = { value: 0, reached: true };
+    let canSeek = true;
+    let isPriming = false;
+    let isLive = false;
+    let lastCueText = null;
+    let originalPreloadValue = $(_video).attr('preload') || 'none';
+    let currentPlaybackSpeed = 1.0;
 
     let currentCCKey = '';
     let setClosedCaptionsQueue = [];
@@ -228,19 +228,20 @@ import CONSTANTS from "./constants/constants";
     const textTrackHelper = new TextTrackHelper(_video);
 
     // Watch for underflow on Chrome
-    var underflowWatcherTimer = null;
-    var waitingEventRaised = false;
-    var watcherTime = -1;
+    let underflowWatcherTimer = null;
+    let waitingEventRaised = false;
+    let watcherTime = -1;
 
     // [PBW-4000] On Android, if the chrome browser loses focus, then the stream cannot be seeked before it
     // is played again.  Detect visibility changes and delay seeks when focus is lost.
+    let watchHidden;
     if (OO.isAndroid && OO.isChrome) {
-      var watchHidden = _.bind(function(evt) {
+      const watchHidden = _.bind(function(evt) {
         if (document.hidden) {
           canSeek = false;
         }
       }, this);
-      document.addEventListener("visibilitychange", watchHidden);
+      document.addEventListener('visibilitychange', watchHidden);
     }
 
     /************************************************************************************/
@@ -253,7 +254,7 @@ import CONSTANTS from "./constants/constants";
      */
     this.sharedElementGive = function() {
       unsubscribeAllEvents();
-      _currentUrl = "";
+      _currentUrl = '';
     };
 
     /**
@@ -272,30 +273,30 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#subscribeAllEvents
      */
     this.subscribeAllEvents = function() {
-      listeners = { "loadstart": onLoadStart,
-                    "loadedmetadata": onLoadedMetadata,
-                    "progress": raiseProgress,
-                    "error": raiseErrorEvent,
-                    "stalled": raiseStalledEvent,
-                    "canplay": raiseCanPlay,
-                    "canplaythrough": raiseCanPlayThrough,
-                    "playing": raisePlayingEvent,
-                    "waiting": raiseWaitingEvent,
-                    "seeking": raiseSeekingEvent,
-                    "seeked": raiseSeekedEvent,
-                    "ended": raiseEndedEvent,
-                    "durationchange": raiseDurationChange,
-                    "timeupdate": raiseTimeUpdate,
-                    "play": raisePlayEvent,
-                    "pause": raisePauseEvent,
-                    "ratechange": raiseRatechangeEvent,
-                        // ios webkit browser fullscreen events
-                    "webkitbeginfullscreen": raiseFullScreenBegin,
-                    "webkitendfullscreen": raiseFullScreenEnd
-                  };
+      listeners = { 'loadstart': onLoadStart,
+        'loadedmetadata': onLoadedMetadata,
+        'progress': raiseProgress,
+        'error': raiseErrorEvent,
+        'stalled': raiseStalledEvent,
+        'canplay': raiseCanPlay,
+        'canplaythrough': raiseCanPlayThrough,
+        'playing': raisePlayingEvent,
+        'waiting': raiseWaitingEvent,
+        'seeking': raiseSeekingEvent,
+        'seeked': raiseSeekedEvent,
+        'ended': raiseEndedEvent,
+        'durationchange': raiseDurationChange,
+        'timeupdate': raiseTimeUpdate,
+        'play': raisePlayEvent,
+        'pause': raisePauseEvent,
+        'ratechange': raiseRatechangeEvent,
+        // ios webkit browser fullscreen events
+        'webkitbeginfullscreen': raiseFullScreenBegin,
+        'webkitendfullscreen': raiseFullScreenEnd,
+      };
       // events not used:
       // suspend, abort, emptied, loadeddata, resize, change, addtrack, removetrack
-      _.each(listeners, function(v, i) { $(_video).on(i, v); }, this);
+      _.each(listeners, function(listener, index) { $(_video).on(index, listener); }, this);
       // The volumechange event does not seem to fire for mute state changes when using jQuery
       // to add the event listener. It does work using the below line. We need this event to fire properly
       // or else other SDKs (such as the Freewheel ad SDK) that make use of this video element may have
@@ -309,8 +310,8 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#unsubscribeAllEvents
      */
-    var unsubscribeAllEvents = function() {
-      _.each(listeners, function(v, i) { $(_video).off(i, v); }, this);
+    const unsubscribeAllEvents = function() {
+      _.each(listeners, function(listener, index) { $(_video).off(index, listener); }, this);
       _video.removeEventListener('volumechange', raiseVolumeEvent);
     };
 
@@ -327,21 +328,21 @@ import CONSTANTS from "./constants/constants";
     this.setVideoUrl = function(url, encoding, live) {
       // check if we actually need to change the URL on video tag
       // compare URLs but make sure to strip out the trailing cache buster
-      var urlChanged = false;
-      if (_currentUrl.replace(/[\?&]_=[^&]+$/,'') != url) {
-        _currentUrl = url || "";
+      let urlChanged = false;
+      if (_currentUrl.replace(/[?&]_=[^&]+$/, '') !== url) {
+        _currentUrl = url || '';
 
-        isM3u8 = (encoding == OO.VIDEO.ENCODING.HLS ||
-          encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS ||
-          encoding == OO.VIDEO.ENCODING.AKAMAI_HD2_HLS ||
-          encoding == OO.VIDEO.ENCODING.AUDIO_HLS
+        isM3u8 = (encoding === OO.VIDEO.ENCODING.HLS ||
+          encoding === OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS ||
+          encoding === OO.VIDEO.ENCODING.AKAMAI_HD2_HLS ||
+          encoding === OO.VIDEO.ENCODING.AUDIO_HLS
         );
         isLive = live;
         urlChanged = true;
         resetStreamData();
-        if (_currentUrl === "") {
-          //Workaround of an issue where iOS attempts to set the src to <RELATIVE_PATH>/null
-          //when setting source to null
+        if (_currentUrl === '') {
+          // Workaround of an issue where iOS attempts to set the src to <RELATIVE_PATH>/null
+          // when setting source to null
           if (OO.isIos) {
             delete _video.src;
           } else {
@@ -351,12 +352,12 @@ import CONSTANTS from "./constants/constants";
           _video.src = _currentUrl;
         }
       }
-      //setup the playback speed for the next video.
+      // setup the playback speed for the next video.
       this.setPlaybackSpeed(currentPlaybackSpeed);
       return urlChanged;
     };
 
-    var resetStreamData = _.bind(function() {
+    const resetStreamData = _.bind(function() {
       this.audioTracks = [];
       playQueued = false;
       canPlay = false;
@@ -374,7 +375,7 @@ import CONSTANTS from "./constants/constants";
       currentTime = 0;
       currentTimeShift = 0;
       videoEnded = false;
-      videoDimension = {height: 0, width: 0};
+      videoDimension = { height: 0, width: 0 };
       initialTime = { value: 0, reached: true };
       canSeek = true;
       isPriming = false;
@@ -387,7 +388,7 @@ import CONSTANTS from "./constants/constants";
       textTrackMap.clear();
       // Restore the preload attribute to the value it had when the video
       // element was created
-      $(_video).attr("preload", originalPreloadValue);
+      $(_video).attr('preload', originalPreloadValue);
       ignoreFirstPlayingEvent = false;
     }, this);
 
@@ -407,7 +408,7 @@ import CONSTANTS from "./constants/constants";
      */
     this.load = function(rewind) {
       if (loaded && !rewind) return;
-      if (!!rewind) {
+      if (rewind) {
         if (OO.isEdge) {
           // PBW-4555: Edge browser will always go back to time 0 on load.  Setting time to 0 here would
           // cause the raw video element to enter seeking state.  Additionally, if we call load while seeking
@@ -416,12 +417,13 @@ import CONSTANTS from "./constants/constants";
           currentTime = 0;
         } else {
           try {
-            if (OO.isIos && OO.iosMajorVersion == 8) {
+            const iosVersion = 8;
+            if (OO.isIos && OO.iosMajorVersion === iosVersion) {
               // On iOS, wait for durationChange before setting currenttime
-              $(_video).on("durationchange", _.bind(function() {
-                                                                 _video.currentTime = 0;
-                                                                 currentTime = 0;
-                                                               }, this));
+              $(_video).on('durationchange', _.bind(function() {
+                _video.currentTime = 0;
+                currentTime = 0;
+              }, this));
             } else {
               _video.currentTime = 0;
               currentTime = 0;
@@ -438,7 +440,7 @@ import CONSTANTS from "./constants/constants";
       // some browsers (i.e. it might determine how much data is actually loaded). We set preload to auto
       // before loading in case that this.load() was called by VC_PRELOAD. If load() is called prior to
       // starting playback this will be redundant, but it shouldn't cause any issues
-      $(_video).attr("preload", "auto");
+      $(_video).attr('preload', 'auto');
       _video.load();
       loaded = true;
     };
@@ -451,16 +453,16 @@ import CONSTANTS from "./constants/constants";
      * @param {number} time The initial time of the video (seconds)
      */
     this.setInitialTime = function(time) {
-      //Ignore any initial times set to 0 if the content has not started playing. The content will start at time 0
-      //by default
-      if (typeof time !== "number" || (!hasStartedPlaying && time === 0)) {
+      // Ignore any initial times set to 0 if the content has not started playing. The content will start at time 0
+      // by default
+      if (typeof time !== 'number' || (!hasStartedPlaying && time === 0)) {
         return;
       }
       // [PBW-5539] On Safari (iOS and Desktop), when triggering replay after the current browser tab looses focus, the
       // current time seems to fall a few milliseconds behind the video duration, which
       // makes the video play for a fraction of a second and then stop again at the end.
       // In this case we allow setting the initial time back to 0 as a workaround for this
-      var queuedSeekRequired = OO.isSafari && videoEnded && time === 0;
+      let queuedSeekRequired = OO.isSafari && videoEnded && time === 0;
       initialTime.value = time;
       initialTime.reached = false;
 
@@ -495,15 +497,15 @@ import CONSTANTS from "./constants/constants";
      * @param {string} error The error object given by the play promise when it fails
      * @returns {boolean} True if this error represents a user interaction required error, false otherwise
      */
-    var userInteractionRequired = function(error) {
-      var userInteractionRequired = false;
+    let userInteractionRequired = function(error) {
+      let userInteractionRequired = false;
       if (error) {
-        var chromeError = error.name === "NotAllowedError";
-        //Safari throws the error "AbortError" for all play promise failures
-        //so we'll have to treat all of them the same
+        let chromeError = error.name === 'NotAllowedError';
+        // Safari throws the error "AbortError" for all play promise failures
+        // so we'll have to treat all of them the same
         if (!OO.isChrome || chromeError) {
-          //There is no requirement for muted autoplay on Firefox,
-          //so we'll ignore any Firefox play promise errors
+          // There is no requirement for muted autoplay on Firefox,
+          // so we'll ignore any Firefox play promise errors
           userInteractionRequired = !OO.isFirefox;
         }
       }
@@ -522,37 +524,37 @@ import CONSTANTS from "./constants/constants";
       if (_video.seeking) {
         playQueued = true;
       } else {
-        var playPromise = executePlay(false);
-        var originalUrl = _video.src;
+        let playPromise = executePlay(false);
+        let originalUrl = _video.src;
         if (playPromise) {
           ignoreFirstPlayingEvent = true;
-          //TODO: Handle MUTED/UNMUTED_PLAYBACK_SUCCEEDED/FAILED in environments that do not support play promises.
-          //Right now this is not needed because environments that do not support play promises do not have
-          //autoplay restrictions.
+          // TODO: Handle MUTED/UNMUTED_PLAYBACK_SUCCEEDED/FAILED in environments that do not support play promises.
+          // Right now this is not needed because environments that do not support play promises do not have
+          // autoplay restrictions.
           if (typeof playPromise.catch === 'function') {
             playPromise.catch(_.bind(function(error) {
               ignoreFirstPlayingEvent = false;
               if (error) {
-                OO.log("Play Promise Failure", error, error.name);
-                //PLAYER-3601: Workaround of an issue where play promises sometimes fail on iOS with Freewheel ads.
-                //We can ignore these as the Freewheel ad plugin will take care of these if they are indeed errors
+                OO.log('Play Promise Failure', error, error.name);
+                // PLAYER-3601: Workaround of an issue where play promises sometimes fail on iOS with Freewheel ads.
+                // We can ignore these as the Freewheel ad plugin will take care of these if they are indeed errors
                 if (OO.isIos && _video._fw_videoAdPlaying) {
                   return;
                 }
-                //Changing the source while attempting to play will cause a play promise error to be thrown.
-                //We don't want to publish an UNMUTED/MUTED playback failed notification in these situations.
+                // Changing the source while attempting to play will cause a play promise error to be thrown.
+                // We don't want to publish an UNMUTED/MUTED playback failed notification in these situations.
                 if (_video.src !== originalUrl) {
-                  OO.log("Url has changed, ignoring play promise failure");
+                  OO.log('Url has changed, ignoring play promise failure');
                   return;
                 }
                 if (userInteractionRequired(error)) {
                   if (!_video.muted) {
-                    this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, {error: error});
+                    this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_FAILED, { error: error });
                   } else {
                     // [PBW-6990]
                     // There seems to be an issue on random Android devices that prevents muted
                     // autoplay from working at all under certain (currently unknown) conditions.
-                    this.controller.notify(this.controller.EVENTS.MUTED_PLAYBACK_FAILED, {error: error});
+                    this.controller.notify(this.controller.EVENTS.MUTED_PLAYBACK_FAILED, { error: error });
                   }
                 }
               }
@@ -564,7 +566,7 @@ import CONSTANTS from "./constants/constants";
                 this.seek(failoverPlayheadTime);
                 handleFailover = false;
               }
-              //playback succeeded
+              // playback succeeded
               if (!_video.muted) {
                 this.controller.notify(this.controller.EVENTS.UNMUTED_PLAYBACK_SUCCEEDED);
               } else {
@@ -599,20 +601,20 @@ import CONSTANTS from "./constants/constants";
      * @public
      * @method OoyalaVideoWrapper#seek
      * @param {number} time The time to seek the video to (in seconds)
-     * @return {boolean} True if the seek was performed, false otherwise
+     * @returns {boolean} True if the seek was performed, false otherwise
      */
     this.seek = function(time) {
       if (time === Math.round(_video.currentTime)) {
         return false;
       }
 
-      var safeSeekTime = null;
+      let safeSeekTime = null;
 
       if (isLive) {
-        //Live videos without DVR can't be seeked
+        // Live videos without DVR can't be seeked
         if (!isDvrAvailable()) {
-          //Re-queue the initial time seek if initial time has not been reached yet. This usually means
-          //the seek ranges are not available yet.
+          // Re-queue the initial time seek if initial time has not been reached yet. This usually means
+          // the seek ranges are not available yet.
           if (!initialTime.reached && time === initialTime.value) {
             queueSeek(time);
           }
@@ -655,10 +657,10 @@ import CONSTANTS from "./constants/constants";
     this.unmute = function() {
       _video.muted = false;
 
-      //workaround of an issue where some external SDKs (such those used in ad/video plugins)
-      //are setting the volume to 0 when muting
-      //Set the volume to our last known setVolume setting.
-      //Since we're unmuting, we don't want to set volume to 0
+      // workaround of an issue where some external SDKs (such those used in ad/video plugins)
+      // are setting the volume to 0 when muting
+      // Set the volume to our last known setVolume setting.
+      // Since we're unmuting, we don't want to set volume to 0
       if (currentVolumeSet > 0) {
         this.setVolume(currentVolumeSet);
       }
@@ -681,7 +683,7 @@ import CONSTANTS from "./constants/constants";
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      var resolvedVolume = volume;
+      let resolvedVolume = volume;
       if (resolvedVolume < 0) {
         resolvedVolume = 0;
       } else if (resolvedVolume > 1) {
@@ -694,8 +696,8 @@ import CONSTANTS from "./constants/constants";
       _video.volume = resolvedVolume;
 
       // If no video is assigned yet, the volumeChange event is not raised although it takes effect
-      if (_video.currentSrc === "" || _video.currentSrc === null) {
-        raiseVolumeEvent({ target: { volume: resolvedVolume }});
+      if (_video.currentSrc === '' || _video.currentSrc === null) {
+        raiseVolumeEvent({ target: { volume: resolvedVolume } });
       }
     };
 
@@ -718,7 +720,7 @@ import CONSTANTS from "./constants/constants";
      */
     this.primeVideoElement = function() {
       // We need to "activate" the video on a click so we can control it with JS later on mobile
-      var playPromise = executePlay(true);
+      let playPromise = executePlay(true);
       // PLAYER-1323
       // Safar iOS seems to freeze when pausing right after playing when using preloading.
       // On this platform we wait for the play promise to be resolved before pausing.
@@ -736,8 +738,8 @@ import CONSTANTS from "./constants/constants";
             ignoreFirstPlayingEvent = false;
           });
         }
-      } else {	
-        _video.pause();	
+      } else {
+        _video.pause();
       }
     };
 
@@ -759,8 +761,8 @@ import CONSTANTS from "./constants/constants";
     this.destroy = function() {
       _video.pause();
       stopUnderflowWatcher();
-      //On IE and Edge, setting the video source to an empty string has the unwanted effect
-      //of a network request to the base url
+      // On IE and Edge, setting the video source to an empty string has the unwanted effect
+      // of a network request to the base url
       if (!OO.isIE && !OO.isEdge) {
         _video.src = '';
       }
@@ -770,7 +772,7 @@ import CONSTANTS from "./constants/constants";
         currentInstances[_playerId]--;
       }
       if (watchHidden) {
-        document.removeEventListener("visibilitychange", watchHidden);
+        document.removeEventListener('visibilitychange', watchHidden);
       }
     };
 
@@ -790,7 +792,7 @@ import CONSTANTS from "./constants/constants";
      *  - mode: (String) The mode to set on the track that matches the language parameter
      */
     this.setClosedCaptions = _.bind(function(language, closedCaptions = {}, params = {}) {
-      OO.log("MainHtml5: setClosedCaptions called", language, closedCaptions, params);
+      OO.log('MainHtml5: setClosedCaptions called', language, closedCaptions, params);
       const vttClosedCaptions = closedCaptions.closed_captions_vtt || {};
       const externalCaptionsProvided = !!Object.keys(vttClosedCaptions).length;
       // Most browsers will require crossorigin=anonymous in order to be able to
@@ -890,13 +892,14 @@ import CONSTANTS from "./constants/constants";
         // At the time of writing iOS Safari doesn't seem to enforce same origin policy
         // for either HLS manifests/segments or VTT files. We avoid setting crossorigin
         // as a workaround for iOS 11 since it currently appears to not be needed.
-        var isIos11 = OO.isIos && OO.iosMajorVersion === 11;
+        const iosVersion = 11;
+        let isIos11 = OO.isIos && OO.iosMajorVersion === iosVersion;
 
         if (!isIos11) {
-          $(_video).attr("crossorigin", crossorigin);
+          $(_video).attr('crossorigin', crossorigin);
         }
       } else {
-        $(_video).removeAttr("crossorigin");
+        $(_video).removeAttr('crossorigin');
       }
     };
 
@@ -907,19 +910,19 @@ import CONSTANTS from "./constants/constants";
      * @returns {Array} - an array of all available audio tracks.
      */
     this.getAvailableAudio = function() {
-      var audioTracks = _video.audioTracks;
-      var audioTrackList = [];
+      let audioTracks = _video.audioTracks;
+      let audioTrackList = [];
       if (audioTracks !== undefined && audioTracks.length) {
-        audioTracks = _.filter(audioTracks, function(track){
+        audioTracks = _.filter(audioTracks, function(track) {
           return track;
         });
-        audioTrackList = _.map(audioTracks, function (track) {
+        audioTrackList = _.map(audioTracks, function(track) {
           return {
             id: track.id,
             label: track.label,
             lang: track.language,
-            enabled: track.enabled
-          }
+            enabled: track.enabled,
+          };
         }, this);
       }
       return audioTrackList;
@@ -933,18 +936,18 @@ import CONSTANTS from "./constants/constants";
      * @callback OoyalaVideoFactory#raiseAudioChange
      */
     this.setAudio = function(trackId) {
-      var audioTracks = _video.audioTracks;
+      let audioTracks = _video.audioTracks;
       if (audioTracks && audioTracks.length) { // if audioTracks exist
-        var currentAudio = _.find(audioTracks, function (track) {
+        let currentAudio = _.find(audioTracks, function(track) {
           return track.enabled;
         });
-        var currentAudioId = null;
+        let currentAudioId = null;
         if (currentAudio && currentAudio.id) {
           currentAudioId = currentAudio.id;
           if (currentAudioId !== trackId) {
-            var newAudioTrack = audioTracks.getTrackById(trackId);
+            let newAudioTrack = audioTracks.getTrackById(trackId);
             if (newAudioTrack) { // if trackId is correct and the audio exists
-              var prevAudioTrack = audioTracks.getTrackById(currentAudioId);
+              let prevAudioTrack = audioTracks.getTrackById(currentAudioId);
               if (prevAudioTrack) { // if currentAudioId is correct and the audio exists
                 prevAudioTrack.enabled = false; // the audio is not active anymore
               }
@@ -956,7 +959,7 @@ import CONSTANTS from "./constants/constants";
 
       // audioTracks right now is Array-like, not actually an array
       // so we need to make it so
-      var newTracks = this.getAvailableAudio();
+      let newTracks = this.getAvailableAudio();
       raiseAudioChange(newTracks);
     };
 
@@ -970,8 +973,8 @@ import CONSTANTS from "./constants/constants";
       if (typeof speed !== 'number' || isNaN(speed)) {
         return;
       }
-      //if we are playing a live asset, set the playback speed back to 1. This is
-      //just in case we have somehow missed reseting the speed somewhere else.
+      // if we are playing a live asset, set the playback speed back to 1. This is
+      // just in case we have somehow missed reseting the speed somewhere else.
       if (isLive) {
         currentPlaybackSpeed = 1.0;
       } else {
@@ -987,7 +990,7 @@ import CONSTANTS from "./constants/constants";
      * Get the current speed multiplier for video elements.
      * @public
      * @method OoyalaVideoWrapper#getPlaybackSpeed
-     * @return {number} Current playback speed multiplier
+     * @returns {number} Current playback speed multiplier
      */
     this.getPlaybackSpeed = function() {
       return currentPlaybackSpeed;
@@ -1002,7 +1005,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#onLoadStart
      */
-    var onLoadStart = _.bind(function() {
+    const onLoadStart = _.bind(function() {
       stopUnderflowWatcher();
       _currentUrl = _video.src;
       firstPlay = true;
@@ -1015,7 +1018,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#onLoadedMetadata
      */
-    var onLoadedMetadata = _.bind(function() {
+    const onLoadedMetadata = _.bind(function() {
       if (_video.textTracks) {
         _video.textTracks.onaddtrack = onTextTracksAddTrack;
         _video.textTracks.onchange = onTextTracksChange;
@@ -1039,8 +1042,8 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoFactory#onAudioChange
      * @callback OoyalaVideoFactory#raiseAudioChange
      */
-    var _onAudioChange = _.bind(function(event) {
-      var audioTracks = this.getAvailableAudio();
+    const _onAudioChange = _.bind(function(event) {
+      let audioTracks = this.getAvailableAudio();
       raiseAudioChange(audioTracks);
     }, this);
 
@@ -1050,7 +1053,7 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoFactory#onAudioChange
      * @fires VideoController#EVENTS.MULTI_AUDIO_CHANGE
      */
-    var raiseAudioChange = _.bind(function(audioTracks) {
+    const raiseAudioChange = _.bind(function(audioTracks) {
       // the problem here is that onchange gets triggered twice so
       // we compare old this.audioTracks with new audioTracks
       // to get updated tracks just once
@@ -1087,7 +1090,7 @@ import CONSTANTS from "./constants/constants";
       // recorded on our text track map (i.e. the ones changed by the native UI)
       for (let changedTrack of changedTracks) {
         const trackMetadata = textTrackMap.findEntry({
-          textTrack: changedTrack
+          textTrack: changedTrack,
         });
         // We assume that any changes that occur prior to playback are browser
         // defaults since the native UI couldn't have been displayed yet
@@ -1139,12 +1142,12 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#onClosedCaptionCueChange
      * @param {object} event The event from the cue change
      */
-    var onClosedCaptionCueChange = _.bind(function(event) {
-      var cueText = "";
+    let onClosedCaptionCueChange = _.bind(function(event) {
+      let cueText = '';
       if (event && event.currentTarget && event.currentTarget.activeCues) {
-        for (var i = 0; i < event.currentTarget.activeCues.length; i++) {
-          if (event.currentTarget.activeCues[i].text) {
-            cueText += event.currentTarget.activeCues[i].text + "\n";
+        for (let index = 0; index < event.currentTarget.activeCues.length; index++) {
+          if (event.currentTarget.activeCues[index].text) {
+            cueText += event.currentTarget.activeCues[index].text + '\n';
           }
         }
       }
@@ -1157,11 +1160,11 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseClosedCaptionCueChanged
      * @param {string} cueText The text of the new closed caption cue. Empty string signifies no active cue.
      */
-    var raiseClosedCaptionCueChanged = _.bind(function(cueText) {
-      cueText = cueText.trim();
-      if (cueText != lastCueText) {
-        lastCueText = cueText;
-        this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, cueText);
+    const raiseClosedCaptionCueChanged = _.bind(function(cueText) {
+      const _cueText = cueText.trim();
+      if (_cueText !== lastCueText) {
+        lastCueText = _cueText;
+        this.controller.notify(this.controller.EVENTS.CLOSED_CAPTION_CUE_CHANGED, _cueText);
       }
     }, this);
 
@@ -1171,24 +1174,24 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseProgress
      * @param {object} event The event from the video
      */
-    var raiseProgress = _.bind(function(event) {
-      var buffer = 0;
+    const raiseProgress = _.bind(function(event) {
+      let buffer = 0;
       if (event.target.buffered && event.target.buffered.length > 0) {
         buffer = event.target.buffered.end(0); // in sec;
       }
 
-      //Progress updates mean seekable ranges could be available so let's attempt to dequeue the seek
+      // Progress updates mean seekable ranges could be available so let's attempt to dequeue the seek
       if (isLive) {
         dequeueSeek();
       }
 
       if (!handleFailover) {
         this.controller.notify(this.controller.EVENTS.PROGRESS,
-                             { "currentTime": event.target.currentTime,
-                               "duration": resolveDuration(event.target.duration),
-                               "buffer": buffer,
-                               "seekRange": getSafeSeekRange(event.target.seekable)
-                             });
+          { 'currentTime': event.target.currentTime,
+            'duration': resolveDuration(event.target.duration),
+            'buffer': buffer,
+            'seekRange': getSafeSeekRange(event.target.seekable),
+          });
       }
     }, this);
 
@@ -1198,12 +1201,14 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseErrorEvent
      * @param {object} event The event from the video
      */
-    var raiseErrorEvent = _.bind(function(event) {
+    const raiseErrorEvent = _.bind(function(event) {
       stopUnderflowWatcher();
 
-      var code = event.target.error ? event.target.error.code : -1;
+      let code = event.target.error ? event.target.error.code : -1;
       // Suppress error code 4 when raised by a video element with a null or empty src
-      if (!(code === 4 && ($(event.target).attr("src") === "null" || $(event.target).attr("src") === ""))) {
+      const errorCode = 4;
+      if (!(code === errorCode &&
+        ($(event.target).attr('src') === 'null' || $(event.target).attr('src') === ''))) {
         this.controller.notify(this.controller.EVENTS.ERROR, { errorcode: code });
       }
     }, this);
@@ -1214,13 +1219,13 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseStalledEvent
      * @param {object} event The event from the video
      */
-    var raiseStalledEvent = _.bind(function(event) {
+    const raiseStalledEvent = _.bind(function(event) {
       // Fix multiple video tag error in iPad
       if (OO.isIpad && event.target.currentTime === 0) {
         _video.pause();
       }
 
-      this.controller.notify(this.controller.EVENTS.STALLED, {"url":_video.currentSrc});
+      this.controller.notify(this.controller.EVENTS.STALLED, { 'url': _video.currentSrc });
     }, this);
 
     /**
@@ -1228,7 +1233,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raiseCanPlay
      */
-    var raiseCanPlay = _.bind(function() {
+    const raiseCanPlay = _.bind(function() {
       // On firefox and iOS, at the end of an underflow the video raises 'canplay' instead of
       // 'canplaythrough'.  If that happens, raise canPlayThrough.
       if ((OO.isFirefox || OO.isIos) && waitingEventRaised) {
@@ -1236,16 +1241,17 @@ import CONSTANTS from "./constants/constants";
       }
       canPlay = true;
 
-      //Notify controller of video width and height.
+      // Notify controller of video width and height.
       if (firstPlay) {
         // Dequeue any calls to setClosedCaptions() that occurred before
         // the video was loaded
         dequeueSetClosedCaptions();
 
-        this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION, {width: _video.videoWidth, height: _video.videoHeight});
+        this.controller.notify(this.controller.EVENTS.ASSET_DIMENSION,
+          { width: _video.videoWidth, height: _video.videoHeight });
 
-        var availableAudio = this.getAvailableAudio();
-        if (availableAudio && availableAudio.length  > 1) {
+        let availableAudio = this.getAvailableAudio();
+        if (availableAudio && availableAudio.length > 1) {
           this.audioTracks = availableAudio;
           this.controller.notify(this.controller.EVENTS.MULTI_AUDIO_AVAILABLE, availableAudio);
         }
@@ -1257,9 +1263,9 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raiseCanPlayThrough
      */
-    var raiseCanPlayThrough = _.bind(function() {
+    const raiseCanPlayThrough = _.bind(function() {
       waitingEventRaised = false;
-      this.controller.notify(this.controller.EVENTS.BUFFERED, {"url":_video.currentSrc});
+      this.controller.notify(this.controller.EVENTS.BUFFERED, { 'url': _video.currentSrc });
     }, this);
 
     /**
@@ -1267,7 +1273,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raisePlayingEvent
      */
-    var raisePlayingEvent = _.bind(function() {
+    const raisePlayingEvent = _.bind(function() {
       // Do not raise playback events if the video is priming
       if (isPriming) {
         return;
@@ -1289,9 +1295,9 @@ import CONSTANTS from "./constants/constants";
 
       hasStartedPlaying = true;
 
-      //We want the initial PLAYING event to be from the play promise if play promises
-      //are supported. This is to help with the muted autoplay workflow.
-      //We want to ignore any playing events thrown by plays started with play promises
+      // We want the initial PLAYING event to be from the play promise if play promises
+      // are supported. This is to help with the muted autoplay workflow.
+      // We want to ignore any playing events thrown by plays started with play promises
       if (!ignoreFirstPlayingEvent) {
         this.controller.notify(this.controller.EVENTS.PLAYING);
       }
@@ -1310,13 +1316,13 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raiseWaitingEvent
      */
-    var raiseWaitingEvent = _.bind(function() {
+    const raiseWaitingEvent = _.bind(function() {
       // WAITING event is not raised if no video is assigned yet
       if (_.isEmpty(_video.currentSrc)) {
         return;
       }
       waitingEventRaised = true;
-      this.controller.notify(this.controller.EVENTS.WAITING, {"url":_video.currentSrc});
+      this.controller.notify(this.controller.EVENTS.WAITING, { 'url': _video.currentSrc });
     }, this);
 
     /**
@@ -1324,7 +1330,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raiseSeekingEvent
      */
-    var raiseSeekingEvent = _.bind(function() {
+    const raiseSeekingEvent = _.bind(function() {
       isSeeking = true;
 
       // Do not raise playback events if the video is priming
@@ -1340,7 +1346,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raiseSeekedEvent
      */
-    var raiseSeekedEvent = _.bind(function(event) { // Firefox known issue: lack of global event.
+    const raiseSeekedEvent = _.bind(function(event) { // Firefox known issue: lack of global event.
       isSeeking = false;
 
       // After done seeking, see if any play events were received and execute them now
@@ -1350,8 +1356,8 @@ import CONSTANTS from "./constants/constants";
       // PBI-718 - If seeking is disabled and a native seek was received, seek back to the previous position.
       // This is required for platforms with native controls that cannot be disabled, such as iOS
       if (this.disableNativeSeek) {
-        var fixedSeekedTime = Math.floor(_video.currentTime);
-        var fixedCurrentTime = Math.floor(currentTime);
+        let fixedSeekedTime = Math.floor(_video.currentTime);
+        let fixedCurrentTime = Math.floor(currentTime);
         if (fixedSeekedTime !== fixedCurrentTime) {
           _video.currentTime = currentTime;
         }
@@ -1382,7 +1388,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raiseEndedEvent
      */
-    var raiseEndedEvent = _.bind(function(event) {
+    const raiseEndedEvent = _.bind(function(event) {
       stopUnderflowWatcher();
       if (
         !_currentUrl || // iOS Safari will trigger an ended event when the source is cleared with an empty string
@@ -1405,7 +1411,7 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseDurationChange
      * @param {object} event The event from the video
      */
-    var raiseDurationChange = _.bind(function(event) {
+    const raiseDurationChange = _.bind(function(event) {
       if (!handleFailover) {
         raisePlayhead(this.controller.EVENTS.DURATION_CHANGE, event);
       }
@@ -1432,7 +1438,7 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseTimeUpdate
      * @param {object} event The event from the video
      */
-    var raiseTimeUpdate = _.bind(function(event) {
+    const raiseTimeUpdate = _.bind(function(event) {
       if (!isSeeking) {
         currentTime = _video.currentTime;
       }
@@ -1453,7 +1459,7 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raisePlayEvent
      * @param {object} event The event from the video
      */
-    var raisePlayEvent = _.bind(function(event) {
+    const raisePlayEvent = _.bind(function(event) {
       // Do not raise playback events if the video is priming
       if (isPriming) {
         return;
@@ -1467,7 +1473,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raisePauseEvent
      */
-    var raisePauseEvent = _.bind(function() {
+    const raisePauseEvent = _.bind(function() {
       // Do not raise playback events if the video is priming
       if (isPriming) {
         return;
@@ -1485,7 +1491,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#removeControlsAttr
      */
-    var removeControlsAttr = _.bind(function(){
+    const removeControlsAttr = _.bind(function() {
       if (OO.isIos && _video.hasAttribute('controls')) {
         _video.removeAttribute('controls');
       }
@@ -1496,11 +1502,11 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raiseRatechangeEvent
      */
-    var raiseRatechangeEvent = _.bind(function() {
-      var playbackRate = _video ? _video.playbackRate : null;
+    const raiseRatechangeEvent = _.bind(function() {
+      let playbackRate = _video ? _video.playbackRate : null;
 
       this.controller.notify(this.controller.EVENTS.PLAYBACK_RATE_CHANGE, {
-        playbackRate: playbackRate
+        playbackRate: playbackRate,
       });
     }, this);
 
@@ -1510,7 +1516,7 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseVolumeEvent
      * @param {object} event The event raised by the video.
      */
-    var raiseVolumeEvent = _.bind(function(event) {
+    const raiseVolumeEvent = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { volume: event.target.volume });
       this.controller.notify(this.controller.EVENTS.MUTE_STATE_CHANGE, { muted: _video.muted });
     }, this);
@@ -1521,9 +1527,9 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseFullScreenBegin
      * @param {object} event The event raised by the video.
      */
-    var raiseFullScreenBegin = _.bind(function(event) {
+    const raiseFullScreenBegin = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { isFullScreen: true, paused: event.target.paused });
+        { isFullScreen: true, paused: event.target.paused });
     }, this);
 
     /**
@@ -1532,12 +1538,11 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#raiseFullScreenEnd
      * @param {object} event The event raised by the video.
      */
-    var raiseFullScreenEnd = _.bind(function(event) {
+    const raiseFullScreenEnd = _.bind(function(event) {
       this.controller.notify(this.controller.EVENTS.FULLSCREEN_CHANGED,
-                             { "isFullScreen": false, "paused": event.target.paused });
+        { 'isFullScreen': false, 'paused': event.target.paused });
       removeControlsAttr();
     }, this);
-
 
     /************************************************************************************/
     // Helper methods
@@ -1551,7 +1556,7 @@ import CONSTANTS from "./constants/constants";
      */
     const dequeueSetClosedCaptions = _.bind(function() {
       let queuedArguments;
-
+      // eslint-disable-next-line
       while (queuedArguments = setClosedCaptionsQueue.shift()) {
         executeSetClosedCaptions.apply(this, queuedArguments);
       }
@@ -1561,7 +1566,7 @@ import CONSTANTS from "./constants/constants";
      * Sets the mode of all text tracks to 'disabled' except for targetTrack.
      * @private
      * @method OoyalaVideoWrapper#disableTextTracksExcept
-     * @param {TextTrack} The text track which we want to exclude from the disable operation.
+     * @param {String} targetTrack The text track which we want to exclude from the disable operation.
      */
     const disableTextTracksExcept = (targetTrack) => {
       // Start by disabling all tracks, except for the one whose mode we want to set
@@ -1586,7 +1591,7 @@ import CONSTANTS from "./constants/constants";
      * @param {String} targetLanguage The language or key of the track that should be set to targetMode
      * (usually the language that should be active).
      * @param {String} targetMode The mode that should be set on the track that matches targetLanguage.
-     * @return {Boolean} True if a track that matches targetLanguage was added as a result of this call, false otherwise.
+     * @returns {Boolean} True if a track that matches targetLanguage was added as a result of this call, false otherwise.
      */
     const addExternalVttCaptions = (vttClosedCaptions = {}, targetLanguage, targetMode) => {
       let wasTargetTrackAdded = false;
@@ -1597,7 +1602,7 @@ import CONSTANTS from "./constants/constants";
           vttClosedCaptions[language]
         );
         const existsTrack = textTrackMap.existsEntry({
-          src: trackData.url
+          src: trackData.url,
         });
         // Only add tracks whose source url hasn't been added before
         if (!existsTrack) {
@@ -1640,7 +1645,7 @@ import CONSTANTS from "./constants/constants";
         src: trackData.url,
         label: trackData.name,
         language: trackData.language,
-        mode: trackMode
+        mode: trackMode,
       }, true);
       // Create the actual TextTrack object
       textTrackHelper.addTrack({
@@ -1651,7 +1656,7 @@ import CONSTANTS from "./constants/constants";
         // cross-browser way to indentify the track after it's created
         label: trackId,
         srclang: trackData.language,
-        src: trackData.url
+        src: trackData.url,
       });
       // MS Edge doesn't fire the addtrack event for manually added tracks
       if (OO.isEdge) {
@@ -1673,11 +1678,11 @@ import CONSTANTS from "./constants/constants";
         // VTT tracks that we recently added. We rely on the label as the only
         // cross-browser way to identify a TextTrack object after its creation
         const trackMetadata = textTrackMap.findEntry({
-          id: textTrack.label
+          id: textTrack.label,
         });
 
         if (trackMetadata) {
-          OO.log("MainHtml5: Registering newly added text track:", trackMetadata.id);
+          OO.log('MainHtml5: Registering newly added text track:', trackMetadata.id);
           // Store a reference to the track on our track map in order to link
           // related metadata
           textTrackMap.tryUpdateEntry(
@@ -1712,7 +1717,7 @@ import CONSTANTS from "./constants/constants";
       // Any unkown track is assumed to be an in-manifest/in-stream track since
       // we map external tracks when they are added
       const isKnownTrack = textTrackMap.existsEntry({
-        textTrack: textTrack
+        textTrack: textTrack,
       });
       // Avoid mapping metadata and other non-subtitle track kinds
       const isTextTrack = (
@@ -1722,13 +1727,13 @@ import CONSTANTS from "./constants/constants";
       // Add an entry to our text track map in order to be able to keep track of
       // the in-manifest/in-stream track's mode
       if (!isKnownTrack && isTextTrack) {
-        OO.log("MainHtml5: Registering internal text track:", textTrack);
+        OO.log('MainHtml5: Registering internal text track:', textTrack);
 
         textTrackMap.addEntry({
           label: textTrack.label,
           language: textTrack.language,
           mode: textTrack.mode,
-          textTrack: textTrack
+          textTrack: textTrack,
         }, false);
       }
     };
@@ -1744,7 +1749,7 @@ import CONSTANTS from "./constants/constants";
     const checkForAvailableClosedCaptions = () => {
       const closedCaptionInfo = {
         languages: [],
-        locale: {}
+        locale: {},
       };
       const externalEntries = textTrackMap.getExternalEntries();
       const internalEntries = textTrackMap.getInternalEntries();
@@ -1815,7 +1820,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#dequeuePlay
      */
-    var dequeuePlay = _.bind(function() {
+    const dequeuePlay = _.bind(function() {
       if (playQueued) {
         playQueued = false;
         this.play();
@@ -1828,7 +1833,7 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#executePlay
      * @param {boolean} priming True if the element is preparing for device playback
      */
-    var executePlay = _.bind(function(priming) {
+    const executePlay = _.bind(function(priming) {
       isPriming = priming;
 
       // TODO: Check if no src url is configured?
@@ -1836,7 +1841,7 @@ import CONSTANTS from "./constants/constants";
         this.load(true);
       }
 
-      var playPromise = _video.play();
+      let playPromise = _video.play();
 
       if (!isPriming) {
         hasPlayed = true;
@@ -1844,7 +1849,6 @@ import CONSTANTS from "./constants/constants";
       }
       return playPromise;
     }, this);
-
 
     /**
      * Gets the range of video that can be safely seeked to.
@@ -1854,14 +1858,14 @@ import CONSTANTS from "./constants/constants";
      *                           function, and an end function.
      * @returns {object} The safe seek range object containing { "start": number, "end": number}
      */
-    var getSafeSeekRange = function(seekRange) {
-      if (!seekRange || !seekRange.length || !(typeof seekRange.start == "function") ||
-          !(typeof seekRange.end == "function" )) {
-        return { "start" : 0, "end" : 0 };
+    const getSafeSeekRange = function(seekRange) {
+      if (!seekRange || !seekRange.length || !(typeof seekRange.start === 'function') ||
+          !(typeof seekRange.end === 'function')) {
+        return { 'start': 0, 'end': 0 };
       }
 
-      return { "start" : seekRange.length > 0 ? seekRange.start(0) : 0,
-               "end" : seekRange.length > 0 ? seekRange.end(0) : 0 };
+      return { 'start': seekRange.length > 0 ? seekRange.start(0) : 0,
+        'end': seekRange.length > 0 ? seekRange.end(0) : 0 };
     };
 
     /**
@@ -1871,7 +1875,7 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#getSafeSeekableObject
      * @returns {object?} Either the video seekable object or null
      */
-    var getSafeSeekableObject = function() {
+    const getSafeSeekableObject = function() {
       if (OO.isSafari && !canPlay) {
         // Safety against accessing seekable before SAFARI browser canPlay media
         return null;
@@ -1889,17 +1893,20 @@ import CONSTANTS from "./constants/constants";
      * @param {number} duration The video's duration
      * @returns {number} The safe seek-to position
      */
-    var convertToSafeSeekTime = function(time, duration) {
+    const convertToSafeSeekTime = function(time, duration) {
       // If seeking within some threshold of the end of the stream, seek to end of stream directly
       if (duration - time < OO.CONSTANTS.SEEK_TO_END_LIMIT) {
+        // eslint-disable-next-line
         time = duration;
       }
-
-      var safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
+      let safeTime = time >= duration ? duration - 0.01 : (time < 0 ? 0 : time);
 
       // iPad with 6.1 has an interesting bug that causes the video to break if seeking exactly to zero
-      if (OO.isIpad && safeTime < 0.1) {
-        safeTime = 0.1;
+      if (OO.isIpad) {
+        const minimumSafeTime = 0.1;
+        if (safeTime < minimumSafeTime) {
+          safeTime = minimumSafeTime;
+        }
       }
       return safeTime;
     };
@@ -1912,17 +1919,17 @@ import CONSTANTS from "./constants/constants";
      * @param {number} time The desired seek-to position
      * @returns {?number} The seek-to position, or null if seeking is not possible
      */
-    var getSafeSeekTimeIfPossible = function(_video, time) {
-      if ((typeof time !== "number") || !canSeek) {
+    const getSafeSeekTimeIfPossible = function(_video, time) {
+      if ((typeof time !== 'number') || !canSeek) {
         return null;
       }
 
-      var range = getSafeSeekRange(getSafeSeekableObject());
+      let range = getSafeSeekRange(getSafeSeekableObject());
       if (range.start === 0 && range.end === 0) {
         return null;
       }
 
-      var safeTime = convertToSafeSeekTime(time, _video.duration);
+      let safeTime = convertToSafeSeekTime(time, _video.duration);
       if (range.start <= safeTime && range.end >= safeTime) {
         return safeTime;
       }
@@ -1938,20 +1945,20 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#getSafeDvrSeekTime
      * @param {HTMLVideoElement} video The video element on which the DVR-enabled stream is loaded.
      * @param {Number} seekTime The time from 0 to DVR Window Length to which we want to shift.
-     * @return {Number} The playhead time that corresponds to the given DVR window position (seekTime).
+     * @returns {Number} The playhead time that corresponds to the given DVR window position (seekTime).
      * The return value will be constrained to valid values within the DVR window. The current playhead
      * will be returned when seekTime is not a valid, finite or positive number.
      */
-    var getSafeDvrSeekTime = function(video, seekTime) {
+    const getSafeDvrSeekTime = function(video, seekTime) {
       // Note that we set seekTime to an invalid negative value if not a number
-      seekTime = ensureNumber(seekTime, -1);
+      const _seekTime = ensureNumber(seekTime, -1);
       // When seekTime is negative or not a valid number, return the current time
       // in order to avoid seeking
-      if (seekTime < 0) {
+      if (_seekTime < 0) {
         return (video || {}).currentTime || 0;
       }
-      var seekRange = getSafeSeekRange(getSafeSeekableObject());
-      var safeSeekTime = seekRange.start + seekTime;
+      let seekRange = getSafeSeekRange(getSafeSeekableObject());
+      let safeSeekTime = seekRange.start + _seekTime;
       // Make sure seek time isn't larger than maximum seekable value, if it is,
       // seek to maximum value instead
       safeSeekTime = Math.min(safeSeekTime, seekRange.end);
@@ -1964,7 +1971,7 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#queueSeek
      * @param {number} time The desired seek-to position
      */
-    var queueSeek = function(time) {
+    const queueSeek = function(time) {
       queuedSeekTime = time;
     };
 
@@ -1973,9 +1980,9 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#dequeueSeek
      */
-    var dequeueSeek = _.bind(function() {
+    const dequeueSeek = _.bind(function() {
       if (queuedSeekTime === null) { return; }
-      var seekTime = queuedSeekTime;
+      let seekTime = queuedSeekTime;
       queuedSeekTime = null;
       this.seek(seekTime);
     }, this);
@@ -1984,11 +1991,11 @@ import CONSTANTS from "./constants/constants";
      * Determines whether or not the current stream has DVR currently enabled.
      * @private
      * @method OoyalaVideoWrapper#isDvrAvailable
-     * @return {Boolean} True if DVR is available, false otherwise.
+     * @returns {Boolean} True if DVR is available, false otherwise.
      */
-    var isDvrAvailable = function() {
-      var maxTimeShift = getMaxTimeShift();
-      var result = maxTimeShift !== 0;
+    const isDvrAvailable = function() {
+      let maxTimeShift = getMaxTimeShift();
+      let result = maxTimeShift !== 0;
       return result;
     };
 
@@ -1996,18 +2003,19 @@ import CONSTANTS from "./constants/constants";
      * Returns the current time shift offset to the live edge in seconds for DVR-enabled streams.
      * @private
      * @method OoyalaVideoWrapper#getTimeShift
-     * @return {Number} The negative value of the current time shift offset, in seconds. Returns 0
+     * @param {number} currentTime currentTime
+     * @returns {Number} The negative value of the current time shift offset, in seconds. Returns 0
      * if currently at the live edge.
      */
-    var getTimeShift = function(currentTime) {
+    const getTimeShift = function(currentTime) {
       if (!isLive) {
         return 0;
       }
-      var timeShift = 0;
-      var seekRange = getSafeSeekRange(getSafeSeekableObject());
+      let timeShift = 0;
+      let seekRange = getSafeSeekRange(getSafeSeekableObject());
       // If not a valid number set to seekRange.end so that timeShift equals zero
-      currentTime = ensureNumber(currentTime, seekRange.end);
-      timeShift = currentTime - seekRange.end;
+      const _currentTime = ensureNumber(currentTime, seekRange.end);
+      timeShift = _currentTime - seekRange.end;
       // Discard positive time shifts
       timeShift = Math.min(timeShift, 0);
       // Shouldn't be greater than max time shift
@@ -2020,15 +2028,15 @@ import CONSTANTS from "./constants/constants";
      * live streams. The value of maxTimeShift is represented as a negative number.
      * @private
      * @method OoyalaVideoWrapper#getMaxTimeShift
-     * @return {Number} The maximum amount of seconds that the current video can be seeked back
+     * @returns {Number} The maximum amount of seconds that the current video can be seeked back
      * represented as a negative number, or zero, if DVR is not available.
      */
-    var getMaxTimeShift = function(event) {
+    const getMaxTimeShift = function() {
       if (!isLive) {
         return 0;
       }
-      var maxShift = 0;
-      var seekRange = getSafeSeekRange(getSafeSeekableObject());
+      let maxShift = 0;
+      let seekRange = getSafeSeekRange(getSafeSeekableObject());
       maxShift = seekRange.end - seekRange.start;
       maxShift = ensureNumber(maxShift, 0) > 0 ? -maxShift : 0;
       return maxShift;
@@ -2039,7 +2047,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#raisePlayhead
      */
-    var raisePlayhead = _.bind(function(eventname, event) {
+    const raisePlayhead = _.bind(function(eventname, event) {
       // Do not raise playback events if the video is priming
       if (isPriming) {
         return;
@@ -2051,15 +2059,15 @@ import CONSTANTS from "./constants/constants";
         return;
       }
 
-      var buffer = 0;
-      var newCurrentTime = null;
-      var currentLiveTime = 0;
-      var duration = resolveDuration(event.target.duration);
+      let buffer = 0;
+      let newCurrentTime = null;
+      let currentLiveTime = 0;
+      let duration = resolveDuration(event.target.duration);
 
       // Live videos without DVR (i.e. maxTimeShift === 0) are treated as regular
       // videos for playhead update purposes
       if (isDvrAvailable()) {
-        var maxTimeShift = getMaxTimeShift();
+        let maxTimeShift = getMaxTimeShift();
         newCurrentTime = currentTimeShift - maxTimeShift;
         duration = -maxTimeShift;
         buffer = duration;
@@ -2074,13 +2082,13 @@ import CONSTANTS from "./constants/constants";
         newCurrentTime = ensureNumber(_video.currentTime, null);
       }
 
-      var seekable = getSafeSeekRange(getSafeSeekableObject());
+      let seekable = getSafeSeekRange(getSafeSeekableObject());
       this.controller.notify(eventname, {
         currentTime: newCurrentTime,
         currentLiveTime: currentLiveTime,
         duration: duration,
         buffer: buffer,
-        seekRange: seekable
+        seekRange: seekable,
       });
     }, this);
 
@@ -2090,12 +2098,13 @@ import CONSTANTS from "./constants/constants";
      * @method OoyalaVideoWrapper#ensureNumber
      * @param {*} value The value to convert.
      * @param {*} defaultValue A default value to return when the input is not a valid number.
-     * @return {Number} The Number equivalent of value if it can be converted and is finite.
+     * @returns {Number} The Number equivalent of value if it can be converted and is finite.
      * When value doesn't meet the criteria the function will return either defaultValue (if provided) or null.
      */
-    var ensureNumber = function(value, defaultValue) {
-      var number;
+    const ensureNumber = function(value, defaultValue) {
+      let number;
       if (value === null || _.isArray(value)) {
+        // eslint-disable-next-line
         value = NaN;
       }
       if (_.isNumber(value)) {
@@ -2116,7 +2125,7 @@ import CONSTANTS from "./constants/constants";
      * @param {number} duration The reported duration of the video in seconds
      * @returns {number} The resolved duration of the video in seconds
      */
-    var resolveDuration = function(duration) {
+    const resolveDuration = function(duration) {
       if (duration === Infinity || isNaN(duration)) {
         return 0;
       }
@@ -2130,11 +2139,11 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#forceEndOnPausedIfRequired
      */
-    var forceEndOnPausedIfRequired = _.bind(function() {
+    const forceEndOnPausedIfRequired = _.bind(function() {
       if (OO.isSafari && !OO.isIos) {
         if (_video.ended) {
-          console.log("VTC_OO: Force through the end of stream for Safari", _video.currentSrc,
-                      _video.duration, _video.currentTime);
+          console.log('VTC_OO: Force through the end of stream for Safari', _video.currentSrc,
+            _video.duration, _video.currentTime);
           raiseEndedEvent();
         }
       }
@@ -2147,17 +2156,16 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#forceEndOnTimeupdateIfRequired
      */
-    var forceEndOnTimeupdateIfRequired = _.bind(function(event) {
+    const forceEndOnTimeupdateIfRequired = _.bind(function(event) {
       if (isM3u8) {
-        var durationResolved = resolveDuration(event.target.duration);
-        var durationInt = Math.floor(durationResolved);
-        if ((_video.currentTime == durationResolved) && (durationResolved > durationInt)) {
-          console.log("VTC_OO: manually triggering end of stream for m3u8", _currentUrl, durationResolved,
-                      _video.currentTime);
+        let durationResolved = resolveDuration(event.target.duration);
+        let durationInt = Math.floor(durationResolved);
+        if ((_video.currentTime === durationResolved) && (durationResolved > durationInt)) {
+          console.log('VTC_OO: manually triggering end of stream for m3u8',
+            _currentUrl, durationResolved, _video.currentTime);
           _.defer(raiseEndedEvent);
-        }
-        else if (OO.isSafari && !OO.isIos && isSeeking === true && !_video.ended && Math.round(_video.currentTime) === Math.round(_video.duration))
-        {
+        } else if (OO.isSafari && !OO.isIos && isSeeking === true &&
+          !_video.ended && Math.round(_video.currentTime) === Math.round(_video.duration)) {
           this.controller.notify(this.controller.EVENTS.SEEKED);
           videoEnded = true;
           initialTime.value = 0;
@@ -2174,10 +2182,10 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#startUnderflowWatcher
      */
-    var startUnderflowWatcher = _.bind(function() {
+    const startUnderflowWatcher = _.bind(function() {
       if ((OO.isChrome || OO.isIos || OO.isIE11Plus || OO.isEdge) && !underflowWatcherTimer) {
-        var watchInterval = 300;
-        underflowWatcherTimer = setInterval(underflowWatcher, watchInterval)
+        let watchInterval = 300;
+        underflowWatcherTimer = setInterval(underflowWatcher, watchInterval);
       }
     }, this);
 
@@ -2187,7 +2195,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#underflowWatcher
      */
-    var underflowWatcher = _.bind(function() {
+    const underflowWatcher = _.bind(function() {
       if (!hasPlayed) {
         return;
       }
@@ -2196,7 +2204,7 @@ import CONSTANTS from "./constants/constants";
         return stopUnderflowWatcher();
       }
 
-      if (!_video.paused && _video.currentTime == watcherTime) {
+      if (!_video.paused && _video.currentTime === watcherTime) {
         if (!waitingEventRaised) {
           raiseWaitingEvent();
         }
@@ -2213,7 +2221,7 @@ import CONSTANTS from "./constants/constants";
      * @private
      * @method OoyalaVideoWrapper#stopUnderflowWatcher
      */
-    var stopUnderflowWatcher = _.bind(function() {
+    const stopUnderflowWatcher = _.bind(function() {
       clearInterval(underflowWatcherTimer);
       underflowWatcherTimer = null;
       waitingEventRaised = false;
@@ -2227,8 +2235,10 @@ import CONSTANTS from "./constants/constants";
    * @method getRandomString
    * @returns {string} A random string
    */
-  var getRandomString = function() {
-    return Math.random().toString(36).substring(7);
+  const getRandomString = function() {
+    const radix = 36;
+    const substringIndex = 7;
+    return Math.random().toString(radix).substring(substringIndex);
   };
 
   OO.Video.plugin(new OoyalaVideoFactory());

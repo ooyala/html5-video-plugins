@@ -2,22 +2,21 @@
  * Youtube video plugin
  */
 
-require("../../../html5-common/js/utils/InitModules/InitOO.js");
-require("../../../html5-common/js/utils/InitModules/InitOOUnderscore.js");
-require("../../../html5-common/js/utils/InitModules/InitOOHazmat.js");
-require("../../../html5-common/js/utils/constants.js");
+require('../../../html5-common/js/utils/InitModules/InitOO.js');
+require('../../../html5-common/js/utils/InitModules/InitOOUnderscore.js');
+require('../../../html5-common/js/utils/InitModules/InitOOHazmat.js');
+require('../../../html5-common/js/utils/constants.js');
 (function(_, $) {
- 
-  var pluginName = "ooyalaYoutubeVideoTech";
-  var player;
-  var youtubePlayer;
-  var youtubeVideoContainer;
-  var element;
-  var youtubeID = '';
-  var playerReady = false;
-  var bitrateFlag = true;
-  var javascriptCommandQueue = [];
-  var qualities = [];
+  let pluginName = 'ooyalaYoutubeVideoTech';
+  let player;
+  let youtubePlayer;
+  let youtubeVideoContainer;
+  let element;
+  let youtubeID = '';
+  let playerReady = false;
+  let bitrateFlag = true;
+  let javascriptCommandQueue = [];
+  let qualities = [];
 
   /**
    * @class OoyalaYoutubeVideoFactory
@@ -27,10 +26,10 @@ require("../../../html5-common/js/utils/constants.js");
    * @property {string[]} features An array of supported features (ex. OO.VIDEO.FEATURE.BITRATE_CONTROL)
    * @property {string} technology The core video technology (ex. OO.VIDEO.TECHNOLOGY.HTML5)
    */
-  var OoyalaYoutubeVideoFactory = function() {
+  let OoyalaYoutubeVideoFactory = function() {
     this.name = pluginName;
     this.features = [ OO.VIDEO.FEATURE.VIDEO_OBJECT_SHARING_GIVE,
-                      OO.VIDEO.FEATURE.BITRATE_CONTROL ];
+      OO.VIDEO.FEATURE.BITRATE_CONTROL ];
     this.technology = OO.VIDEO.TECHNOLOGY.HTML5;
     this.encodings = [OO.VIDEO.ENCODING.YOUTUBE];
 
@@ -47,16 +46,16 @@ require("../../../html5-common/js/utils/constants.js");
      */
     this.create = function(parentContainer, domId, controller, css, playerId) {
       player = '<div id="player"  style="position:absolute;top:0px;left:0px;"></div>';
-      //Its best to create the div for iframe in the create. Has this method is called once the youtube plugin is choosen.
-      if(player == null || parentContainer == null || controller == null) {
-        console.warn("Youtube: Failed to create the player");
+      // Its best to create the div for iframe in the create. Has this method is called once the youtube plugin is choosen.
+      if (player == null || parentContainer == null || controller == null) {
+        console.warn('Youtube: Failed to create the player');
         return;
       }
       youtubeVideoContainer = parentContainer;
       $('head').append("<script type = 'text/javascript' src = '//www.youtube.com/iframe_api'></script>");
-      window.onYouTubePlayerAPIReady = function() { onYouTubeIframeAPIReady(); }; 
+      window.onYouTubePlayerAPIReady = function() { onYouTubeIframeAPIReady(); };
       element = new OoyalaYoutubeVideoWrapper();
-      if(element == null) return;
+      if (element == null) return;
       element.controller = controller;
       controller.notify(controller.EVENTS.CAN_PLAY);
       youtubeVideoContainer.append(player);
@@ -76,7 +75,7 @@ require("../../../html5-common/js/utils/constants.js");
     this.maxSupportedElements = -1;
   };
 
-  /* 
+  /**
    * Youtube iframe API will call this function to create an <iframe> (YouTube player)
    * once the API code downloads.
    * @public
@@ -84,29 +83,29 @@ require("../../../html5-common/js/utils/constants.js");
    * @property {object} youtubePlayer The youtube player is creted.
    */
   function onYouTubeIframeAPIReady() {
-    //youtubeID is expected to be initialized
-    if ( youtubeID === '' || youtubePlayer ) {
-     OO.log("Youtube: youtubeID " + youtubeID + " not defined / youtubePlayer already exists");
-     return;
+    // youtubeID is expected to be initialized
+    if (youtubeID === '' || youtubePlayer) {
+      OO.log('Youtube: youtubeID ' + youtubeID + ' not defined / youtubePlayer already exists');
+      return;
     }
     youtubePlayer = new YT.Player('player', {
       videoId: youtubeID,
-      height: "100%",
-      width: "100%",
+      height: '100%',
+      width: '100%',
       playerVars: { 'autoplay': 0, 'controls': 0, 'rel': 0, 'showinfo': 0, 'modestbranding': 1 },
       events: {
-      'onReady': onPlayerReady,
-      'onPlaybackQualityChange': onPlayerPlaybackQualityChange,
-      'onStateChange': onPlayerStateChange,
-      'onError': onPlayerError
-      }
+        'onReady': onPlayerReady,
+        'onPlaybackQualityChange': onPlayerPlaybackQualityChange,
+        'onStateChange': onPlayerStateChange,
+        'onError': onPlayerError,
+      },
     });
-    if(!youtubePlayer) {
-      element.controller.notify(element.controller.EVENTS.ERROR, { "errorcode" : -1 });
+    if (!youtubePlayer) {
+      element.controller.notify(element.controller.EVENTS.ERROR, { 'errorcode': -1 });
     }
   }
 
-  /*
+  /**
    * The Youtube iframe API will call this function when the video player is ready.
    * @public
    * @method onPlayerReady
@@ -115,118 +114,143 @@ require("../../../html5-common/js/utils/constants.js");
   function onPlayerReady(event) {
     playerReady = true;
     if (javascriptCommandQueue.length < 1) return;
-    for(var i = 0; i < javascriptCommandQueue.length; i++) {
-      switch(javascriptCommandQueue[i][0]) {
+    for (let index = 0; index < javascriptCommandQueue.length; index++) {
+      switch (javascriptCommandQueue[index][0]) {
         case OO.EVENTS.PLAY:
           element.play();
+          // eslint-disable-next-line no-undef
           hasPlayed = true;
           break;
         case OO.EVENTS.SEEK:
-          if (javascriptCommandQueue[i].length > 1) element.seek(javascriptCommandQueue[i][1]);
+          if (javascriptCommandQueue[index].length > 1) element.seek(javascriptCommandQueue[index][1]);
           break;
         case OO.EVENTS.VOLUME_CHANGE:
-          if (javascriptCommandQueue[i].length > 1) element.setVolume(javascriptCommandQueue[i][1]);
+          if (javascriptCommandQueue[index].length > 1) element.setVolume(javascriptCommandQueue[index][1]);
+          break;
+        default:
           break;
       }
-    }    
+    }
   }
 
-  /*
+  /**
    * The Youtube iframe API calls this function when the player's quality changes.
    * @public
    * @method onPlayerPlaybackQualityChange
    * @param {object} event The event from the youtube on player quality change.
    */
   function onPlayerPlaybackQualityChange(event) {
-    var vtcBitrate = {
+    let vtcBitrate = {
       id: event.data,
       width: 0,
       height: 0,
-      bitrate:event.data 
+      bitrate: event.data,
     };
-    element.controller.notify(element.controller.EVENTS.BITRATE_CHANGED,vtcBitrate);
+    element.controller.notify(element.controller.EVENTS.BITRATE_CHANGED, vtcBitrate);
   }
 
-  /*
+  /**
    * The Youtube iframe API calls this function when the player's state changes.
    * @public
    * @method onPlayerStateChange
    * @param {object} event The event from the youtube on player state change.
    */
   function onPlayerStateChange(event) {
-    if(event.data == null) return;
-    switch(event.data) {
-      case -1:
-        OO.log("Youtube: Unstarted event received");
-       // unstarted
+    if (event.data == null) return;
+    const stateCodes = {
+      'unstarted': -1,
+      'ended': 0,
+      'playing': 1,
+      'pause': 2,
+      'buffering': 3,
+      'cued': 5,
+    };
+    switch (event.data) {
+      case stateCodes['unstarted']:
+        OO.log('Youtube: Unstarted event received');
+        // unstarted
         break;
-      case 0:
-        OO.log("Youtube: Ended event received");
+      case stateCodes['ended']:
+        OO.log('Youtube: Ended event received');
         // ended
         element.controller.notify(element.controller.EVENTS.ENDED);
         break;
-      case 1:
-        // playing 
-        OO.log("Youtube: Playing event received");
+      case stateCodes['playing']:
+        // playing
+        OO.log('Youtube: Playing event received');
         if (bitrateFlag) {
-          if(!youtubePlayer) return;
+          if (!youtubePlayer) return;
           qualities = youtubePlayer.getAvailableQualityLevels();
           element.raiseBitratesAvailable();
           bitrateFlag = false;
-        }      
+        }
         break;
-      case 2:
-        OO.log("Youtube: Pause event received");
-        // paused 
+      case stateCodes['pause']:
+        OO.log('Youtube: Pause event received');
+        // paused
         element.controller.notify(element.controller.EVENTS.PAUSED);
         break;
-      case 3:
+      case stateCodes['buffering']:
         // buffering
-        OO.log("Youtube: Buffering event received"); 
+        OO.log('Youtube: Buffering event received');
         break;
-      case 5:
-        OO.log("Youtube: Cued event received");
-        // video cued 
+      case stateCodes['cued']:
+        OO.log('Youtube: Cued event received');
+        // video cued
+        break;
+      default:
         break;
     }
   }
 
-  /*
+  /**
    * The Youtube iframe API calls this function when the player's throws an error.
    * @public
    * @method onPlayerError
    * @param {object} event The event from the youtube on player error.
    */
   function onPlayerError(event) {
-    if(event.data == null) return;
-    var code = -1;
-    switch(event.data) {
-      case 2:
-        OO.log("Youtube: invalid video id");
-        element.controller.notify(element.controller.EVENTS.ERROR, { "errorcode" : code });
+    if (event.data == null) return;
+    const errorCodes = {
+      'invalidVideoId_2': 2,
+      'html5': 5,
+      'notFound': 100,
+      'notAllowed': 101,
+      'invalidVideoId_150': 150,
+    };
+    let code = -1;
+    switch (event.data) {
+      case errorCodes['invalidVideoId_2']:
+        OO.log('Youtube: invalid video id');
+        element.controller.notify(element.controller.EVENTS.ERROR,
+          { 'errorcode': code });
         // invalid video id
         break;
-      case 5:
-        OO.log("Youtube: The requested content cannot be played in an HTML5 player ");
-        element.controller.notify(element.controller.EVENTS.ERROR, { "errorcode" : code });
+      case errorCodes['html5']:
+        OO.log('Youtube: The requested content cannot be played in an HTML5 player ');
+        element.controller.notify(element.controller.EVENTS.ERROR, { 'errorcode': code });
         // The requested content cannot be played in an HTML5 player or another error related to the HTML5 player has occurred
         break;
-      case 100:
-        OO.log("Youtube: The video requested was not found.");
-        element.controller.notify(element.controller.EVENTS.ERROR, { "errorcode" : code });
-        // The video requested was not found. This error occurs when a video has been removed or has been marked as private 
+      case errorCodes['notFound']:
+        OO.log('Youtube: The video requested was not found.');
+        element.controller.notify(element.controller.EVENTS.ERROR, { 'errorcode': code });
+        // The video requested was not found. This error occurs when a video has been removed or has been marked as private
         break;
-      case 101:
-        OO.log("Youtube: The owner of the requested video does not allow it to be played in embedded players.");
-        element.controller.notify(element.controller.EVENTS.ERROR, { "errorcode" : code });
-        // The owner of the requested video does not allow it to be played in embedded players. 
+      case errorCodes['notAllowed']:
+        OO.log(
+          'Youtube: The owner of the requested video does not allow it to be played in embedded players.'
+        );
+        element.controller.notify(element.controller.EVENTS.ERROR, { 'errorcode': code });
+        // The owner of the requested video does not allow it to be played in embedded players.
         break;
-      case 150:
-        OO.log("Youtube: invalid video id");
-        element.controller.notify(element.controller.EVENTS.ERROR, { "errorcode" : code });
-        // This error is the same as 101. It's just a 101 error in disguise! 
+      case errorCodes['invalidVideoId_150']:
+        OO.log('Youtube: invalid video id');
+        element.controller.notify(element.controller.EVENTS.ERROR, { 'errorcode': code });
+        // This error is the same as 101. It's just a 101 error in disguise!
         break;
-      }
+      default:
+        break;
+    }
   }
 
   /**
@@ -235,12 +259,12 @@ require("../../../html5-common/js/utils/constants.js");
    * @property {object} controller A reference to the Ooyala Video Tech Controller
    * @property {boolean} disableNativeSeek When true, the plugin should supress or undo seeks that come from
    *                                       native video controls
-   */  
-  var OoyalaYoutubeVideoWrapper = function() {
+   */
+  const OoyalaYoutubeVideoWrapper = function() {
     this.controller = {};
     this.disableNativeSeek = false;
-    var timeUpdateInterval = null;
-    var hasPlayed = false;
+    let timeUpdateInterval = null;
+    let hasPlayed = false;
 
     /**
      * Triggers playback on the video element.
@@ -249,9 +273,9 @@ require("../../../html5-common/js/utils/constants.js");
      */
     this.play = function() {
       if (!youtubePlayer) {
-        javascriptCommandQueue.push(["play", null]);
-        onYouTubeIframeAPIReady();  
-        return;  
+        javascriptCommandQueue.push(['play', null]);
+        onYouTubeIframeAPIReady();
+        return;
       }
       if (playerReady) {
         youtubePlayer.playVideo();
@@ -259,9 +283,8 @@ require("../../../html5-common/js/utils/constants.js");
         this.controller.notify(element.controller.EVENTS.PLAYING);
         updateTimerDisplay();
         hasPlayed = true;
-      }
-      else {
-        javascriptCommandQueue.push(["play", null]);
+      } else {
+        javascriptCommandQueue.push(['play', null]);
       }
     };
 
@@ -271,14 +294,14 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#pause
      */
     this.pause = function() {
-      if(!youtubePlayer) return;
+      if (!youtubePlayer) return;
       youtubePlayer.pauseVideo();
       if (timeUpdateInterval) {
         clearInterval(timeUpdateInterval);
         timeUpdateInterval = null;
       }
     };
-    
+
     /**
      * Triggers a seek on the video element.
      * @public
@@ -286,15 +309,14 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} time The time to seek the video to (in seconds)
      */
     this.seek = function(time) {
-      if(!youtubePlayer) return;
-      if(playerReady) {
-        youtubePlayer.seekTo(time,true);
-        this.controller.notify( this.controller.EVENTS.SEEKED);
-      }
-      else {
+      if (!youtubePlayer) return;
+      if (playerReady) {
+        youtubePlayer.seekTo(time, true);
+        this.controller.notify(this.controller.EVENTS.SEEKED);
+      } else {
         // control comes here only when the setinitial time calls the seek and the player is not yet in ready state.
-        OO.log("Youtube: Adding setInitialTime to queue has the youtube player is not yet ready");
-        javascriptCommandQueue.push(["seek", time]);
+        OO.log('Youtube: Adding setInitialTime to queue has the youtube player is not yet ready');
+        javascriptCommandQueue.push(['seek', time]);
       }
     };
 
@@ -305,12 +327,12 @@ require("../../../html5-common/js/utils/constants.js");
      * @param {number} volume A number between 0 and 1 indicating the desired volume percentage
      */
     this.setVolume = function(volume) {
-      if(!youtubePlayer) {
+      if (!youtubePlayer) {
         javascriptCommandQueue.push([OO.EVENTS.VOLUME_CHANGE, volume]);
         return;
       }
-      youtubePlayer.setVolume(volume*100);
-      this.controller.notify( this.controller.EVENTS.VOLUME_CHANGE, { "volume" :volume});
+      youtubePlayer.setVolume(volume * 100);
+      this.controller.notify(this.controller.EVENTS.VOLUME_CHANGE, { 'volume': volume });
     };
 
     /**
@@ -329,12 +351,12 @@ require("../../../html5-common/js/utils/constants.js");
      * Sets the url of the video.
      * @public
      * @method OoyalaYoutubeVideoWrapper#setVideoUrl
-     * @param {string} youtubeId The youtube Id of the video that needs to be played. 
+     * @param {string} youtubeId The youtube Id of the video that needs to be played.
      * @returns {boolean} True or false indicating success
      */
     this.setVideoUrl = function(youtubeId) {
       if (youtubeId) {
-        youtubeID = youtubeId;                
+        youtubeID = youtubeId;
         return true;
       }
       return false;
@@ -350,7 +372,7 @@ require("../../../html5-common/js/utils/constants.js");
      *   An ID of 'auto' should return the plugin to automatic bitrate selection.
      */
     this.setBitrate = function(suggestedQuality) {
-      if(!youtubePlayer) return;
+      if (!youtubePlayer) return;
       youtubePlayer.setPlaybackQuality(suggestedQuality);
     };
 
@@ -363,8 +385,7 @@ require("../../../html5-common/js/utils/constants.js");
       // Reset the source
       if (!OO.isEdge) {
         this.setVideoUrl('');
-      }
-      else {
+      } else {
         youtubeID = '';
       }
       player = null;
@@ -384,12 +405,13 @@ require("../../../html5-common/js/utils/constants.js");
      * @private
      * @method OoyalaYoutubeVideoWrapper#updateTimerDisplay
      */
-    var updateTimerDisplay = function() {
-      if(!youtubePlayer || !playerReady) return;
+    const updateTimerDisplay = function() {
+      if (!youtubePlayer || !playerReady) return;
       if (timeUpdateInterval) {
         clearInterval(timeUpdateInterval);
       }
-      timeUpdateInterval = setInterval(function () { updateTimerDisplay(); }, 255);
+      const interval = 255;
+      timeUpdateInterval = setInterval(function() { updateTimerDisplay(); }, interval);
       raisePlayhead();
     };
 
@@ -398,12 +420,12 @@ require("../../../html5-common/js/utils/constants.js");
      * @private
      * @method OoyalaYoutubeVideoWrapper#raisePlayhead
      */
-    var raisePlayhead = _.bind(function() {
-      if(!youtubePlayer) return;
-      var timeUpdateObject = {
-        "currentTime" : youtubePlayer.getCurrentTime(),
-        "duration" : youtubePlayer.getDuration(),
-        "seekRange" : { "begin" : 0, "end" : youtubePlayer.getDuration() }
+    const raisePlayhead = _.bind(function() {
+      if (!youtubePlayer) return;
+      let timeUpdateObject = {
+        'currentTime': youtubePlayer.getCurrentTime(),
+        'duration': youtubePlayer.getDuration(),
+        'seekRange': { 'begin': 0, 'end': youtubePlayer.getDuration() },
       };
       this.controller.notify(this.controller.EVENTS.TIME_UPDATE, timeUpdateObject);
     }, this);
@@ -414,20 +436,20 @@ require("../../../html5-common/js/utils/constants.js");
      * @method OoyalaYoutubeVideoWrapper#raiseBitratesAvailable
      */
     this.raiseBitratesAvailable = function() {
-      if(!qualities) return;
-      var vtcBitrates = [{id: "auto", width: 0, height: 0, bitrate: "auto" }];
-      for (var i = 0; i < qualities.length; i++) {
-        if (qualities[i] != "auto") {
-          var vtcBitrate = {
-            id: qualities[i],
+      if (!qualities) return;
+      let vtcBitrates = [{ id: 'auto', width: 0, height: 0, bitrate: 'auto' }];
+      for (let id = 0; id < qualities.length; id++) {
+        if (qualities[id] !== 'auto') {
+          let vtcBitrate = {
+            id: qualities[id],
             width: 0,
             height: 0,
-            bitrate: qualities[i]
+            bitrate: qualities[id],
           };
           vtcBitrates.push(vtcBitrate);
         }
       }
-      this.controller.notify(this.controller.EVENTS.BITRATES_AVAILABLE,vtcBitrates);
+      this.controller.notify(this.controller.EVENTS.BITRATES_AVAILABLE, vtcBitrates);
     };
   };
   OO.Video.plugin(new OoyalaYoutubeVideoFactory());

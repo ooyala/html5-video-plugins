@@ -1,11 +1,10 @@
-import TextTrackMap from "./text_track_map";
+import TextTrackMap from './text_track_map';
 
 /**
  * Extends the functionality of the TextTrackList object in order to simplify
  * adding, searching, updating and removing text tracks.
  */
 export default class TextTrackHelper {
-
   constructor(video) {
     this.video = video;
   }
@@ -61,7 +60,7 @@ export default class TextTrackHelper {
    * Allows executing Array.prototype.filter on the video's TextTrackList.
    * @public
    * @param {Function} callback A predicate function to test each element of the array.
-   * @return {Array} An array with all the TextTrack objects that match the filter criteria.
+   * @returns {Array} An array with all the TextTrack objects that match the filter criteria.
    */
   filter(callback) {
     if (!this.video || !this.video.textTracks) {
@@ -74,7 +73,7 @@ export default class TextTrackHelper {
    * Allows executing Array.prototype.find on the video's TextTrackList.
    * @public
    * @param {Function} callback A function to execute on each value in the array.
-   * @return {TextTrack} The first TextTrack object that matches the search criteria or undefined if there are no matches.
+   * @returns {TextTrack} The first TextTrack object that matches the search criteria or undefined if there are no matches.
    */
   find(callback) {
     if (!this.video || !this.video.textTracks) {
@@ -97,12 +96,12 @@ export default class TextTrackHelper {
    * @param {String} languageOrId The language or track id of the track we want to find. Note that
    * language matches only internal tracks and track id only external tracks.
    * @param {TextTrackMap} textTrackMap A TextTrackMap that contains metadata for all of the video's TextTrack objects.
-   * @return {TextTrack} The first TextTrack object that matches the given key or undefined if there are no matches.
+   * @returns {TextTrack} The first TextTrack object that matches the given key or undefined if there are no matches.
    */
   findTrackByKey(languageOrId, textTrackMap = new TextTrackMap()) {
     let track = this.find(currentTrack => {
       const trackMetadata = textTrackMap.findEntry({
-        textTrack: currentTrack
+        textTrack: currentTrack,
       });
       // Note: We don't match tracks that are unknown to us
       const matchesTrackId = (
@@ -127,13 +126,13 @@ export default class TextTrackHelper {
    * from the value stored in the given TextTrackMap.
    * @public
    * @param {TextTrackMap} textTrackMap A TextTrackMap that contains metadata for all of the video's TextTrack objects.
-   * @return {Array} An array with all of the TextTrack objects that match the search
+   * @returns {Array} An array with all of the TextTrack objects that match the search
    * criteria or an empty array if there are no matches.
    */
   filterChangedTracks(textTrackMap = new TextTrackMap()) {
     const changedTracks = this.filter(currentTrack => {
       const trackMetadata = textTrackMap.findEntry({
-        textTrack: currentTrack
+        textTrack: currentTrack,
       });
       const hasTrackChanged = (
         trackMetadata &&

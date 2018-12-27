@@ -1,4 +1,4 @@
-import CONSTANTS from "../constants/constants";
+import CONSTANTS from '../constants/constants';
 
 /**
  * Allows us to store and associate metadata with a TextTrack object since we
@@ -6,7 +6,6 @@ import CONSTANTS from "../constants/constants";
  * registered tracks which can be used identify the object later.
  */
 export default class TextTrackMap {
-
   constructor() {
     this.textTracks = [];
   }
@@ -18,7 +17,7 @@ export default class TextTrackMap {
    * @public
    * @param {Object} metadata An object with metadata related to a TextTrack
    * @param {Boolean} isExternal Determines whether or not the TextTrack was added by the plugin (i.e. is external)
-   * @return {String} The auto-generated id assigned to the newly registered track
+   * @returns {String} The auto-generated id assigned to the newly registered track
    */
   addEntry(metadata = {}, isExternal = false) {
     let idPrefix, trackCount;
@@ -34,7 +33,7 @@ export default class TextTrackMap {
     // (i.e. internal vs external)
     const newTextTrack = Object.assign({}, metadata, {
       id: `${idPrefix}${trackCount + 1}`,
-      isExternal: !!isExternal
+      isExternal: !!isExternal,
     });
 
     this.textTracks.push(newTextTrack);
@@ -47,7 +46,7 @@ export default class TextTrackMap {
    * @param {Object} searchOptions An object whose key value pairs will be matched against
    * the existing entries. All existing properties in searchOptions need to match in order
    * for a given entry to be matched.
-   * @return {Object} The metadata object that matches the given search options or undefined if there are no matches.
+   * @returns {Object} The metadata object that matches the given search options or undefined if there are no matches.
    */
   findEntry(searchOptions = {}) {
     const textTrack = this.textTracks.find(currentTrack => {
@@ -73,7 +72,7 @@ export default class TextTrackMap {
    * @param {Object} searchOptions An object whose key value pairs will be matched against
    * the existing entries. All existing properties in searchOptions need to match in order
    * for a given entry to be matched.
-   * @return {Boolean} True if the entry exists, false otherwise
+   * @returns {Boolean} True if the entry exists, false otherwise
    */
   existsEntry(searchOptions) {
     const exists = !!this.findEntry(searchOptions);
@@ -88,7 +87,7 @@ export default class TextTrackMap {
    * the existing entries. All existing properties in searchOptions need to match in order
    * for a given entry to be matched.
    * @param {Object} metadata An object containing the properties to be merged with the existing object
-   * @return {Object} The updated metadata entry or undefined if there were no matches
+   * @returns {Object} The updated metadata entry or undefined if there were no matches
    */
   tryUpdateEntry(searchOptions, metadata = {}) {
     let entry = this.findEntry(searchOptions);
@@ -102,7 +101,7 @@ export default class TextTrackMap {
   /**
    * Gets all of the entries associated with internal in-manifest/in-stream text tracks.
    * @public
-   * @return {Array} An array with all the internal TextTrack objects.
+   * @returns {Array} An array with all the internal TextTrack objects.
    */
   getInternalEntries() {
     const internalEntries = this.textTracks.filter(trackMetadata =>
@@ -114,7 +113,7 @@ export default class TextTrackMap {
   /**
    * Gets all of the entries associated with external, manually added text tracks.
    * @public
-   * @return {Array} An array with all the external TextTrack objects.
+   * @returns {Array} An array with all the external TextTrack objects.
    */
   getExternalEntries() {
     const externalEntries = this.textTracks.filter(trackMetadata =>
@@ -126,7 +125,7 @@ export default class TextTrackMap {
   /**
    * Determines whether or not all of the track entries are currently in 'disabled' mode.
    * @public
-   * @return {Boolean} True if all tracks have 'disabled' mode, false otherwise
+   * @returns {Boolean} True if all tracks have 'disabled' mode, false otherwise
    */
   areAllDisabled() {
     const allDisabled = this.textTracks.reduce((result, trackMetadata) =>
