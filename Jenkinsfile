@@ -4,7 +4,7 @@
 def nodeLabel = 'ops-alfred3-aws'
 
 // variables
-def repositoryKey = 'html5-ad-plugins'
+def repositoryKey = 'html5-videos-plugins'
 def numToKeepStr = '10'
 def eventKeyStatic
 
@@ -35,7 +35,7 @@ pipeline {
                         echo "Branch Target Name: ${env.CHANGE_TARGET}"
                         echo "Commit SHA: ${env.GIT_COMMIT}"
                         echo "Event Key: ${eventKeyStatic}"
-                        build job: 'Playback-Web-CI/html5-video-plugins-commits-pull-request', parameters: [
+                        build job: 'Playback-Web-CI/html5-video-plugins-commits-pull-requests', parameters: [
                         string(name: 'commitHash', value: env.GIT_COMMIT),
                         string(name: 'branchNameFrom', value: env.CHANGE_BRANCH),
                         string(name: 'branchNameTo', value: env.CHANGE_TARGET),
@@ -45,7 +45,7 @@ pipeline {
                         echo "Branch Name: ${env.GIT_BRANCH}"
                         echo "Commit SHA: ${env.GIT_COMMIT}"
                         echo "Event Key: ${eventKeyStatic}"
-                        build job: 'Playback-Web-CI/html5-video-plugins-commits-pull-request', parameters: [
+                        build job: 'Playback-Web-CI/html5-video-plugins-commits-pull-requests', parameters: [
                         string(name: 'commitHash', value: env.GIT_COMMIT),
                         string(name: 'branchNameFrom', value: env.GIT_BRANCH),
                         string(name: 'eventKey', value: "commit")]
