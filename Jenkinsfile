@@ -25,7 +25,6 @@ pipeline {
     }
 
     stages {
-
         stage('Run Main build') {
             steps {
                 script {
