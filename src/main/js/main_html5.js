@@ -347,6 +347,7 @@ require('../../../html5-common/js/utils/environment.js');
             delete _video.src;
           } else if (OO.isMacOs && OO.isSafari) {
             _video.removeAttrribute('src');
+            // would not trigger Video#loadstart or Airplay#playbackTargetChanged events
             _video.load();
           } else {
             _video.src = null;
