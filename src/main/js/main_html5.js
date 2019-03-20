@@ -341,10 +341,13 @@ require('../../../html5-common/js/utils/environment.js');
         urlChanged = true;
         resetStreamData();
         if (_currentUrl === '') {
-          // Workaround of an issue where iOS attempts to set the src to <RELATIVE_PATH>/null
+          // Workaround of an issue where iOS and MacOS attempt to set the src to <RELATIVE_PATH>/null
           // when setting source to null
           if (OO.isIos) {
             delete _video.src;
+          } else if (OO.isMacOs && OO.isSafari) {
+            _video.removeAttrribute('src');
+            _video.load();
           } else {
             _video.src = null;
           }
