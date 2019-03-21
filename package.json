@@ -15,7 +15,8 @@
     "build:future": "webpack --mode development",
     "build-prod": "webpack --mode production",
     "start": "webpack-dev-server",
-    "lint": "eslint src/**"
+    "lint": "echo",
+    "analysis": "echo"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.51",
