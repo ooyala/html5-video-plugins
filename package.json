@@ -11,6 +11,7 @@
   "scripts": {
     "build": "gulp",
     "test": "jest",
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
     "build:future": "webpack --mode development",
     "build-prod": "webpack --mode production",
     "start": "webpack-dev-server",
