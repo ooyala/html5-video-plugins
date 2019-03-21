@@ -169,6 +169,16 @@ describe('main_html5 wrapper tests', function () {
     expect(typeof element.src).to.eql("undefined");
   });
 
+  it('should set src to empty string on MacOS Safari', () => {
+    OO.isMacOs = true;
+    OO.isSafari = true;
+    const spy = sinon.spy(element, 'removeAttribute');
+    wrapper.setVideoUrl('url');
+    expect(spy.callCount).to.be(0);
+    wrapper.setVideoUrl('');
+    expect(spy.calledOnceWith('src')).to.be(true);
+  });
+
   it('should call stream load', function(){
     var loadSpy = sinon.spy(element, "load");
     var pauseSpy = sinon.spy(element, "pause");
