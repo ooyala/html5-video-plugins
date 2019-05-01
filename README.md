@@ -113,4 +113,3 @@ $ gulp docs
 ```
 This will put the documentation into the /docs folder.
 Open /docs/index.html to view the docs home page.
-
