@@ -1,6 +1,6 @@
 # html5-video-plugins
 
-Open-source interfaces to video renderers that plug into the Ooyala V4 core player. This README contains introduction, setup, test, and build sections.
+Open-source  interfaces to video renderers that plug into the Ooyala V4 core player. This README contains introduction, setup, test, and build sections.
 
 ## High Level Overview
 
@@ -113,3 +113,4 @@ $ gulp docs
 ```
 This will put the documentation into the /docs folder.
 Open /docs/index.html to view the docs home page.
+
