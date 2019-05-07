@@ -2163,7 +2163,6 @@ require('../../../html5-common/js/utils/environment.js');
       if (isM3u8) {
         let durationResolved = resolveDuration(event.target.duration);
         let durationInt = Math.floor(durationResolved);
-        console.log(_video.currentTime, durationResolved, durationInt);
         if ((_video.currentTime === durationResolved) && (durationResolved > durationInt)) {
           console.log('VTC_OO: manually triggering end of stream for m3u8',
             _currentUrl, durationResolved, _video.currentTime);
