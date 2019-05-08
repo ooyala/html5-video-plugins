@@ -120,14 +120,10 @@ require('../../../html5-common/js/utils/environment.js');
         // http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/AirPlayGuide/OptingInorOutofAirPlay/OptingInorOutofAirPlay.html
         //
         video.attr('x-webkit-airplay', 'allow');
-
-        // enable inline playback for mobile
-        if (pluginParams['iosPlayMode'] === 'inline') {
-          const iosVersion = 10;
-          if (OO.iosMajorVersion >= iosVersion) {
-            video.attr('playsinline', '');
-          }
-        }
+      }
+      // enable inline playback for mobile
+      if (pluginParams['iosPlayMode'] === 'inline') {
+        video.attr('playsinline', '');
       }
 
       let element = new OoyalaVideoWrapper(domId, video[0], playerId);
