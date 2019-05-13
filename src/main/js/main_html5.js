@@ -121,7 +121,7 @@ require('../../../html5-common/js/utils/environment.js');
         video.attr('x-webkit-airplay', 'allow');
       }
       // enable inline playback for mobile
-      if (pluginParams['iosPlayMode'] === 'inline') {
+      if (pluginParams && pluginParams['iosPlayMode'] === 'inline') {
         video.attr('playsinline', '');
       }
 
