@@ -13,7 +13,6 @@ require('../../../html5-common/js/utils/InitModules/InitOOHazmat.js');
 require('../../../html5-common/js/utils/constants.js');
 require('../../../html5-common/js/utils/utils.js');
 require('../../../html5-common/js/utils/environment.js');
-
 (function(_, $) {
   let pluginName = 'ooyalaHtml5VideoTech';
   let currentInstances = {};
@@ -1390,15 +1389,15 @@ require('../../../html5-common/js/utils/environment.js');
      */
     const raiseEndedEvent = _.bind(function(event) {
       stopUnderflowWatcher();
-      if (
+      if (videoEnded || // no double firing ended event
         !_currentUrl || // iOS Safari will trigger an ended event when the source is cleared with an empty string
-        (!_video.ended && OO.isSafari)
-      ) {
-        // iOS raises ended events sometimes when a new stream is played in the same video element
+        (OO.isEdge && !event) || // Edge fires empty ended event in the beginning on some mp4
+        (!_video.ended && OO.isSafari) // iOS raises ended events sometimes when a new stream is played in the same video element
         // Prevent this faulty event from making it to the player message bus
+      ) {
         return;
       }
-      if (videoEnded) { return; } // no double firing ended event.
+
       videoEnded = true;
       initialTime.value = 0;
 
