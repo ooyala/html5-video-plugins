@@ -63,7 +63,10 @@ require('../../../html5-common/js/utils/environment.js');
           list.push(OO.VIDEO.ENCODING.HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_VOD_HLS);
           list.push(OO.VIDEO.ENCODING.AKAMAI_HD2_HLS);
-          list.push(OO.VIDEO.ENCODING.AUDIO_HLS);
+          // [PBW-7936] We don't support audio_hls on Android Chrome
+          if (!OO.isChrome && !OO.isAndroid) {
+            list.push(OO.VIDEO.ENCODING.AUDIO_HLS);
+          }
         }
 
         // Sony OperaTV supports HLS but doesn't properly report it so we are forcing it here
