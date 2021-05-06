@@ -47,7 +47,7 @@
     "jsdoc": "^3.3.3",
     "sinon": "^6.0.0",
     "uglify": "^0.1.5",
-    "underscore": "1.9.1",
+    "underscore": "1.12.1",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^2.0.0",
     "webpack": "^4.27.1",
