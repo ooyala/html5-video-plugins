@@ -6,7 +6,7 @@
     "node": ">=8.11.3"
   },
   "dependencies": {
-    "aws-sdk": "^2.1.49"
+    "aws-sdk": "^2.814.0"
   },
   "scripts": {
     "build": "gulp",
